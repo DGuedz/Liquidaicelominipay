@@ -1,0 +1,93 @@
+{
+  "project": "LiquidAI",
+  "version": "2.0.0",
+  "hackathon": "Build Agents for the Real World V2",
+  "chain": "Celo (42220)",
+  "lastUpdated": "2026-03-15T00:00:00Z",
+  "milestones": [
+    {
+      "id": "liquidity-map",
+      "name": "AI Liquidity Map",
+      "description": "Interactive SVG-based liquidity visualization with real-time pool data, custom components (no Recharts conflicts), and agent-driven pool allocation display.",
+      "progress": 90,
+      "status": "in-progress",
+      "priority": 1,
+      "deadline": "2026-03-20",
+      "deliverables": [
+        "Interactive Celo liquidity map SVG",
+        "Pool allocation visualization",
+        "Agent rebalancing animation",
+        "Real-time yield display"
+      ],
+      "completedItems": [
+        "CeloLiquidityMap component",
+        "LiquidityMap base component",
+        "AgentPulse real-time animation",
+        "SVG custom chart system"
+      ]
+    },
+    {
+      "id": "minipay-ux",
+      "name": "MiniPay UX + Mobile Optimization",
+      "description": "Mobile-first UI optimized for MiniPay Opera Mini users with $1,200 avg balance. Sub-12s onboarding, 3-tap max interactions, offline-first architecture.",
+      "progress": 85,
+      "status": "in-progress",
+      "priority": 1,
+      "deadline": "2026-03-22",
+      "deliverables": [
+        "MiniPay-optimized onboarding (<12s)",
+        "Bottom navigation with haptics",
+        "Self Protocol identity integration",
+        "Mobile-first responsive design"
+      ],
+      "completedItems": [
+        "OnboardingPage redesign",
+        "BottomNavigation component",
+        "SelfVerification integration",
+        "32 premium SVG icon library"
+      ]
+    },
+    {
+      "id": "yield-router",
+      "name": "Yield Router + AMM Integrations",
+      "description": "DeFi strategy router with Aave v3, Morpho, and Mento V3 integrations. Autonomous rebalancing based on APY signals and risk tolerance settings.",
+      "progress": 60,
+      "status": "in-progress",
+      "priority": 2,
+      "deadline": "2026-03-28",
+      "deliverables": [
+        "Aave v3 yield integration",
+        "Morpho pool allocation",
+        "Mento V3 stable yields",
+        "Auto-rebalance engine"
+      ],
+      "completedItems": [
+        "AgentPage with strategy config",
+        "SavingsPage with yield display",
+        "Agent risk tolerance UI"
+      ]
+    },
+    {
+      "id": "card-infrastructure",
+      "name": "Card Infrastructure + PIX Off-ramp",
+      "description": "Yield-backed virtual card with JIT liquidity and PIX off-ramp for Brazilian market. Transfero payout integration and Mento swap simulation.",
+      "progress": 40,
+      "status": "planned",
+      "priority": 3,
+      "deadline": "2026-04-05",
+      "deliverables": [
+        "Virtual card UI (CardPage)",
+        "PIX off-ramp simulator",
+        "JIT funding logic",
+        "Transfero payout flow"
+      ],
+      "completedItems": [
+        "CardPage UI component",
+        "Card design and animations"
+      ]
+    }
+  ],
+  "overallProgress": 69,
+  "nextRelease": "v2.1.0",
+  "releaseNotes": "Interactive Liquidity Map + Self Protocol Integration + AgentPulse"
+}
