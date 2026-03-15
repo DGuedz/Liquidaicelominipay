@@ -39,6 +39,8 @@ import {
 import { BottomNavigation } from "../components/bottom-navigation";
 import { useTheme } from "../hooks/useTheme";
 import { useNavigate } from "react-router";
+import { apiGet, apiPost, AgentStatePayload } from "../lib/api";
+import { useCeloWallet } from "../hooks/use-celo-wallet";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type RiskMode = "conservative" | "balanced" | "aggressive";
@@ -61,8 +63,8 @@ const RISK_CONFIG = {
       "Monitora IPCA em tempo real. Se inflação sobe, migra 100% do saldo para cUSD. Buffer de $150 sempre protegido.",
     sampleLog: "IPCA subiu +0.6% → 100% do saldo alocado em dólar estável.",
     pools: [
-      { name: "Aave v3 (cUSD)", type: "Lending · baixo risco", apy: "4.8%", pct: 55, amount: 660, color: "#06B6D4" },
-      { name: "Mento cUSD/USDC", type: "AMM estável · IL mínimo", apy: "3.8%", pct: 30, amount: 360, color: "#10B981" },
+      { name: "Aave v3 (cUSD)", type: "Lending · baixo risco", apy: "4.8%", pct: 55, amount: 660, color: "#06B6D4", iconUrl: "https://cryptologos.cc/logos/aave-aave-logo.png" },
+      { name: "Mento cUSD/USDC", type: "AMM estável · IL mínimo", apy: "3.8%", pct: 30, amount: 360, color: "#10B981", iconUrl: "https://mento.org/favicon.ico" },
       { name: "Liquidity Buffer", type: "Cartão + PIX imediato", apy: "0%", pct: 15, amount: 180, color: "#A3D977" },
     ],
     riskMetrics: { il: 8, ilLabel: "Muito Baixo", poolDepth: 95, withdrawalTime: 98, ilPositive: true },
@@ -85,9 +87,9 @@ const RISK_CONFIG = {
       "Executa looping: stCELO → Morpho (colateral) → mais CELO emprestado → re-stake. Monitora rácio de liquidação. Se volatilidade do CELO >15%, rebalanceia 20% para stables.",
     sampleLog: "Morpho looping ativado: stCELO como colateral → +3% yield extra sem vender posição.",
     pools: [
-      { name: "Aave v3 (cUSD)", type: "Lending · base estável", apy: "4.8%", pct: 30, amount: 360, color: "#06B6D4" },
-      { name: "Morpho + stCELO Loop", type: "🆕 Looping institucional · Mar 2026", apy: "9.1%", pct: 32, amount: 384, color: "#10B981" },
-      { name: "Ubeswap cUSD/CELO", type: "AMM · yield adicional", apy: "8.2%", pct: 22, amount: 264, color: "#F59E0B" },
+      { name: "Aave v3 (cUSD)", type: "Lending · base estável", apy: "4.8%", pct: 30, amount: 360, color: "#06B6D4", iconUrl: "https://cryptologos.cc/logos/aave-aave-logo.png" },
+      { name: "Morpho + stCELO Loop", type: "🆕 Looping institucional · Mar 2026", apy: "9.1%", pct: 32, amount: 384, color: "#10B981", iconUrl: "https://cdn.morpho.org/v2/assets/images/logo.svg" },
+      { name: "Ubeswap cUSD/CELO", type: "AMM · yield adicional", apy: "8.2%", pct: 22, amount: 264, color: "#F59E0B", iconUrl: "https://cryptologos.cc/logos/celo-celo-logo.png" },
       { name: "Liquidity Buffer", type: "Cartão + PIX", apy: "0%", pct: 16, amount: 192, color: "#A3D977" },
     ],
     riskMetrics: { il: 42, ilLabel: "Moderado", poolDepth: 85, withdrawalTime: 92, ilPositive: true },
@@ -110,11 +112,11 @@ const RISK_CONFIG = {
       "Morpho looping máximo + Credit Engine como ponte. Risk Engine em alerta: saída em 2–5s via Mento V3 se IL > threshold. Off-ramp via Daimo se precisar de liquidez de outra chain.",
     sampleLog: "Arbitragem CELO/ETH +$0.85 noturno + Morpho loop +$1.20 = 4 PIX gratuitos amanhã.",
     pools: [
-      { name: "Morpho + stCELO Loop (Agressivo)", type: "🆕 Looping máximo · 3x leverage", apy: "15%", pct: 30, amount: 360, color: "#10B981" },
-      { name: "CELO/ETH (Ubeswap)", type: "Par volátil · arbitragem", apy: "18%", pct: 25, amount: 300, color: "#EF4444" },
+      { name: "Morpho + stCELO Loop (Agressivo)", type: "🆕 Looping máximo · 3x leverage", apy: "15%", pct: 30, amount: 360, color: "#10B981", iconUrl: "https://cdn.morpho.org/v2/assets/images/logo.svg" },
+      { name: "CELO/ETH (Ubeswap)", type: "Par volátil · arbitragem", apy: "18%", pct: 25, amount: 300, color: "#EF4444", iconUrl: "https://cryptologos.cc/logos/celo-celo-logo.png" },
       { name: "PWN / EthicHub (RWA)", type: "Crédito real · yield estável", apy: "11.4%", pct: 22, amount: 264, color: "#8B5CF6" },
       { name: "Credit Engine (Bridge)", type: "Ponte · não toca pools lucrativos", apy: "–", pct: 13, amount: 156, color: "#06B6D4" },
-      { name: "Buffer Emergência", type: "Saída rápida Mento V3 · 2–5s", apy: "0%", pct: 10, amount: 120, color: "#A3D977" },
+      { name: "Buffer Emergência", type: "Saída rápida Mento V3 · 2–5s", apy: "0%", pct: 10, amount: 120, color: "#A3D977", iconUrl: "https://mento.org/favicon.ico" },
     ],
     riskMetrics: { il: 78, ilLabel: "Elevado", poolDepth: 65, withdrawalTime: 72, ilPositive: false },
     creditEngine: true,
@@ -170,6 +172,14 @@ const MODE_AUTHS: Record<RiskMode, { id: number; action: string; gain: string; r
   ],
 };
 
+function mapServerLogToUi(log: { time: string; type: string; action: string }) {
+  if (log.type === "yield") return { ...log, icon: DollarSign, color: "#10B981" };
+  if (log.type === "rebalance") return { ...log, icon: RotateCcw, color: "#0D4B2E" };
+  if (log.type === "protection") return { ...log, icon: Shield, color: "#3B82F6" };
+  if (log.type === "opportunity") return { ...log, icon: Sparkles, color: "#A3D977" };
+  return { ...log, icon: Activity, color: "#06B6D4" };
+}
+
 // ─── Mini Performance Chart ───────────────────────────────────────────────────
 const PERF_DATA = [2.1, 3.4, 4.2, 5.8, 6.9, 7.5, 8.15];
 
@@ -209,12 +219,16 @@ function PoolCompositionTable({ mode }: { mode: RiskMode }) {
           style={{ borderBottom: i < cfg.pools.length - 1 ? "1px solid var(--border-light)" : "none" }}
         >
           <div className="flex items-center gap-3 mb-2">
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: `${p.color}18` }}
-            >
-              <div className="w-2.5 h-2.5 rounded-full" style={{ background: p.color }} />
-            </div>
+            {(p as any).iconUrl ? (
+              <img src={(p as any).iconUrl} alt={p.name} className="w-8 h-8 rounded-xl object-contain p-1" style={{ background: `${p.color}18` }} />
+            ) : (
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: `${p.color}18` }}
+              >
+                <div className="w-2.5 h-2.5 rounded-full" style={{ background: p.color }} />
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{p.name}</span>
@@ -512,6 +526,7 @@ function JITWarmupBadge({ mode }: { mode: RiskMode }) {
 export function AgentPage() {
   const { isDark } = useTheme();
   const navigate = useNavigate();
+  const { address } = useCeloWallet();
   const [riskMode, setRiskMode] = useState<RiskMode>("balanced");
   const [isRunning, setIsRunning] = useState(true);
   const [yieldToday, setYieldToday] = useState(0.72);
@@ -521,6 +536,7 @@ export function AgentPage() {
   const [liveLog, setLiveLog] = useState(MODE_LOGS.balanced);
   const [newLogFlash, setNewLogFlash] = useState(false);
   const [profileExpanded, setProfileExpanded] = useState(false);
+  const [remoteState, setRemoteState] = useState<AgentStatePayload | null>(null);
 
   const cfg = RISK_CONFIG[riskMode];
 
@@ -532,8 +548,31 @@ export function AgentPage() {
     setDismissedAuths([]);
   }, [riskMode]);
 
+  useEffect(() => {
+    let active = true;
+    apiGet<AgentStatePayload>("/api/agent/state", {
+      address: address || "",
+      riskMode,
+    })
+      .then((payload) => {
+        if (!active) return;
+        setRemoteState(payload);
+        setYieldToday(payload.status.yieldTodayUsd);
+        setOpsCount(payload.status.opsCount);
+        if (payload.logs?.length) {
+          setLiveLog(payload.logs.map(mapServerLogToUi));
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, [address, riskMode]);
+
   // Simulate live yield ticking
   useEffect(() => {
+    if (remoteState) return;
     if (!isRunning) return;
     const id = setInterval(() => {
       const tick = riskMode === "aggressive" ? 0.03 : riskMode === "balanced" ? 0.02 : 0.01;
@@ -547,19 +586,27 @@ export function AgentPage() {
       }
     }, 3200);
     return () => clearInterval(id);
-  }, [isRunning, riskMode]);
+  }, [isRunning, riskMode, remoteState]);
 
-  const pendingAuths = MODE_AUTHS[riskMode].filter(
+  const pendingAuths = (remoteState?.pendingAuthorizations?.length
+    ? remoteState.pendingAuthorizations.map((item) => ({ ...item, id: Number(item.id) }))
+    : MODE_AUTHS[riskMode]
+  ).filter(
     (a) => !authorized.includes(a.id) && !dismissedAuths.includes(a.id)
   );
 
   const handleAuthorize = (id: number) => {
     setAuthorized((prev) => [...prev, id]);
     setOpsCount((c) => c + 1);
+    apiPost("/api/agent/authorize", {
+      address: address || "",
+      actionId: id,
+      accepted: true,
+    }).catch(() => {});
   };
 
   // APY shown in header varies by mode
-  const apyDisplay = cfg.apyTarget.toFixed(1) + "%";
+  const apyDisplay = (remoteState?.blendedApy ?? cfg.apyTarget).toFixed(1) + "%";
 
   return (
     <div className="min-h-dvh bg-background pb-28 overflow-x-hidden">
@@ -655,7 +702,7 @@ export function AgentPage() {
             <div className="grid grid-cols-3 rounded-2xl overflow-hidden" style={{ background: "rgba(0,0,0,0.2)" }}>
               {[
                 { label: "Yield hoje", value: `+$${yieldToday.toFixed(2)}`, color: "#A3D977" },
-                { label: "Capital gerido", value: "$1.200", color: "#ffffff" },
+                { label: "Capital gerido", value: `$${Math.round(remoteState?.totalCapitalUsd ?? 1200)}`, color: "#ffffff" },
                 { label: "Operações", value: opsCount.toString(), color: "#ffffff" },
               ].map((m, i) => (
                 <div key={m.label} className="px-2 py-3 text-center" style={{ borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
@@ -669,7 +716,9 @@ export function AgentPage() {
             <div className="mt-4">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>Yield acumulado (6 meses)</span>
-                <span className="text-xs font-mono font-bold" style={{ color: "#A3D977" }}>+$8.15</span>
+                <span className="text-xs font-mono font-bold" style={{ color: "#A3D977" }}>
+                  +${(remoteState?.projectedMonthlyYieldUsd ?? 8.15).toFixed(2)}
+                </span>
               </div>
               <div style={{ height: 52 }}><MiniPerfChart isDark={isDark} /></div>
             </div>
@@ -841,7 +890,14 @@ export function AgentPage() {
                     </motion.button>
                     <motion.button
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => setDismissedAuths((prev) => [...prev, auth.id])}
+                      onClick={() => {
+                        setDismissedAuths((prev) => [...prev, auth.id]);
+                        apiPost("/api/agent/authorize", {
+                          address: address || "",
+                          actionId: auth.id,
+                          accepted: false,
+                        }).catch(() => {});
+                      }}
                       className="px-4 py-2.5 rounded-xl text-sm font-semibold"
                       style={{ background: "var(--muted)", color: "var(--text-muted)" }}
                     >
