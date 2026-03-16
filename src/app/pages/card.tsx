@@ -85,7 +85,7 @@ const ROADMAP_QUARTERS = [
     bg: "rgba(163,217,119,0.12)",
     status: "done",
     items: [
-      "Vault DeFi · Aave v3 + Mento",
+      "Auto-Savings DeFi · Aave v3 + Mento",
       "LiquidAI Agent (autonomous rebalance)",
       "Onboarding + Self Protocol",
       "Dashboard · Analytics · Transfer",

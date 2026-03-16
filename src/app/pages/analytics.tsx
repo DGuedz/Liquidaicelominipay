@@ -63,7 +63,7 @@ const yieldData = [
 
 const allocationData = [
   { name: "Productive Capital", value: 0, color: "#0D4B2E", pct: "0%" },
-  { name: "Liquidity", value: 0, color: "#A3D977", pct: "0%" },
+  { name: "Yield Reserve", value: 0, color: "#A3D977", pct: "0%" },
   { name: "Reserve", value: 0, color: "#E5E7EB", pct: "0%" },
 ];
 

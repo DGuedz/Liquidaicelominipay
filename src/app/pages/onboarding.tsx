@@ -510,18 +510,17 @@ function StepConnect({ onNext }: { onNext: () => void }) {
         address,
       });
 
-      // 2. Ideally show QR Code / Deep Link here. 
-      // For this MVP/Demo flow, we'll auto-poll assuming the user is "doing it" or it's a mock.
-      // In a real UI, we'd set a state `showQR` with `session.deepLink` and wait.
       console.log("Self Session Started:", session);
       
       if (session.mode === "mock") {
-         // Mock is instant
          setInlineSuccess("Mock verification instant success.");
       } else if (session.deepLink) {
          setInlineSuccess("Aguardando confirmação no app Self...");
          // Abre o deep link no MiniPay/Mobile
          window.open(session.deepLink, "_blank");
+      } else if (session.qrData) {
+         setInlineSuccess("Verifique via QR Code ou abra o app Self...");
+         window.open(session.qrData, "_blank");
       } else {
          setInlineSuccess("Verifique no seu app Self...");
          await new Promise(r => setTimeout(r, 3000));

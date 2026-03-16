@@ -1,4 +1,3 @@
-import { SelfAgent } from "@selfxyz/agent-sdk";
 import { env } from "../config/env.mjs";
 
 let initError = null;
@@ -7,7 +6,7 @@ let initError = null;
 const activeSessions = new Map();
 
 function resolveSelfNetwork() {
-  return env.celoChain === "sepolia" ? "testnet" : "mainnet";
+  return env.celoChain === "alfajores" ? "testnet" : "mainnet";
 }
 
 export async function initSelfAgent() {
@@ -61,29 +60,36 @@ export async function startSelfRegistration(humanAddress) {
     }
 
     try {
-        const session = await SelfAgent.requestRegistration({
-            mode: "linked",
-            network: resolveSelfNetwork(),
-            humanAddress: humanAddress,
-            disclosures: { minimumAge: 18, ofac: true }, // Customize as needed
-            agentName: "LiquidAI Agent",
-            agentDescription: "Treasury Operating System for your on-chain assets."
-        });
-        
-        // Guarda a sessão na memória para conseguirmos fazer o poll depois
-        activeSessions.set(session.sessionToken, session);
-        
-        // Dispara o waitForCompletion no background para limpar a memória quando terminar
-        session.waitForCompletion({ timeoutMs: 10 * 60 * 1000 }).then(result => {
-           console.log(`[Self Service] Registration complete for agentId ${result.agentId}`);
-           // Não removemos imediatamente para que o próximo poll do frontend ainda pegue sucesso
-        }).catch(err => {
-           console.warn("[Self Service] Registration session failed or timed out:", err.message);
+        const response = await fetch("https://self-agent-id.vercel.app/api/agent/register", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                minimumAge: 18, 
+                ofac: true,
+                network: resolveSelfNetwork()
+            })
         });
 
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(`Self API Error: ${response.status} - ${JSON.stringify(errorData)}`);
+        }
+
+        const data = await response.json();
+        
+        // Guarda a sessão na memória para conseguirmos fazer o poll depois
+        activeSessions.set(data.sessionId, {
+            ...data,
+            startedAt: Date.now()
+        });
+        
         return { 
-            sessionToken: session.sessionToken,
-            deepLink: session.deepLink,
+            sessionToken: data.sessionId,
+            deepLink: data.deepLink,
+            qrData: data.qrUrl,
+            privateKeyHex: data.privateKeyHex,
             mode: "agent" 
         };
     } catch (error) {
@@ -106,27 +112,33 @@ export async function checkRegistrationStatus(sessionToken) {
     }
 
     try {
-        // A API real usa um GET no backend da Vercel. Podemos verificar checando a "stage" da sessão
-        // Mas a forma mais segura de saber se terminou é checar se agentsForHuman já tem o agent
-        // Porém como a SDK esconde isso, se waitForCompletion já resolveu, stage será "completed" (ou equivalente)
-        // Como o waitForCompletion fica rodando no background, a SDK atualiza a session? A SDK em JS geralmente atualiza o objeto.
-        
-        // Alternativamente, se quisermos ser stateless/robustos:
-        // A SDK não expõe um "checkStatus", então se o frontend pedir poll, podemos usar o `waitForCompletion`
-        // mas setando um timeout muito baixo para simular um "poll" de 1 segundo!
-        const result = await session.waitForCompletion({ timeoutMs: 1000, pollIntervalMs: 1000 });
-        
-        // Se passar daqui sem throw, significa que completou!
-        return { 
-            stage: "completed",
-            agentId: result.agentId,
-            verified: true
-        };
-    } catch (error) {
-        if (error.message.includes("Timeout") || error.message.includes("timeout")) {
-            // Ainda pendente
-            return { stage: "pending", verified: false };
+        const response = await fetch(`https://self-agent-id.vercel.app/api/agent/register/status?token=${sessionToken}`, {
+            method: "GET"
+        });
+
+        if (!response.ok) {
+            throw new Error(`Self API Error: ${response.status}`);
         }
+
+        const data = await response.json();
+        
+        if (data.status === "verified") {
+            // Em produção, o privateKey gerado deve ser injetado na session/db do usuário
+            console.log(`[Self Service] Agent ${data.agentId} verified successfully!`);
+            return { 
+                stage: "completed",
+                agentId: data.agentId,
+                verified: true
+            };
+        } else if (data.status === "expired") {
+            throw new Error("Self registration session expired");
+        } else if (data.status === "failed") {
+            throw new Error(`Self registration failed: ${data.reason}`);
+        }
+        
+        // Status pending
+        return { stage: "pending", verified: false };
+    } catch (error) {
         console.error("[Self Service] Status check failed:", error);
         throw error;
     }

@@ -4,7 +4,7 @@ import { defineChain } from "viem";
 import { chainConfig } from "viem/celo";
 import { injected, metaMask } from "wagmi/connectors";
 
-const DEFAULT_CELO_RPC_URL = "https://forno.celo-sepolia.celo-testnet.org";
+const DEFAULT_CELO_RPC_URL = "https://alfajores-forno.celo-testnet.org";
 
 type InjectedProvider = {
   isMiniPay?: boolean;
@@ -51,8 +51,8 @@ export async function requestPreferredAccounts() {
 
 export const CELO_CHAIN = defineChain({
   ...chainConfig,
-  id: 11142220,
-  name: "Celo Sepolia",
+  id: 44787,
+  name: "Celo Alfajores",
   nativeCurrency: {
     decimals: 18,
     name: "CELO",
@@ -68,9 +68,9 @@ export const CELO_CHAIN = defineChain({
   },
   blockExplorers: {
     default: {
-      name: "Celo Sepolia Explorer",
-      url: "https://celo-sepolia.blockscout.com",
-      apiUrl: "https://celo-sepolia.blockscout.com/api",
+      name: "Celo Alfajores Explorer",
+      url: "https://alfajores.celoscan.io",
+      apiUrl: "https://api-alfajores.celoscan.io/api",
     },
   },
   testnet: true,

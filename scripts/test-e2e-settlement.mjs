@@ -51,6 +51,30 @@ async function runTest() {
     const token = session.data.token;
     console.log("   ✅ Authenticated! Token received.");
 
+    // 1.5. Simular Verificação Self (Mock) para passar na barreira Anti-Sybil
+    console.log("\n1.5. 🛡️  Simulating Self Protocol Verification...");
+    const selfRes = await fetch(`${API_URL}/self/start-registration`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ address: userAccount.address })
+    });
+    const selfData = await selfRes.json();
+    if (!selfData.ok) throw new Error("Self mock start failed");
+    
+    // Complete the mock flow
+    const pollRes = await fetch(`${API_URL}/self/poll-registration?address=${userAccount.address}&sessionToken=${selfData.data.sessionToken}`, {
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
+    const pollData = await pollRes.json();
+    if (!pollData.ok || !pollData.data.verified) throw new Error("Self mock verification failed");
+    
+    console.log("   ✅ Self Mock session completed (bypasses gate for demo).");
+
     // 2. Autorizar Ação do Agente (Simulando clique no frontend)
     console.log("\n2. 🤖 Authorizing Agent Action...");
     const authRes = await fetch(`${API_URL}/agent/authorize`, {
