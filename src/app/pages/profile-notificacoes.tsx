@@ -1,23 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import {
   ArrowLeft, TrendingUp, RotateCcw, Shield, Zap, Bell, DollarSign, AlertTriangle,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useTheme } from "../hooks/useTheme";
+import { useCeloWallet } from "../hooks/use-celo-wallet";
+import { apiGet, DashboardPayload } from "../lib/api";
 
 const NOTIF_CHANNELS = [
-  { id: "push", label: "Push (navegador)", sub: "Alertas instantâneos no celular", enabled: true },
-  { id: "email", label: "E-mail resumo", sub: "Relatório diário às 08:00", enabled: true },
-  { id: "sms", label: "SMS crítico", sub: "Apenas alertas de segurança", enabled: false },
+  { id: "push", label: "Push (browser)", sub: "Instant mobile alerts", enabled: true },
+  { id: "email", label: "Email summary", sub: "Daily summary after the first sync", enabled: true },
+  { id: "sms", label: "Critical SMS", sub: "Security alerts only", enabled: false },
 ];
 
 const NOTIF_TYPES = [
   {
     id: "yield",
     icon: DollarSign,
-    label: "Yield Capturado",
-    sub: "Quando o agente capturar rendimento",
+    label: "Yield Captured",
+    sub: "When agent captures yield",
     color: "#A3D977",
     bg: "rgba(163,217,119,0.1)",
     enabled: true,
@@ -25,8 +27,8 @@ const NOTIF_TYPES = [
   {
     id: "rebalance",
     icon: RotateCcw,
-    label: "Rebalanceamento",
-    sub: "Alertas de realocação automática",
+    label: "Rebalancing",
+    sub: "Automatic reallocation alerts",
     color: "#10B981",
     bg: "rgba(16,185,129,0.1)",
     enabled: true,
@@ -34,8 +36,8 @@ const NOTIF_TYPES = [
   {
     id: "opportunity",
     icon: TrendingUp,
-    label: "Oportunidade Detectada",
-    sub: "Novos pools com APY superior",
+    label: "Opportunity Detected",
+    sub: "New pools with higher APY",
     color: "#F59E0B",
     bg: "rgba(245,158,11,0.1)",
     enabled: true,
@@ -43,8 +45,8 @@ const NOTIF_TYPES = [
   {
     id: "protect",
     icon: Shield,
-    label: "Proteção Cambial",
-    sub: "Movimentos bruscos de BRL/USD",
+    label: "Forex Protection",
+    sub: "Sharp BRL/USD movements",
     color: "#3B82F6",
     bg: "rgba(59,130,246,0.1)",
     enabled: true,
@@ -52,8 +54,8 @@ const NOTIF_TYPES = [
   {
     id: "agent",
     icon: Zap,
-    label: "Ações do Agente",
-    sub: "Cada transação autônoma",
+    label: "Agent Actions",
+    sub: "Every autonomous transaction",
     color: "#8B5CF6",
     bg: "rgba(139,92,246,0.1)",
     enabled: false,
@@ -61,8 +63,8 @@ const NOTIF_TYPES = [
   {
     id: "security",
     icon: AlertTriangle,
-    label: "Alertas de Segurança",
-    sub: "Login, 2FA e atividade suspeita",
+    label: "Security Alerts",
+    sub: "Login, 2FA and suspicious activity",
     color: "#EF4444",
     bg: "rgba(239,68,68,0.1)",
     enabled: true,
@@ -99,11 +101,37 @@ function Toggle({
 export function ProfileNotificacoesPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
+  const { address } = useCeloWallet();
   const [channels, setChannels] = useState(NOTIF_CHANNELS);
   const [types, setTypes] = useState(NOTIF_TYPES);
   const [quietStart, setQuietStart] = useState("22:00");
   const [quietEnd, setQuietEnd] = useState("07:00");
   const [quietEnabled, setQuietEnabled] = useState(true);
+  const [dashboard, setDashboard] = useState<DashboardPayload | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    if (!address) {
+      setDashboard(null);
+      return () => {
+        alive = false;
+      };
+    }
+
+    apiGet<DashboardPayload>("/api/dashboard", { address, riskMode: "balanced" })
+      .then((payload) => {
+        if (!alive) return;
+        setDashboard(payload);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setDashboard(null);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [address]);
 
   const toggleChannel = (id: string) =>
     setChannels((prev) => prev.map((c) => (c.id === id ? { ...c, enabled: !c.enabled } : c)));
@@ -124,8 +152,8 @@ export function ProfileNotificacoesPage() {
           <ArrowLeft className="w-5 h-5" style={{ color: "var(--text-primary)" }} />
         </button>
         <div>
-          <h1 className="font-bold text-text-primary">Notificações</h1>
-          <p className="text-xs text-text-muted">{activeCount} de {types.length} tipos ativos</p>
+          <h1 className="font-bold text-text-primary">Notifications</h1>
+          <p className="text-xs text-text-muted">{activeCount} of {types.length} types active</p>
         </div>
       </header>
 
@@ -145,10 +173,10 @@ export function ProfileNotificacoesPage() {
           </div>
           <div>
             <p className="text-sm font-semibold" style={{ color: "#A3D977" }}>
-              3 notificações não lidas
+              {dashboard?.summary.agentOpsToday ? "Agent events available" : "No unread notifications"}
             </p>
             <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              Última: Yield +$0.45 · Hoje 08:00
+              {dashboard?.agentEvents?.[0] || "Notifications will appear after the first agent action."}
             </p>
           </div>
         </motion.div>
@@ -157,7 +185,7 @@ export function ProfileNotificacoesPage() {
       {/* Channels */}
       <div className="px-5 mb-5">
         <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3 px-1">
-          Canais de Entrega
+          Delivery Channels
         </p>
         <div
           className="bg-surface-solid rounded-2xl overflow-hidden"
@@ -182,7 +210,7 @@ export function ProfileNotificacoesPage() {
       {/* Types */}
       <div className="px-5 mb-5">
         <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3 px-1">
-          Tipos de Notificação
+          Notification Types
         </p>
         <div
           className="bg-surface-solid rounded-2xl overflow-hidden"
@@ -222,7 +250,7 @@ export function ProfileNotificacoesPage() {
       {/* Quiet hours */}
       <div className="px-5 mb-5">
         <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3 px-1">
-          Horário Silencioso
+          Quiet Hours
         </p>
         <div
           className="bg-surface-solid rounded-2xl p-4"
@@ -230,9 +258,9 @@ export function ProfileNotificacoesPage() {
         >
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-sm font-medium text-text-primary">Silenciar notificações</p>
+              <p className="text-sm font-medium text-text-primary">Mute notifications</p>
               <p className="text-xs text-text-muted mt-0.5">
-                De {quietStart} às {quietEnd}
+                From {quietStart} to {quietEnd}
               </p>
             </div>
             <Toggle enabled={quietEnabled} onToggle={() => setQuietEnabled((v) => !v)} />
@@ -244,7 +272,7 @@ export function ProfileNotificacoesPage() {
               className="flex gap-3"
             >
               <div className="flex-1">
-                <p className="text-xs text-text-muted mb-1">Início</p>
+                <p className="text-xs text-text-muted mb-1">Start</p>
                 <input
                   type="time"
                   value={quietStart}
@@ -258,7 +286,7 @@ export function ProfileNotificacoesPage() {
                 />
               </div>
               <div className="flex-1">
-                <p className="text-xs text-text-muted mb-1">Fim</p>
+                <p className="text-xs text-text-muted mb-1">End</p>
                 <input
                   type="time"
                   value={quietEnd}
@@ -275,7 +303,7 @@ export function ProfileNotificacoesPage() {
           )}
         </div>
         <p className="text-xs text-center text-text-muted mt-2 px-2">
-          Alertas críticos de segurança sempre são entregues imediatamente.
+          Critical security alerts are always delivered immediately.
         </p>
       </div>
     </div>

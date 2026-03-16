@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import {
   ArrowLeft, Zap, Shield, Activity, ChevronRight, RotateCcw, Clock, DollarSign,
@@ -6,37 +6,39 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useTheme } from "../hooks/useTheme";
+import { useCeloWallet } from "../hooks/use-celo-wallet";
+import { AgentStatePayload, apiGet } from "../lib/api";
 
 type Mode = "conservative" | "balanced" | "aggressive";
 
 const MODES = [
   {
     id: "conservative" as Mode,
-    label: "Conservador",
+    label: "Conservative",
     apy: "3.2–4.2%",
     color: "#3B82F6",
     bg: "rgba(59,130,246,0.12)",
     icon: Shield,
-    desc: "Foco em estabilidade. Aave v3 + Mento. Ideal para proteção cambial.",
+    desc: "Focus on stability. Aave v3 + Mento. Ideal for forex protection.",
   },
   {
     id: "balanced" as Mode,
-    label: "Balanceado",
+    label: "Balanced",
     apy: "4.2–9.1%",
     color: "#A3D977",
     bg: "rgba(163,217,119,0.12)",
     icon: Activity,
-    desc: "Melhor custo-benefício. Morpho looping + Aave. APY otimizado automaticamente.",
+    desc: "Best cost-benefit. Morpho looping + Aave. Automatically optimized APY.",
     recommended: true,
   },
   {
     id: "aggressive" as Mode,
-    label: "Arrojado",
+    label: "Aggressive",
     apy: "9–18%",
     color: "#F59E0B",
     bg: "rgba(245,158,11,0.12)",
     icon: Zap,
-    desc: "Morpho 3x loop + RWA pools. Maior yield, maior volatilidade gerenciada.",
+    desc: "Morpho 3x loop + RWA pools. Higher yield, managed volatility.",
   },
 ];
 
@@ -55,12 +57,34 @@ function Toggle({ enabled, onToggle, color = "#A3D977" }: { enabled: boolean; on
 export function ProfileAgenteConfigPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
+  const { address } = useCeloWallet();
   const [mode, setMode] = useState<Mode>("balanced");
   const [autoRebalance, setAutoRebalance] = useState(true);
   const [yieldNotify, setYieldNotify] = useState(true);
   const [maxTx, setMaxTx] = useState(50);
   const [rebalanceFreq, setRebalanceFreq] = useState("daily");
   const [saved, setSaved] = useState(false);
+  const [agentState, setAgentState] = useState<AgentStatePayload | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    apiGet<AgentStatePayload>("/api/agent/state", {
+      address: address || "",
+      riskMode: mode,
+    })
+      .then((payload) => {
+        if (!alive) return;
+        setAgentState(payload);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setAgentState(null);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [address, mode]);
 
   const currentMode = MODES.find((m) => m.id === mode)!;
 
@@ -80,12 +104,12 @@ export function ProfileAgenteConfigPage() {
           <ArrowLeft className="w-5 h-5" style={{ color: "var(--text-primary)" }} />
         </button>
         <div>
-          <h1 className="font-bold text-text-primary">Configurar Agente</h1>
-          <p className="text-xs text-text-muted">Perfil ativo: <span style={{ color: currentMode.color }}>{currentMode.label}</span></p>
+          <h1 className="font-bold text-text-primary">Configure Agent</h1>
+          <p className="text-xs text-text-muted">Active Profile: <span style={{ color: currentMode.color }}>{currentMode.label}</span></p>
         </div>
         <div className="ml-auto flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "#A3D977" }} />
-          <span className="text-xs font-semibold" style={{ color: "#A3D977" }}>Ativo</span>
+          <span className="text-xs font-semibold" style={{ color: "#A3D977" }}>Active</span>
         </div>
       </header>
 
@@ -97,12 +121,12 @@ export function ProfileAgenteConfigPage() {
           className="rounded-2xl p-4"
           style={{ background: "linear-gradient(135deg, #0D4B2E, #1a6b45)", boxShadow: "0 4px 20px rgba(13,75,46,0.25)" }}
         >
-          <p className="text-xs text-white/50 mb-3 uppercase tracking-wider">Performance Atual</p>
+          <p className="text-xs text-white/50 mb-3 uppercase tracking-wider">Current Performance</p>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: "APY Real", value: "4.8%", color: "#A3D977" },
-              { label: "Yield/mês", value: "$8.15", color: "#10B981" },
-              { label: "Ações", value: "47", color: "#F59E0B" },
+              { label: "Real APY", value: agentState ? `${agentState.blendedApy.toFixed(2)}%` : "--", color: "#A3D977" },
+              { label: "Yield/mo", value: agentState ? `$${agentState.projectedMonthlyYieldUsd.toFixed(2)}` : "--", color: "#10B981" },
+              { label: "Actions", value: String(agentState?.status.opsCount ?? 0), color: "#F59E0B" },
             ].map((s) => (
               <div key={s.label} className="text-center">
                 <p className="font-mono font-bold text-lg" style={{ color: s.color }}>{s.value}</p>
@@ -116,7 +140,7 @@ export function ProfileAgenteConfigPage() {
       {/* Risk mode selector */}
       <div className="px-5 mb-5">
         <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3 px-1">
-          Perfil de Risco
+          Risk Profile
         </p>
         <div className="space-y-2">
           {MODES.map((m) => {
@@ -148,7 +172,7 @@ export function ProfileAgenteConfigPage() {
                     </p>
                     {(m as any).recommended && (
                       <span className="text-xs px-1.5 py-0.5 rounded-full font-semibold" style={{ background: "rgba(163,217,119,0.12)", color: "#A3D977", fontSize: "9px" }}>
-                        Recomendado
+                        Recommended
                       </span>
                     )}
                   </div>
@@ -169,7 +193,7 @@ export function ProfileAgenteConfigPage() {
       {/* Automation rules */}
       <div className="px-5 mb-5">
         <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3 px-1">
-          Regras de Automação
+          Automation Rules
         </p>
         <div className="bg-surface-solid rounded-2xl overflow-hidden" style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.06)" }}>
           <div className="flex items-center gap-3 px-4 py-3.5" style={{ borderBottom: "1px solid var(--border-light)" }}>
@@ -177,8 +201,8 @@ export function ProfileAgenteConfigPage() {
               <RotateCcw className="w-4 h-4" style={{ color: "#A3D977" }} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-text-primary">Rebalanceamento automático</p>
-              <p className="text-xs text-text-muted mt-0.5">Agente realoca quando APY cair &gt;0.5%</p>
+              <p className="text-sm font-medium text-text-primary">Automatic rebalancing</p>
+              <p className="text-xs text-text-muted mt-0.5">Agent reallocates only when the next yield target materially improves.</p>
             </div>
             <Toggle enabled={autoRebalance} onToggle={() => setAutoRebalance((v) => !v)} />
           </div>
@@ -187,8 +211,8 @@ export function ProfileAgenteConfigPage() {
               <Bell className="w-4 h-4" style={{ color: "#F59E0B" }} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-text-primary">Notificar antes de agir</p>
-              <p className="text-xs text-text-muted mt-0.5">Confirmar acima de ${maxTx}</p>
+              <p className="text-sm font-medium text-text-primary">Notify before acting</p>
+              <p className="text-xs text-text-muted mt-0.5">Confirm above ${maxTx}</p>
             </div>
             <Toggle enabled={yieldNotify} onToggle={() => setYieldNotify((v) => !v)} color="#F59E0B" />
           </div>
@@ -197,7 +221,7 @@ export function ProfileAgenteConfigPage() {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <DollarSign className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
-                <p className="text-sm font-medium text-text-primary">Limite por transação</p>
+                <p className="text-sm font-medium text-text-primary">Transaction limit</p>
               </div>
               <span className="font-mono font-bold text-sm" style={{ color: "#A3D977" }}>${maxTx}</span>
             </div>
@@ -221,13 +245,13 @@ export function ProfileAgenteConfigPage() {
       {/* Rebalance frequency */}
       <div className="px-5 mb-5">
         <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3 px-1">
-          Frequência de Rebalanceamento
+          Rebalancing Frequency
         </p>
         <div className="bg-surface-solid rounded-2xl overflow-hidden" style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.06)" }}>
           {[
-            { id: "realtime", label: "Tempo real", sub: "Agente age assim que oportunidade surge", icon: Zap },
-            { id: "daily", label: "Diário (03:00)", sub: "Rebalance noturno silencioso", icon: Clock },
-            { id: "weekly", label: "Semanal", sub: "Todo domingo às 00:00", icon: TrendingUp },
+            { id: "realtime", label: "Real-time", sub: "Agent acts as soon as opportunity arises", icon: Zap },
+            { id: "daily", label: "Daily (03:00)", sub: "Silent nightly rebalance", icon: Clock },
+            { id: "weekly", label: "Weekly", sub: "Every Sunday at 00:00", icon: TrendingUp },
           ].map(({ id, label, sub, icon: Icon }, i) => (
             <button
               key={id}
@@ -268,7 +292,7 @@ export function ProfileAgenteConfigPage() {
           }}
         >
           {saved ? <CheckCircle2 className="w-4 h-4" /> : null}
-          {saved ? "Configurações Salvas!" : "Salvar Configurações"}
+          {saved ? "Settings Saved!" : "Save Settings"}
         </motion.button>
       </div>
     </div>

@@ -1,31 +1,67 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import {
   ArrowLeft, User, Mail, Phone, MapPin, Copy, CheckCircle2, Edit2, Camera,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useTheme } from "../hooks/useTheme";
+import { useCeloWallet } from "../hooks/use-celo-wallet";
+import { apiGet, DashboardPayload } from "../lib/api";
 
-const WALLET = "0x4aF3...D9c2";
-const FULL_WALLET = "0x4aF3b9d2E1c8A7f6B0e5D9c2";
+function truncateAddress(address?: string | null) {
+  if (!address) return "Wallet not connected";
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
 
 export function ProfileDadosPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
+  const { address } = useCeloWallet();
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [dashboard, setDashboard] = useState<DashboardPayload | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    if (!address) {
+      setDashboard(null);
+      return () => {
+        alive = false;
+      };
+    }
+
+    apiGet<DashboardPayload>("/api/dashboard", { address, riskMode: "balanced" })
+      .then((payload) => {
+        if (!alive) return;
+        setDashboard(payload);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setDashboard(null);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [address]);
+
+  const walletLabel = truncateAddress(address);
+  const memberSince = dashboard ? "Synced on Celo Sepolia" : "Connect a wallet to sync";
+  const displayName = address ? `Wallet ${walletLabel}` : "LiquidAI User";
+  const initials = useMemo(() => (address ? address.slice(2, 4).toUpperCase() : "LI"), [address]);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(FULL_WALLET).catch(() => {});
+    if (!address) return;
+    navigator.clipboard.writeText(address).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const fields = [
-    { label: "Nome completo", value: "Alex Johnson", icon: User, editable: true },
-    { label: "E-mail", value: "alex@liquidai.io", icon: Mail, editable: true },
-    { label: "Telefone", value: "+55 11 99999-0000", icon: Phone, editable: true },
-    { label: "País", value: "Brasil", icon: MapPin, editable: true },
+    { label: "Display Name", value: displayName, icon: User, editable: true },
+    { label: "Email", value: "Not provided", icon: Mail, editable: true },
+    { label: "Phone", value: "Not provided", icon: Phone, editable: true },
+    { label: "Region", value: address ? "Celo Sepolia" : "Connect wallet", icon: MapPin, editable: false },
   ];
 
   return (
@@ -40,8 +76,8 @@ export function ProfileDadosPage() {
           <ArrowLeft className="w-5 h-5" style={{ color: "var(--text-primary)" }} />
         </button>
         <div>
-          <h1 className="font-bold text-text-primary">Dados Pessoais</h1>
-          <p className="text-xs text-text-muted">Suas informações de conta</p>
+          <h1 className="font-bold text-text-primary">Personal Data</h1>
+          <p className="text-xs text-text-muted">Your account information</p>
         </div>
         <button
           onClick={() => setEditing((v) => !v)}
@@ -66,11 +102,9 @@ export function ProfileDadosPage() {
             className="w-24 h-24 rounded-3xl overflow-hidden"
             style={{ border: "3px solid #A3D977" }}
           >
-            <img
-              src="https://images.unsplash.com/photo-1672685667592-0392f458f46f?w=200&h=200&fit=crop&crop=face"
-              alt="Avatar"
-              className="w-full h-full object-cover"
-            />
+            <div className="w-full h-full flex items-center justify-center bg-black/15 text-white font-mono text-xl font-bold">
+              {initials}
+            </div>
           </div>
           {editing && (
             <motion.button
@@ -83,20 +117,20 @@ export function ProfileDadosPage() {
             </motion.button>
           )}
         </motion.div>
-        <p className="font-bold text-text-primary">Alex Johnson</p>
-        <p className="text-xs text-text-muted">Membro desde Jan 2026</p>
+        <p className="font-bold text-text-primary">{displayName}</p>
+        <p className="text-xs text-text-muted">{memberSince}</p>
         <div
           className="mt-2 px-3 py-1 rounded-full text-xs font-semibold"
           style={{ background: "rgba(163,217,119,0.12)", color: "#A3D977" }}
         >
-          ✦ Premium · 127 dias ativo
+          ✦ Wallet-synced
         </div>
       </div>
 
       {/* Fields */}
       <div className="px-5 mb-5">
         <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3 px-1">
-          Informações Pessoais
+          Personal Information
         </p>
         <div
           className="bg-surface-solid rounded-2xl overflow-hidden"
@@ -119,7 +153,7 @@ export function ProfileDadosPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-text-muted">{label}</p>
-                {editing && editable ? (
+              {editing && editable ? (
                   <input
                     defaultValue={value}
                     className="text-sm font-medium w-full bg-transparent outline-none mt-0.5"
@@ -140,7 +174,7 @@ export function ProfileDadosPage() {
       {/* Wallet Address */}
       <div className="px-5 mb-5">
         <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3 px-1">
-          Carteira MiniPay · Celo
+          MiniPay Wallet · Celo
         </p>
         <motion.div
           initial={{ opacity: 0, y: 6 }}
@@ -165,18 +199,19 @@ export function ProfileDadosPage() {
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-text-muted">Endereço Celo (cUSD)</p>
+            <p className="text-xs text-text-muted">Celo Address (cUSD)</p>
             <p
               className="text-sm font-mono font-semibold mt-0.5 truncate"
               style={{ color: "var(--text-primary)" }}
             >
-              {WALLET}
+              {walletLabel}
             </p>
           </div>
           <button
             onClick={handleCopy}
+            disabled={!address}
             className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: copied ? "rgba(163,217,119,0.15)" : "var(--muted)" }}
+            style={{ background: copied ? "rgba(163,217,119,0.15)" : "var(--muted)", opacity: address ? 1 : 0.5 }}
           >
             {copied
               ? <CheckCircle2 className="w-4 h-4" style={{ color: "#A3D977" }} />
@@ -197,7 +232,7 @@ export function ProfileDadosPage() {
             className="w-full py-4 rounded-2xl font-semibold text-sm"
             style={{ background: "#0D4B2E", color: "#fff", boxShadow: "0 4px 20px rgba(13,75,46,0.3)" }}
           >
-            Salvar Alterações
+            Save Changes
           </button>
         </motion.div>
       )}

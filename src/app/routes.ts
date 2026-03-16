@@ -23,7 +23,11 @@ import { ProfileRelatoriosPage } from "./pages/profile-relatorios";
 import { ProfileProtocolosPage } from "./pages/profile-protocolos";
 import { ProfileSuportePage } from "./pages/profile-suporte";
 import { ProfileSobrePage } from "./pages/profile-sobre";
+import { SecurityPage } from "./pages/profile/security";
+import { ProtocolsPage } from "./pages/profile/protocols";
+import { YieldStrategyPage } from "./pages/profile/yield";
 import { KarmaDashboardPage } from "./pages/karma-dashboard";
+import { ProjectBriefPage } from "./pages/project-brief";
 
 export const router = createBrowserRouter([
   {
@@ -49,12 +53,16 @@ export const router = createBrowserRouter([
       { path: "profile/protocolos", Component: ProfileProtocolosPage },
       { path: "profile/suporte", Component: ProfileSuportePage },
       { path: "profile/sobre", Component: ProfileSobrePage },
+      { path: "profile/security", Component: SecurityPage },
+      { path: "profile/protocols", Component: ProtocolsPage },
+      { path: "profile/yield", Component: YieldStrategyPage },
       { path: "karma", Component: KarmaDashboardPage },
       { path: "scan", Component: ScanPage },
       { path: "agent", Component: AgentPage },
       { path: "chat", Component: ChatPage },
       { path: "savings", Component: SavingsPage },
       { path: "minipay-pitch", Component: MiniPayPitchPage },
+      { path: "brief", Component: ProjectBriefPage },
     ],
   },
 ]);

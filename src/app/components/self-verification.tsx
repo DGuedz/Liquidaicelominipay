@@ -1,19 +1,25 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Shield, CheckCircle2, ExternalLink, Fingerprint, X, Zap } from "lucide-react";
+import { Shield, CheckCircle2, ExternalLink, Fingerprint, X, Zap, RotateCcw } from "lucide-react";
+import { CELO_CHAIN_ID } from "../lib/celo-wallet";
+import { apiGet, apiPost, SelfStatusPayload } from "../lib/api";
+import { ensureWalletAuthSession } from "../lib/wallet-auth";
+import { useCeloWallet } from "../hooks/use-celo-wallet";
 import { useTheme } from "../hooks/useTheme";
 
 type VerifyState = "idle" | "scanning" | "proving" | "done";
 
-// ─── Mini animated ZK proof steps ─────────────────────────────────────────────
 const ZK_STEPS = [
-  "Lendo dados do passaporte...",
-  "Gerando ZK Proof...",
-  "Verificando sem expor dados pessoais...",
-  "Identidade confirmada ✓",
+  "Preparing secure verification session...",
+  "Creating zero-knowledge proof...",
+  "Validating uniqueness without exposing data...",
+  "Identity confirmed",
 ];
 
-// ─── QR pattern (static decoration) ──────────────────────────────────────────
+function sleep(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
 function QRDecoration() {
   const cells = [
     [1,1,1,1,1,1,1,0,1,0,0,1,1,1,1,1,1,1,1],
@@ -36,74 +42,152 @@ function QRDecoration() {
     [1,0,0,0,0,0,1,0,0,0,1,1,1,0,1,1,0,0,0],
     [1,1,1,1,1,1,1,0,1,0,1,0,0,1,0,0,1,1,0],
   ];
-  const SIZE = 6;
+  const size = 6;
+
   return (
-    <svg viewBox={`0 0 ${cells[0].length * SIZE} ${cells.length * SIZE}`} className="w-full h-full">
-      {cells.map((row, r) =>
-        row.map((cell, c) =>
+    <svg viewBox={`0 0 ${cells[0].length * size} ${cells.length * size}`} className="w-full h-full">
+      {cells.map((row, rowIndex) =>
+        row.map((cell, cellIndex) =>
           cell ? (
             <rect
-              key={`${r}-${c}`}
-              x={c * SIZE}
-              y={r * SIZE}
-              width={SIZE - 0.5}
-              height={SIZE - 0.5}
+              key={`${rowIndex}-${cellIndex}`}
+              x={cellIndex * size}
+              y={rowIndex * size}
+              width={size - 0.5}
+              height={size - 0.5}
               rx="0.8"
               fill="currentColor"
             />
-          ) : null
-        )
+          ) : null,
+        ),
       )}
     </svg>
   );
 }
 
-// ─── Main component ────────────────────────────────────────────────────────────
 interface SelfVerificationProps {
-  onVerified?: () => void;
+  onVerified?: (status: SelfStatusPayload) => void;
 }
 
 export function SelfVerification({ onVerified }: SelfVerificationProps) {
   const { isDark } = useTheme();
-  const [state, setState]     = useState<VerifyState>("idle");
+  const {
+    address,
+    isConnected,
+    hasConnector,
+    wrongNetwork,
+    isConnecting,
+    isSwitchingChain,
+    isSigningMessage,
+    connectWallet,
+    switchToCelo,
+    signWalletMessage,
+  } = useCeloWallet();
+  const [state, setState] = useState<VerifyState>("idle");
   const [stepIdx, setStepIdx] = useState(0);
-  const [showQr, setShowQr]   = useState(false);
+  const [showQr, setShowQr] = useState(false);
+  const [inlineError, setInlineError] = useState("");
+  const [status, setStatus] = useState<SelfStatusPayload | null>(null);
+  const timeoutsRef = useRef<number[]>([]);
 
-  const isVerified = state === "done";
+  const isVerified = Boolean(status?.verified);
 
-  // ── ZK proof step ticker ──────────────────────────────────────────────────
-  useEffect(() => {
-    if (state !== "proving") return;
-    setStepIdx(0);
-    const id = setInterval(() => {
-      setStepIdx((i) => {
-        if (i >= ZK_STEPS.length - 1) {
-          clearInterval(id);
-          setTimeout(() => {
-            setState("done");
-            localStorage.setItem("selfVerified", "true");
-            onVerified?.();
-          }, 600);
-          return i;
-        }
-        return i + 1;
-      });
-    }, 900);
-    return () => clearInterval(id);
-  }, [state, onVerified]);
-
-  // ── Simulate scan delay ───────────────────────────────────────────────────
-  const handleStartScan = () => {
-    setState("scanning");
-    setShowQr(true);
-    setTimeout(() => {
-      setState("proving");
-      setShowQr(false);
-    }, 2800);
+  const clearTimers = () => {
+    timeoutsRef.current.forEach((id) => window.clearTimeout(id));
+    timeoutsRef.current = [];
   };
 
-  // ── VERIFIED STATE ────────────────────────────────────────────────────────
-  if (isVerified) {
+  const refreshStatus = async (targetAddress = address) => {
+    if (!targetAddress) {
+      setStatus(null);
+      return null;
+    }
+
+    const payload = await apiGet<SelfStatusPayload>("/api/self/status", {
+      address: targetAddress,
+    });
+    setStatus(payload);
+    return payload;
+  };
+
+  useEffect(() => {
+    void refreshStatus();
+    return () => clearTimers();
+  }, [address]);
+
+  useEffect(() => {
+    if (!isVerified || !status) return;
+    setState("done");
+    onVerified?.(status);
+  }, [isVerified, onVerified, status]);
+
+  const handleStartScan = async () => {
+    setInlineError("");
+    clearTimers();
+
+    if (!hasConnector) {
+      setInlineError("No wallet detected. Open in MiniPay or MetaMask and try again.");
+      return;
+    }
+
+    try {
+      let connectedAddress = address;
+
+      if (!isConnected) {
+        const session = await connectWallet();
+        connectedAddress = session.accounts?.[0] || "";
+        if (session.chainId !== CELO_CHAIN_ID) {
+          await switchToCelo();
+        }
+      } else if (wrongNetwork) {
+        await switchToCelo();
+      }
+
+      const walletAddress = connectedAddress || address;
+      if (!walletAddress) {
+        throw new Error("Wallet address unavailable for Self verification.");
+      }
+
+      await ensureWalletAuthSession(walletAddress, signWalletMessage);
+
+      setState("scanning");
+      setShowQr(true);
+      await sleep(1200);
+
+      setShowQr(false);
+      setState("proving");
+
+      for (let idx = 0; idx < ZK_STEPS.length; idx += 1) {
+        setStepIdx(idx);
+        await sleep(800);
+      }
+
+      const verification = await apiPost<SelfStatusPayload>("/api/self/verify", {
+        address: walletAddress,
+      });
+      setStatus(verification);
+      setState("done");
+    } catch (error) {
+      setState("idle");
+      setShowQr(false);
+      setInlineError(error instanceof Error ? error.message : "Failed to verify with Self.");
+    }
+  };
+
+  const handleReset = async () => {
+    if (!address) return;
+    setInlineError("");
+    try {
+      await ensureWalletAuthSession(address, signWalletMessage);
+      const nextStatus = await apiPost<SelfStatusPayload>("/api/self/reset", { address });
+      setStatus(nextStatus);
+      setState("idle");
+    } catch (error) {
+      setInlineError(error instanceof Error ? error.message : "Failed to reset Self status.");
+    }
+  };
+
+  if (isVerified && status) {
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
@@ -127,10 +211,10 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                Identidade Verificada
+                Identity verified
               </p>
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                via Self Protocol · ZK Proof
+                {status.provider} · {status.mode} mode
               </p>
             </div>
             <div
@@ -141,32 +225,42 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
             </div>
           </div>
 
-          {/* ZK proof hash */}
           <div
             className="rounded-xl px-3 py-2.5 mb-3"
             style={{ background: isDark ? "rgba(0,0,0,0.3)" : "rgba(255,255,255,0.7)" }}
           >
             <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>
-              ZK Proof Hash
+              Proof reference
             </p>
             <p
               className="font-mono text-xs break-all"
               style={{ color: isDark ? "#A3D977" : "#0D4B2E", fontSize: "10px" }}
             >
-              0x7f3a9c2e...d4b8e1f0
+              {status.proofRef || "Self verification recorded"}
             </p>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
-            <Shield className="w-3 h-3 flex-shrink-0" />
-            <span>Nenhum dado pessoal foi exposto — apenas prova criptográfica</span>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
+              <Shield className="w-3 h-3 flex-shrink-0" />
+              <span>Backend-owned verification state. No localStorage bypass.</span>
+            </div>
+            {status.mode === "mock" && (
+              <button
+                onClick={handleReset}
+                className="inline-flex items-center gap-1 text-xs font-semibold"
+                style={{ color: "var(--text-muted)" }}
+              >
+                <RotateCcw className="w-3 h-3" />
+                Reset
+              </button>
+            )}
           </div>
         </div>
       </motion.div>
     );
   }
 
-  // ── QR SCANNING STATE ─────────────────────────────────────────────────────
   if (showQr) {
     return (
       <motion.div
@@ -181,13 +275,11 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
       >
         <div className="p-4 flex flex-col items-center">
           <p className="text-sm font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
-            Abra o app Self
+            Open the Self flow
           </p>
           <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>
-            Escaneie com seu passaporte ou ID
+            Mock QR shown now. Replace with the official Self proof handoff before enabling `SELF_MODE=agent`.
           </p>
-
-          {/* QR Code */}
           <div
             className="relative w-44 h-44 rounded-2xl p-3 mb-4"
             style={{
@@ -197,7 +289,6 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
             }}
           >
             <QRDecoration />
-            {/* Scan line */}
             <motion.div
               animate={{ y: [-62, 62, -62] }}
               transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
@@ -205,7 +296,6 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
               style={{ background: "rgba(163,217,119,0.9)" }}
             />
           </div>
-
           <div className="flex items-center gap-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
             <motion.div
               animate={{ rotate: 360 }}
@@ -213,22 +303,13 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
             >
               <Zap className="w-3 h-3" style={{ color: "#A3D977" }} />
             </motion.div>
-            Aguardando leitura do documento...
+            Waiting for secure verification handoff...
           </div>
-
-          <button
-            onClick={() => { setState("idle"); setShowQr(false); }}
-            className="mt-3 text-xs flex items-center gap-1"
-            style={{ color: "var(--text-muted)" }}
-          >
-            <X className="w-3 h-3" /> Cancelar
-          </button>
         </div>
       </motion.div>
     );
   }
 
-  // ── ZK PROVING STATE ──────────────────────────────────────────────────────
   if (state === "proving") {
     return (
       <motion.div
@@ -256,7 +337,7 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
 
           <div className="text-center">
             <p className="text-sm font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
-              Gerando Prova ZK
+              Validating Self proof
             </p>
             <AnimatePresence mode="wait">
               <motion.p
@@ -272,18 +353,16 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
             </AnimatePresence>
           </div>
 
-          {/* Step progress dots */}
           <div className="flex items-center gap-2">
-            {ZK_STEPS.map((_, i) => (
+            {ZK_STEPS.map((_, index) => (
               <motion.div
-                key={i}
-                animate={{ scale: i === stepIdx ? 1.3 : 1 }}
+                key={index}
+                animate={{ scale: index === stepIdx ? 1.3 : 1 }}
                 className="rounded-full"
                 style={{
-                  width: i === stepIdx ? 8 : 5,
-                  height: i === stepIdx ? 8 : 5,
-                  background: i <= stepIdx ? "#A3D977" : (isDark ? "#1E3A28" : "#D1D5DB"),
-                  transition: "background 0.3s",
+                  width: index === stepIdx ? 8 : 5,
+                  height: index === stepIdx ? 8 : 5,
+                  background: index <= stepIdx ? "#A3D977" : (isDark ? "#1E3A28" : "#D1D5DB"),
                 }}
               />
             ))}
@@ -293,7 +372,6 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
     );
   }
 
-  // ── IDLE (default) STATE ──────────────────────────────────────────────────
   return (
     <div
       className="rounded-2xl overflow-hidden"
@@ -304,7 +382,6 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
       }}
     >
       <div className="p-4">
-        {/* Header row */}
         <div className="flex items-start gap-3 mb-4">
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -314,12 +391,12 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
           </div>
           <div className="flex-1">
             <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-              Verificar Identidade
+              Verify identity
             </p>
             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
               Powered by{" "}
               <a
-                href="https://ai.self.xyz"
+                href="https://app.ai.self.xyz/documentation"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline"
@@ -327,23 +404,18 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
               >
                 Self Protocol
               </a>{" "}
-              · ZK Proofs
+              · backend-gated anti-Sybil
             </p>
           </div>
-          <a
-            href="https://ai.self.xyz"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <a href="https://app.ai.self.xyz/documentation" target="_blank" rel="noopener noreferrer">
             <ExternalLink className="w-4 h-4 mt-1 flex-shrink-0" style={{ color: "var(--text-muted)" }} />
           </a>
         </div>
 
-        {/* Value props */}
         {[
-          { icon: "🔒", text: "Passaporte ou ID verificado via ZK Proof — sem expor dados" },
-          { icon: "🛡️", text: "Previne Sybil attacks e garante 1 humano = 1 conta" },
-          { icon: "🌐", text: "Compatível com Celo · Ethereum · Self app" },
+          { icon: "🔒", text: "Verification state lives on the backend, not only in the browser." },
+          { icon: "🛡️", text: "Agent authorization can be blocked until Self verification exists." },
+          { icon: "🌐", text: "Current mode: mock now, real Self callback later." },
         ].map((item) => (
           <div key={item.text} className="flex items-start gap-2.5 mb-2.5">
             <span className="text-sm flex-shrink-0">{item.icon}</span>
@@ -353,25 +425,64 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
           </div>
         ))}
 
-        {/* CTA */}
+        {wrongNetwork && (
+          <div
+            className="rounded-xl px-3 py-2.5 mt-3"
+            style={{
+              background: "rgba(245,158,11,0.08)",
+              border: "1px solid rgba(245,158,11,0.2)",
+              color: "#F59E0B",
+            }}
+          >
+            <p className="text-xs font-semibold">Switch to Celo Sepolia first.</p>
+          </div>
+        )}
+
+        {inlineError && (
+          <div
+            className="rounded-xl px-3 py-2.5 mt-3"
+            style={{
+              background: "rgba(239,68,68,0.08)",
+              border: "1px solid rgba(239,68,68,0.2)",
+              color: "#EF4444",
+            }}
+          >
+            <p className="text-xs">{inlineError}</p>
+          </div>
+        )}
+
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={handleStartScan}
+          disabled={isConnecting || isSwitchingChain || isSigningMessage}
           className="w-full mt-3 py-3 rounded-xl flex items-center justify-center gap-2 text-white text-sm font-semibold"
           style={{
-            background: "linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%)",
-            boxShadow: "0 4px 16px rgba(37,99,235,0.3)",
+            background: wrongNetwork
+              ? "rgba(245,158,11,0.15)"
+              : "linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%)",
+            color: wrongNetwork ? "#F59E0B" : "#FFFFFF",
+            boxShadow: wrongNetwork ? "none" : "0 4px 16px rgba(37,99,235,0.3)",
+            opacity: isConnecting || isSwitchingChain || isSigningMessage ? 0.75 : 1,
           }}
         >
           <Fingerprint className="w-4 h-4" />
-          Verificar com Self
+          {isConnecting
+            ? "Connecting wallet..."
+            : isSwitchingChain
+              ? "Switching network..."
+              : isSigningMessage
+                ? "Authorizing session..."
+                : !isConnected
+                  ? "Connect wallet to verify"
+                  : wrongNetwork
+                    ? "Switch to Celo Sepolia"
+                    : "Verify with Self"}
         </motion.button>
       </div>
     </div>
   );
 }
 
-// ─── Compact badge (for use in other pages) ────────────────────────────────────
 export function SelfVerifiedBadge({ size = "sm" }: { size?: "xs" | "sm" }) {
   if (size === "xs") {
     return (

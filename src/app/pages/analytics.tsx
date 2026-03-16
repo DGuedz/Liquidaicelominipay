@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   PieChart,
   Pie,
@@ -38,76 +38,77 @@ import {
   JITIcon,
 } from "../components/icons";
 import { BottomNavigation } from "../components/bottom-navigation";
+import { apiGet, AnalyticsPayload } from "../lib/api";
+import { useCeloWallet } from "../hooks/use-celo-wallet";
 
 const cashflowData = [
-  { month: "Set", income: 145, spending: 82 },
-  { month: "Out", income: 168, spending: 91 },
-  { month: "Nov", income: 152, spending: 78 },
-  { month: "Dez", income: 195, spending: 104 },
-  { month: "Jan", income: 178, spending: 87 },
-  { month: "Fev", income: 210, spending: 98 },
-  { month: "Mar", income: 185, spending: 62 },
+  { month: "D-6", income: 0, spending: 0 },
+  { month: "D-5", income: 0, spending: 0 },
+  { month: "D-4", income: 0, spending: 0 },
+  { month: "D-3", income: 0, spending: 0 },
+  { month: "D-2", income: 0, spending: 0 },
+  { month: "D-1", income: 0, spending: 0 },
+  { month: "Today", income: 0, spending: 0 },
 ];
 
 const yieldData = [
-  { month: "Set", yield: 2.1 },
-  { month: "Out", yield: 3.4 },
-  { month: "Nov", yield: 4.2 },
-  { month: "Dez", yield: 5.8 },
-  { month: "Jan", yield: 6.9 },
-  { month: "Fev", yield: 7.5 },
-  { month: "Mar", yield: 8.15 },
+  { month: "D-6", yield: 0 },
+  { month: "D-5", yield: 0 },
+  { month: "D-4", yield: 0 },
+  { month: "D-3", yield: 0 },
+  { month: "D-2", yield: 0 },
+  { month: "D-1", yield: 0 },
+  { month: "Today", yield: 0 },
 ];
 
 const allocationData = [
-  { name: "Capital Produtivo", value: 820, color: "#0D4B2E", pct: "66%" },
-  { name: "Liquidez", value: 350, color: "#A3D977", pct: "28%" },
-  { name: "Reserva", value: 70.5, color: "#E5E7EB", pct: "6%" },
+  { name: "Productive Capital", value: 0, color: "#0D4B2E", pct: "0%" },
+  { name: "Liquidity", value: 0, color: "#A3D977", pct: "0%" },
+  { name: "Reserve", value: 0, color: "#E5E7EB", pct: "0%" },
 ];
 
 const keyMetrics = [
   {
     icon: Percent,
-    label: "APY Atual",
-    value: "4.8%",
-    sub: "+0.2% esta semana",
+    label: "Current APY",
+    value: "--",
+    sub: "Waiting for snapshot",
     color: "#0D4B2E",
     bg: "#E8F5E9",
   },
   {
     icon: DollarSign,
-    label: "Yield Total",
-    value: "$8.15",
-    sub: "Este mês",
+    label: "Total Yield",
+    value: "$0.00",
+    sub: "No history yet",
     color: "#10B981",
     bg: "rgba(16,185,129,0.1)",
   },
   {
     icon: Zap,
-    label: "Otimizações",
-    value: "47",
-    sub: "Pelo agente IA",
+    label: "Optimizations",
+    value: "0",
+    sub: "By AI Agent",
     color: "#F59E0B",
     bg: "rgba(245,158,11,0.1)",
   },
   {
     icon: TrendingUp,
-    label: "Retorno Total",
-    value: "+12.1%",
-    sub: "Últimos 6 meses",
+    label: "Total Return",
+    value: "$0.00",
+    sub: "Current projection",
     color: "#3B82F6",
     bg: "rgba(59,130,246,0.1)",
   },
 ];
 
-const tabs = ["Fluxo de Caixa", "Alocação", "Yield", "Proteção"];
+const tabs = ["Cashflow", "Allocation", "Yield", "Protection"];
 
 // ─── Inflation Shield data (12 months) ────────────────────────────────────────
 // BRL Savings: 7% SELIC nominal − 6.5% IPCA = ~0.5% real → purchasing power barely moves
 // cUSD + LiquidAI: 4.8% APY, dollar-pegged = no inflation risk
-const inflationData = (() => {
-  const months = ["Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez", "Jan", "Fev"];
-  const startBRL = 1200; // R$ nominal start
+function buildInflationData(startBRL: number) {
+  const months = ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9", "M10", "M11", "M12"];
   const inflationMonthly = 0.0054;    // ~6.5% IPCA annually
   const selicMonthly = 0.00583;       // ~7% SELIC annually
   const liquidAIMonthly = 0.004;      // 4.8% APY monthly compounding
@@ -122,64 +123,20 @@ const inflationData = (() => {
       liquidAI: parseFloat(liquidAI.toFixed(2)),
     };
   });
-})();
+}
 
 // ─── Agent protection log ─────────────────────────────────────────────────────
 const AGENT_PROTECTION_LOGS = [
   {
     id: 1,
-    time: "Hoje 06:14",
-    event: "Real caiu -2.3% na semana",
-    action: "Protegeu $47.50 convertendo para cUSD",
+    time: "Now",
+    event: "Wallet synced",
+    action: "Protection logs will appear after the first live hedge or rebalance.",
     type: "protect",
     icon: Shield,
     color: "#3B82F6",
     bg: "rgba(59,130,246,0.1)",
-    impact: "+$1.09 preservado",
-  },
-  {
-    id: 2,
-    time: "Hoje 02:00",
-    event: "Oportunidade 5.9% APY detectada no Moola",
-    action: "Realocou $172 de Mento → Moola automaticamente",
-    type: "optimize",
-    icon: Zap,
-    color: "#A3D977",
-    bg: "rgba(163,217,119,0.1)",
-    impact: "+$0.45/mês adicional",
-  },
-  {
-    id: 3,
-    time: "Ontem 23:48",
-    event: "IPCA de Fev acima do esperado (0.83%)",
-    action: "Aumentou alocação em stablecoins +$80",
-    type: "protect",
-    icon: AlertTriangle,
-    color: "#F59E0B",
-    bg: "rgba(245,158,11,0.1)",
-    impact: "Risco inflação reduzido 18%",
-  },
-  {
-    id: 4,
-    time: "13 Mar 09:00",
-    event: "Yield noturno capturado: $0.72",
-    action: "Cobriu 2 saques PIX gratuitos automaticamente",
-    type: "yield",
-    icon: DollarSign,
-    color: "#10B981",
-    bg: "rgba(16,185,129,0.1)",
-    impact: "R$1.44 em tarifas zeradas",
-  },
-  {
-    id: 5,
-    time: "12 Mar 00:00",
-    event: "Rebalance periódico executado",
-    action: "Saiu do pool com maior impermanent loss",
-    type: "risk",
-    icon: CheckCircle2,
-    color: "#8B5CF6",
-    bg: "rgba(139,92,246,0.1)",
-    impact: "-$2.10 de IL evitada",
+    impact: "No impact realized yet",
   },
 ];
 
@@ -188,40 +145,118 @@ const VAULT_RESERVES = [
   {
     id: "buffer",
     label: "Liquidity Buffer",
-    desc: "Pagamentos instantâneos · cartão · PIX",
+    desc: "Instant payments · card · PIX",
     pct: 12.5,
-    amount: 150,
+    amount: 0,
     color: "#06B6D4",
     bg: "rgba(6,182,212,0.1)",
     VaultIcon: JITIcon,
-    yield: "0% (disponível imediato)",
+    yield: "Available after first operation",
   },
   {
     id: "vault",
     label: "Yield Vault",
-    desc: "AMMs + Lending · trabalhando 24/7",
+    desc: "AMMs + Lending · working 24/7",
     pct: 75,
-    amount: 900,
+    amount: 0,
     color: "#A3D977",
     bg: "rgba(163,217,119,0.1)",
     VaultIcon: YieldIcon,
-    yield: "4.8% APY médio",
+    yield: "Dynamic APY",
   },
   {
     id: "credit",
     label: "Credit Engine",
-    desc: "Crédito colateralizado (Q4) · 70% do vault",
+    desc: "Collateralized credit (Q4) · 70% of vault",
     pct: 12.5,
-    amount: 150,
+    amount: 0,
     color: "#8B5CF6",
     bg: "rgba(139,92,246,0.1)",
     VaultIcon: BankIcon,
-    yield: "Limite: $840 disponível",
+    yield: "Available when credit module is active",
   },
 ];
 
 export function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState(0);
+  const [overview, setOverview] = useState<AnalyticsPayload | null>(null);
+  const { address } = useCeloWallet();
+
+  useEffect(() => {
+    let active = true;
+    apiGet<AnalyticsPayload>("/api/analytics/overview", { riskMode: "balanced", address: address || "" })
+      .then((payload) => {
+        if (!active) return;
+        setOverview(payload);
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, [address]);
+
+  const displayMetrics = overview?.keyMetrics?.length
+    ? overview.keyMetrics.map((metric) => ({
+        ...metric,
+        icon: keyMetrics.find((item) => item.label === metric.label)?.icon || TrendingUp,
+      }))
+    : keyMetrics;
+  const displayCashflowData = overview?.cashflowData?.length ? overview.cashflowData : cashflowData;
+  const displayYieldData = overview?.yieldData?.length ? overview.yieldData : yieldData;
+  const displayAllocationData = overview?.allocationData?.length
+    ? overview.allocationData.map((item) => ({
+        ...item,
+        pct: `${Math.round((item.value / (overview.allocationData.reduce((sum, row) => sum + row.value, 0) || 1)) * 100)}%`,
+      }))
+    : allocationData;
+  const displayProtectionLogs = overview?.protectionLogs?.length
+    ? overview.protectionLogs.map((log) => ({
+        ...log,
+        icon:
+          log.type === "protect"
+            ? Shield
+            : log.type === "yield"
+            ? DollarSign
+            : log.type === "risk"
+            ? CheckCircle2
+            : Zap,
+        color:
+          log.type === "protect"
+            ? "#3B82F6"
+            : log.type === "yield"
+            ? "#10B981"
+            : log.type === "risk"
+            ? "#8B5CF6"
+            : "#A3D977",
+        bg:
+          log.type === "protect"
+            ? "rgba(59,130,246,0.1)"
+            : log.type === "yield"
+            ? "rgba(16,185,129,0.1)"
+            : log.type === "risk"
+            ? "rgba(139,92,246,0.1)"
+            : "rgba(163,217,119,0.1)",
+      }))
+    : AGENT_PROTECTION_LOGS;
+  const displayVaultReserves = overview?.vaultReserves?.length
+    ? overview.vaultReserves.map((reserve) => ({
+        ...reserve,
+        VaultIcon:
+          reserve.id === "buffer"
+            ? JITIcon
+            : reserve.id === "vault"
+            ? YieldIcon
+            : BankIcon,
+      }))
+    : VAULT_RESERVES;
+  const trackedBalance = displayAllocationData.reduce((sum, item) => sum + item.value, 0);
+  const inflationData = buildInflationData(Math.max(1, trackedBalance || 1));
+  const yieldStart = displayYieldData[0]?.yield || 0;
+  const yieldEnd = displayYieldData[displayYieldData.length - 1]?.yield || 0;
+  const yieldGrowthPct = yieldStart > 0 ? ((yieldEnd - yieldStart) / yieldStart) * 100 : 0;
+  const protectedDelta = Math.max(0, (inflationData[inflationData.length - 1]?.liquidAI || 0) - (inflationData[inflationData.length - 1]?.brlReal || 0));
+  const totalVaultUsd = displayVaultReserves.reduce((sum, reserve) => sum + reserve.amount, 0);
 
   return (
     <div className="min-h-dvh bg-background pb-28">
@@ -231,14 +266,14 @@ export function AnalyticsPage() {
           Analytics
         </h1>
         <p className="text-sm text-text-muted">
-          Inteligência financeira em tempo real
+          Real-time financial intelligence
         </p>
       </header>
 
       {/* Key Metrics Grid */}
       <div className="px-5 mb-6">
         <div className="grid grid-cols-2 gap-3">
-          {keyMetrics.map((m, i) => {
+          {displayMetrics.map((m, i) => {
             const Icon = m.icon;
             return (
               <motion.div
@@ -303,21 +338,21 @@ export function AnalyticsPage() {
             >
               <div className="flex items-center justify-between mb-4">
                 <span className="font-semibold text-text-primary text-sm">
-                  Entradas vs Saídas
+                  Inflow vs Outflow
                 </span>
-                <span className="text-xs text-text-muted">6 meses</span>
+                <span className="text-xs text-text-muted">Last checkpoints</span>
               </div>
               <div className="h-44">
-                <DualLineChart data={cashflowData} />
+                <DualLineChart data={displayCashflowData} />
               </div>
               <div className="flex items-center gap-4 mt-3">
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-1 rounded-full bg-success" />
-                  <span className="text-xs text-text-muted">Entradas</span>
+                  <span className="text-xs text-text-muted">Inflow</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-1 rounded-full bg-warning" />
-                  <span className="text-xs text-text-muted">Saídas</span>
+                  <span className="text-xs text-text-muted">Outflow</span>
                 </div>
               </div>
             </motion.div>
@@ -335,16 +370,16 @@ export function AnalyticsPage() {
             >
               <div className="flex items-center justify-between mb-4">
                 <span className="font-semibold text-text-primary text-sm">
-                  Alocação de Capital
+                  Capital Allocation
                 </span>
-                <span className="text-xs text-text-muted">Atual</span>
+                <span className="text-xs text-text-muted">Current</span>
               </div>
               <div className="flex items-center gap-6">
                 <div className="h-40 w-40 flex-shrink-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={allocationData}
+                        data={displayAllocationData}
                         cx="50%"
                         cy="50%"
                         innerRadius={44}
@@ -352,7 +387,7 @@ export function AnalyticsPage() {
                         dataKey="value"
                         strokeWidth={0}
                       >
-                        {allocationData.map((entry) => (
+                        {displayAllocationData.map((entry) => (
                           <Cell key={entry.name} fill={entry.color} />
                         ))}
                       </Pie>
@@ -369,7 +404,7 @@ export function AnalyticsPage() {
                   </ResponsiveContainer>
                 </div>
                 <div className="flex-1 space-y-3">
-                  {allocationData.map((item) => (
+                  {displayAllocationData.map((item) => (
                     <div key={item.name}>
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2">
@@ -404,9 +439,9 @@ export function AnalyticsPage() {
               >
                 <p className="text-xs text-text-secondary">
                   <span className="font-semibold" style={{ color: "#A3D977" }}>
-                    LiquidAI otimizou 66%
+                    LiquidAI allocated {displayAllocationData.find((item) => item.name === "Productive Capital")?.pct || "0%"}
                   </span>{" "}
-                  do seu capital em posições produtivas automaticamente
+                  of current capital in productive positions
                 </p>
               </div>
             </motion.div>
@@ -424,14 +459,14 @@ export function AnalyticsPage() {
             >
               <div className="flex items-center justify-between mb-4">
                 <span className="font-semibold text-text-primary text-sm">
-                  Yield Gerado pelo Agente
+                  Yield Generated by Agent
                 </span>
-                <span className="text-xs text-text-muted">Mensal ($)</span>
+                <span className="text-xs text-text-muted">Monthly ($)</span>
               </div>
               <div className="h-44">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={yieldData}
+                    data={displayYieldData}
                     margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
                   >
                     <XAxis
@@ -467,9 +502,9 @@ export function AnalyticsPage() {
               >
                 <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
                   <span className="font-semibold" style={{ color: "#A3D977" }}>
-                    +73% de crescimento
+                    {yieldGrowthPct > 0 ? `+${yieldGrowthPct.toFixed(0)}% growth` : "No historical growth yet"}
                   </span>{" "}
-                  no yield gerado nos últimos 6 meses via automação do agente IA
+                  in yield generated in the last 6 months via AI agent automation
                 </p>
               </div>
             </motion.div>
@@ -495,14 +530,14 @@ export function AnalyticsPage() {
                       Inflation Shield
                     </span>
                     <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                      Poupança BRL vs cUSD + LiquidAI · 12 meses
+                      BRL Savings vs cUSD + LiquidAI · 12 months
                     </p>
                   </div>
                   <span
                     className="text-xs px-2 py-0.5 rounded-full font-semibold flex-shrink-0"
                     style={{ background: "rgba(163,217,119,0.12)", color: "#A3D977" }}
                   >
-                    +$57 protegido
+                    +${protectedDelta.toFixed(2)} protected
                   </span>
                 </div>
 
@@ -514,7 +549,7 @@ export function AnalyticsPage() {
                   <div className="flex items-center gap-1.5">
                     <div className="w-3 h-0.5 rounded-full" style={{ background: "#EF4444" }} />
                     <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                      BRL real (poder de compra)
+                      BRL real (purchasing power)
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -533,9 +568,7 @@ export function AnalyticsPage() {
                   <Shield className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#A3D977" }} />
                   <div>
                     <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                      Em 12 meses, seu <span style={{ color: "#EF4444", fontWeight: 600 }}>saldo BRL perdeu ~4.7%</span> de poder de compra (IPCA 6.5% − SELIC 7%). O{" "}
-                      <span style={{ color: "#A3D977", fontWeight: 600 }}>cUSD + LiquidAI ganhou +4.8%</span> — diferença real de{" "}
-                      <span style={{ color: "#A3D977", fontWeight: 600 }}>+$57 em $1.200</span>.
+                      This projection compares keeping capital idle in local currency vs keeping the same balance under agent monitoring. The gain shown uses real synchronized capital now, without artificial seeding.
                     </p>
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {[
@@ -554,7 +587,7 @@ export function AnalyticsPage() {
                       ))}
                     </div>
                     <p className="text-xs mt-1.5" style={{ color: "var(--text-muted)", fontSize: "10px" }}>
-                      Yield via estratégias institucionais de staking e empréstimo (Morpho · Celo Mondo · Mar/2026)
+                      Yield via institutional staking and lending strategies (Morpho · Celo Mondo · Mar/2026)
                     </p>
                   </div>
                 </div>
@@ -571,20 +604,20 @@ export function AnalyticsPage() {
                 >
                   <Layers className="w-4 h-4" style={{ color: "#A3D977" }} />
                   <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-                    Arquitetura de 3 Reservas
+                    3-Reserve Architecture
                   </span>
                   <span
                     className="ml-auto text-xs px-2 py-0.5 rounded-full font-semibold"
                     style={{ background: "rgba(163,217,119,0.12)", color: "#A3D977" }}
                   >
-                    $1.200 total
+                    ${totalVaultUsd.toFixed(2)} total
                   </span>
                 </div>
 
                 {/* Visual allocation bar */}
                 <div className="px-4 py-3">
                   <div className="flex h-3 rounded-full overflow-hidden gap-px mb-3">
-                    {VAULT_RESERVES.map((r) => (
+                    {displayVaultReserves.map((r) => (
                       <motion.div
                         key={r.id}
                         initial={{ width: 0 }}
@@ -601,7 +634,7 @@ export function AnalyticsPage() {
                   </div>
                 </div>
 
-                {VAULT_RESERVES.map((r, i) => (
+                {displayVaultReserves.map((r, i) => (
                   <div
                     key={r.id}
                     className="flex items-center gap-3 px-4 py-3.5"
@@ -642,7 +675,7 @@ export function AnalyticsPage() {
                 >
                   <Bot className="w-4 h-4" style={{ color: "#A3D977" }} />
                   <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-                    Log de Proteção do Agente
+                    Agent Protection Log
                   </span>
                   <span
                     className="ml-auto w-2 h-2 rounded-full animate-pulse"
@@ -650,7 +683,7 @@ export function AnalyticsPage() {
                   />
                 </div>
 
-                {AGENT_PROTECTION_LOGS.map((log, i) => {
+                {displayProtectionLogs.map((log, i) => {
                   const Icon = log.icon;
                   return (
                     <motion.div
@@ -710,13 +743,13 @@ export function AnalyticsPage() {
                   Self-Custody Yield Bank
                 </p>
                 <p className="text-sm text-white mb-3 leading-relaxed">
-                  Seu dinheiro permanece <span style={{ color: "#A3D977" }}>100% seu</span>, trabalhando automaticamente em DeFi — sem banco intermediário.
+                  Your money remains <span style={{ color: "#A3D977" }}>100% yours</span>, working automatically in DeFi — without an intermediary bank.
                 </p>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { label: "Mantém em $", value: "cUSD" },
-                    { label: "Yield gerado", value: "4.8%" },
-                    { label: "Banco necessário", value: "Zero" },
+                    { label: "Keeps in $", value: "cUSD" },
+                    { label: "Yield generated", value: "4.8%" },
+                    { label: "Bank required", value: "Zero" },
                   ].map((s) => (
                     <div
                       key={s.label}
@@ -755,24 +788,23 @@ export function AnalyticsPage() {
           </div>
           <div>
             <p className="text-sm font-semibold text-white mb-1">
-              Insight do Agente IA
+              AI Agent Insight
             </p>
             <p className="text-xs text-white/70 leading-relaxed">
-              Detectei $350 em liquidez ociosa. Posso realocar para maximizar
-              seu APY de 4.8% → 5.9% automaticamente. Estimativa: +$0.43/mês.
+              The agent compares buffer, pools, and on-chain opportunities using only the current wallet balance. When there is a material APY improvement, it appears here with real impact estimation.
             </p>
             <div className="flex gap-2 mt-3">
               <button
                 className="px-4 py-1.5 rounded-full text-xs font-semibold"
                 style={{ background: "#A3D977", color: "#0D4B2E" }}
               >
-                Autorizar
+                Authorize
               </button>
               <button
                 className="px-4 py-1.5 rounded-full text-xs font-semibold"
                 style={{ background: "rgba(255,255,255,0.15)", color: "#fff" }}
               >
-                Ver detalhes
+                See details
               </button>
             </div>
           </div>

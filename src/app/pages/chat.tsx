@@ -20,6 +20,11 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useTheme } from "../hooks/useTheme";
+import { apiGet, apiPost, ChatReplyPayload, DashboardPayload, getApiAuthToken } from "../lib/api";
+import { CELO_CHAIN_ID } from "../lib/celo-wallet";
+import { ensureWalletAuthSession } from "../lib/wallet-auth";
+import { useCeloWallet } from "../hooks/use-celo-wallet";
+import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -67,7 +72,7 @@ const SCENARIOS: Record<string, Scenario> = {
       "Verificando posições abertas nos protocolos...",
     ],
     text:
-      "Hoje executei **3 operações automáticas** para maximizar seu capital:\n\n🔄 **03:00** — Rebalancei $350 para Aave v3 (4.8% APY)\n✨ **08:00** — Capturei +$0.45 em yield noturno\n🛡️ **11:15** — Proteção cambial aplicada (BRL caiu 1.2%)\n\nSeu patrimônio cresceu **+$0.72** hoje. Tudo automático, sem ação necessária da sua parte.",
+      "Resumo do dia pronto. Se o backend estiver disponível, vou priorizar os eventos reais da sua carteira e o rendimento estimado com base no capital atual.",
     type: "text",
   },
   maximizar: {
@@ -82,11 +87,11 @@ const SCENARIOS: Record<string, Scenario> = {
       "Encontrei **1 oportunidade** para aumentar seu rendimento com risco baixo. Preciso da sua autorização para executar:",
     type: "action",
     actionData: {
-      id: "action-moola-1",
-      title: "Realocar $90 → Moola Market",
-      amount: "$90.00",
-      gain: "+$0.43/mês vs atual",
-      protocol: "Moola · Lending · Celo",
+      id: "action-rebalance-1",
+      title: "Realocar uma parte do capital produtivo",
+      amount: "Valor calculado no backend",
+      gain: "Ganho estimado após leitura on-chain",
+      protocol: "Protocolo sugerido · Celo",
       risk: "Baixo",
       riskColor: "#10B981",
     },
@@ -95,28 +100,28 @@ const SCENARIOS: Record<string, Scenario> = {
     thinkingTime: 1800,
     steps: ["Compilando métricas dos últimos 30 dias...", "Calculando retorno vs benchmark..."],
     text:
-      "Sua performance nos **últimos 30 dias** 📈\n\n• Yield gerado: **+$8.15** (meta era $7.00)\n• APY médio: **4.8%** (benchmark DeFi: 3.1%)\n• Operações automáticas: **47**\n• Capital protegido vs inflação BRL: **$14.88**\n\nVocê está **+73% acima da meta mensal**. O modo Balanceado está performando muito bem.",
+      "Vou consolidar performance usando apenas o histórico real já registrado para esta wallet.",
     type: "insight",
   },
   protecao: {
     thinkingTime: 1600,
     steps: ["Verificando exposição cambial...", "Monitorando BRL/USD em tempo real..."],
     text:
-      "Proteção cambial **100% ativa** 🛡️\n\nSeu saldo em **cUSD** (dólar digital estável) elimina o risco de desvalorização do Real.\n\n📊 Esta semana: BRL caiu **1.2%**\n✅ Seu poder de compra: **intacto**\n💚 Equivalente protegido: **+$14.88 vs quem está em reais**\n\nVocê não perde dinheiro para inflação enquanto o agente trabalha.",
+      "Proteção cambial ativa. Vou avaliar sua exposição atual e a parcela do saldo já preservada em stablecoins antes de sugerir qualquer ação.",
     type: "text",
   },
   saldo: {
     thinkingTime: 800,
     steps: ["Consultando carteira..."],
     text:
-      "Seu saldo atual é **$1,240.50 cUSD** 💚\n\n📊 **Distribuição:**\n• $820.00 — Capital produtivo (gerando 4.8% APY)\n• $350.00 — Liquidez imediata (PIX/remessas)\n• $70.50 — Reserva emergencial\n\n⚡ Rendimento diário: **+$0.72/dia**\nMeta mensal: $7.00 | Atual: **$8.15 ✓**",
+      "Vou ler o saldo real da carteira e dividir entre capital produtivo, liquidez imediata e projeção de yield com base no estado atual.",
     type: "text",
   },
   pix: {
     thinkingTime: 1200,
     steps: ["Verificando liquidez disponível para pagamentos...", "Checando reserva do dia..."],
     text:
-      "Sua liquidez imediata está em **$350.00** — pronta para qualquer pagamento ⚡\n\nPara um PIX ou transferência:\n1. Toque em **Enviar** na tela inicial\n2. Escolha o contato\n3. Digite o valor e confirme\n\nLiquidação em menos de **1 segundo** na rede Celo. Sem taxas para valores abaixo de $10.",
+      "Vou verificar a liquidez imediata real da wallet antes de orientar um pagamento. O fluxo continua o mesmo: Enviar → selecionar destino → confirmar valor.",
     type: "text",
   },
   default: {
@@ -244,11 +249,13 @@ function ActionCard({
   state,
   onAuthorize,
   onDismiss,
+  disabled,
 }: {
   data: ActionData;
   state: "pending" | "authorized" | "dismissed";
   onAuthorize: () => void;
   onDismiss: () => void;
+  disabled?: boolean;
 }) {
   if (state === "authorized") {
     return (
@@ -326,16 +333,22 @@ function ActionCard({
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={onAuthorize}
+          disabled={disabled}
           className="flex-1 py-2 rounded-xl text-xs font-bold"
-          style={{ background: "#0D4B2E", color: "#A3D977" }}
+          style={{
+            background: disabled ? "var(--muted)" : "#0D4B2E",
+            color: disabled ? "var(--text-muted)" : "#A3D977",
+            opacity: disabled ? 0.7 : 1,
+          }}
         >
           ✓ Autorizar
         </motion.button>
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={onDismiss}
+          disabled={disabled}
           className="px-3 py-2 rounded-xl text-xs font-semibold"
-          style={{ background: "var(--muted)", color: "var(--text-muted)" }}
+          style={{ background: "var(--muted)", color: "var(--text-muted)", opacity: disabled ? 0.6 : 1 }}
         >
           Ignorar
         </motion.button>
@@ -351,11 +364,13 @@ function MessageBubble({
   onToggleReasoning,
   onAuthorize,
   onDismiss,
+  actionsDisabled,
 }: {
   msg: Message;
   onToggleReasoning: (id: number) => void;
   onAuthorize: (id: number) => void;
   onDismiss: (id: number) => void;
+  actionsDisabled?: boolean;
 }) {
   const isAgent = msg.role === "agent";
 
@@ -475,6 +490,7 @@ function MessageBubble({
               state={msg.actionState || "pending"}
               onAuthorize={() => onAuthorize(msg.id)}
               onDismiss={() => onDismiss(msg.id)}
+              disabled={actionsDisabled}
             />
           )}
           <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
@@ -493,7 +509,7 @@ const INITIAL_MESSAGES: Message[] = [
     id: 1,
     role: "agent",
     type: "text",
-    text: "Olá, Alex! 👋 Sou o **LiquidAI Agent** — seu gestor financeiro autônomo na rede Celo.\n\nEnquanto você dormia, capturei **+$0.45 em yield** e mantive **$350 em liquidez** para seus pagamentos. Tudo certo!\n\nComo posso ajudar você hoje?",
+    text: "Olá. Sou o **LiquidAI Agent**.\n\nAssim que a wallet estiver pronta em Celo Sepolia, vou responder usando apenas o saldo, a liquidez e o rendimento reais desta conta.\n\nComo posso ajudar?",
     timestamp: "08:00",
     reasoningSteps: [],
   },
@@ -502,12 +518,82 @@ const INITIAL_MESSAGES: Message[] = [
 export function ChatPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
+  const {
+    address,
+    isConnected,
+    hasConnector,
+    wrongNetwork,
+    isConnecting,
+    isSwitchingChain,
+    isSigningMessage,
+    connectWallet,
+    switchToCelo,
+    signWalletMessage,
+  } = useCeloWallet();
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [inputText, setInputText] = useState("");
   const [isThinking, setIsThinking] = useState(false);
   const [thinkingStep, setThinkingStep] = useState("Analisando...");
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [sessionReady, setSessionReady] = useState(() => Boolean(getApiAuthToken()));
+  const [dashboard, setDashboard] = useState<DashboardPayload | null>(null);
+  const canUseProtectedFlow = isConnected && !wrongNetwork && sessionReady;
+  const activeCapital = dashboard?.summary.managedCapitalUsd ?? 0;
+  const activeApy = dashboard?.summary.apy ?? 0;
+  const activeYieldToday = (dashboard?.summary.monthlyYieldUsd ?? 0) / 30;
+
+  useEffect(() => {
+    const syncSessionState = () => {
+      setSessionReady(Boolean(getApiAuthToken()));
+    };
+
+    syncSessionState();
+    window.addEventListener("focus", syncSessionState);
+    window.addEventListener("storage", syncSessionState);
+
+    return () => {
+      window.removeEventListener("focus", syncSessionState);
+      window.removeEventListener("storage", syncSessionState);
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    if (!address) {
+      setDashboard(null);
+      return () => {
+        active = false;
+      };
+    }
+
+    apiGet<DashboardPayload>("/api/dashboard", { address, riskMode: "balanced" })
+      .then((payload) => {
+        if (!active) return;
+        setDashboard(payload);
+      })
+      .catch(() => {
+        if (!active) return;
+        setDashboard(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [address]);
+
+  useEffect(() => {
+    if (!dashboard) return;
+    setMessages((prev) => {
+      if (prev.length !== 1 || prev[0].id !== 1) return prev;
+      return [
+        {
+          ...prev[0],
+          text: `Hello. I am **LiquidAI Agent**.\n\nMonitored balance: **$${dashboard.summary.balanceUsd.toFixed(2)}**.\nProductive capital: **$${dashboard.summary.managedCapitalUsd.toFixed(2)}**.\nImmediate liquidity: **$${dashboard.summary.liquidityBufferUsd.toFixed(2)}**.\n\nHow can I help you?`,
+        },
+      ];
+    });
+  }, [dashboard]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -522,6 +608,10 @@ export function ChatPage() {
   const sendMessage = useCallback(
     async (text: string) => {
       if (!text.trim() || isThinking) return;
+      if (!canUseProtectedFlow) {
+        toast.error("Prepare wallet session on Celo Sepolia before chatting with the agent.");
+        return;
+      }
 
       const userMsg: Message = {
         id: nextId(),
@@ -535,8 +625,8 @@ export function ChatPage() {
       setInputText("");
       setIsThinking(true);
 
-      const scenario = detectScenario(text);
-      const steps = scenario.steps || ["Processando..."];
+      const fallbackScenario = detectScenario(text);
+      const steps = fallbackScenario.steps || ["Processando..."];
 
       // Cycle through thinking steps
       let stepIdx = 0;
@@ -544,31 +634,46 @@ export function ChatPage() {
       const stepInterval = setInterval(() => {
         stepIdx = (stepIdx + 1) % steps.length;
         setThinkingStep(steps[stepIdx]);
-      }, Math.max(600, scenario.thinkingTime / steps.length));
+      }, Math.max(600, fallbackScenario.thinkingTime / steps.length));
 
-      await new Promise((r) => setTimeout(r, scenario.thinkingTime));
+      let remoteReply: ChatReplyPayload | null = null;
+      try {
+        remoteReply = await apiPost<ChatReplyPayload>("/api/chat", {
+          address: address || "",
+          message: text.trim(),
+          riskMode: "balanced",
+        });
+      } catch {
+        remoteReply = null;
+      }
+
+      await new Promise((r) => setTimeout(r, Math.max(900, fallbackScenario.thinkingTime * 0.45)));
       clearInterval(stepInterval);
+
+      const replyType = remoteReply?.type || fallbackScenario.type;
+      const replyText = remoteReply?.text || fallbackScenario.text;
+      const replySteps = remoteReply?.thinkingSteps || fallbackScenario.steps;
+      const replyAction = remoteReply?.actionData || fallbackScenario.actionData;
 
       const agentMsg: Message = {
         id: nextId(),
         role: "agent",
-        type: scenario.type,
-        text: scenario.text,
+        type: replyType,
+        text: replyText,
         timestamp: getTime(),
-        reasoningSteps: scenario.steps,
+        reasoningSteps: replySteps,
         showReasoning: false,
-        actionData: scenario.actionData,
-        actionState: scenario.actionData ? "pending" : undefined,
+        actionData: replyAction,
+        actionState: replyAction ? "pending" : undefined,
       };
 
       setIsThinking(false);
       setMessages((prev) => [...prev, agentMsg]);
     },
-    [isThinking]
+    [address, canUseProtectedFlow, isThinking]
   );
 
   const handleChip = (key: string) => {
-    const scenario = SCENARIOS[key] || SCENARIOS.default;
     sendMessage(QUICK_CHIPS.find((c) => c.key === key)?.label.replace(/^[^ ]+ /, "") || key);
   };
 
@@ -578,24 +683,91 @@ export function ChatPage() {
     );
   };
 
-  const handleAuthorize = (id: number) => {
+  const handlePrepareWallet = async () => {
+    if (!hasConnector) {
+      toast.error("No wallet detected. Open the app in MiniPay or MetaMask.");
+      return;
+    }
+
+    try {
+      let connectedAddress = address;
+
+      if (!isConnected) {
+        const session = await connectWallet();
+        connectedAddress = session.accounts?.[0] || "";
+        if (session.chainId !== CELO_CHAIN_ID) {
+          await switchToCelo();
+        }
+      } else if (wrongNetwork) {
+        await switchToCelo();
+      }
+
+      const walletAddress = connectedAddress || address;
+      if (!walletAddress) {
+        throw new Error("Wallet address unavailable after connection.");
+      }
+
+      await ensureWalletAuthSession(walletAddress, signWalletMessage);
+      setSessionReady(true);
+      toast.success("Wallet ready on Celo Sepolia.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to prepare wallet session.";
+      toast.error(message);
+    }
+  };
+
+  const submitAuthorization = async (id: number, accepted: boolean) => {
+    if (!address) {
+      toast.error("Connect a wallet before authorizing agent actions.");
+      return false;
+    }
+
+    if (wrongNetwork) {
+      toast.error("Switch to Celo Sepolia before authorizing agent actions.");
+      return false;
+    }
+
+    try {
+      await ensureWalletAuthSession(address, signWalletMessage);
+      setSessionReady(true);
+      await apiPost("/api/agent/authorize", {
+        address,
+        actionId: id,
+        accepted,
+      });
+      return true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to submit authorization.";
+      toast.error(message);
+      return false;
+    }
+  };
+
+  const handleAuthorize = async (id: number) => {
+    const submitted = await submitAuthorization(id, true);
+    if (!submitted) return;
+    const authorizedAction = messages.find((m) => m.id === id)?.actionData?.title || "Ação autorizada";
+
     setMessages((prev) =>
       prev.map((m) => (m.id === id ? { ...m, actionState: "authorized" as const } : m))
     );
-    // Agent confirms execution after short delay
-    setTimeout(() => {
-      const confirmMsg: Message = {
-        id: nextId(),
-        role: "agent",
-        type: "success",
-        text: "✅ **Operação executada com sucesso!**\n\n$90 realocados para Moola Market (5.9% APY). Você vai ganhar +$0.43/mês adicionais.\n\nAtualização no log de atividade em instantes.",
-        timestamp: getTime(),
-      };
-      setMessages((prev) => [...prev, confirmMsg]);
-    }, 1200);
-  };
+      // Agent confirms execution after short delay
+      setTimeout(() => {
+        const confirmMsg: Message = {
+          id: nextId(),
+          role: "agent",
+          type: "success",
+          text: `✅ **Autorização registrada com sucesso.**\n\n${authorizedAction}\n\nVou refletir essa decisão no estado do agente assim que a operação ficar disponível no backend.`,
+          timestamp: getTime(),
+        };
+        setMessages((prev) => [...prev, confirmMsg]);
+      }, 1200);
+    };
 
-  const handleDismiss = (id: number) => {
+  const handleDismiss = async (id: number) => {
+    const submitted = await submitAuthorization(id, false);
+    if (!submitted) return;
+
     setMessages((prev) =>
       prev.map((m) => (m.id === id ? { ...m, actionState: "dismissed" as const } : m))
     );
@@ -657,7 +829,9 @@ export function ChatPage() {
               style={{ background: "#A3D977" }}
             />
             <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              Online · Gerenciando $820 em 3 protocolos
+              {dashboard
+                ? `Online · monitorando $${activeCapital.toFixed(2)} em ${dashboard.liquidityNetwork.connections.length || 1} fluxos`
+                : "Online · aguardando snapshot da wallet"}
             </p>
           </div>
         </div>
@@ -668,10 +842,79 @@ export function ChatPage() {
         >
           <Activity className="w-3 h-3" style={{ color: "#A3D977" }} />
           <span className="text-xs font-semibold" style={{ color: "#A3D977" }}>
-            4.8% APY
+            {activeApy.toFixed(2)}% APY
           </span>
         </div>
       </header>
+
+      {!canUseProtectedFlow && (
+        <div className="px-4 pt-4">
+          <div
+            className="rounded-2xl p-4"
+            style={{
+              background: wrongNetwork ? "rgba(245,158,11,0.1)" : "var(--surface-solid)",
+              border: `1px solid ${wrongNetwork ? "rgba(245,158,11,0.28)" : "var(--border-light)"}`,
+              boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: wrongNetwork ? "rgba(245,158,11,0.15)" : "rgba(163,217,119,0.12)" }}
+              >
+                {wrongNetwork ? (
+                  <AlertTriangle className="w-4 h-4" style={{ color: "#F59E0B" }} />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4" style={{ color: "#A3D977" }} />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                  {wrongNetwork ? "Wrong network detected" : "Wallet session required"}
+                </p>
+                <div className="mt-1 space-y-1">
+                  <p className="text-xs" style={{ color: isConnected ? "#A3D977" : "var(--text-muted)" }}>
+                    Wallet: {isConnected ? "Connected" : "Not connected"}
+                  </p>
+                  <p className="text-xs" style={{ color: sessionReady ? "#A3D977" : "var(--text-muted)" }}>
+                    Session: {sessionReady ? "Active" : "Required"}
+                  </p>
+                  <p className="text-xs" style={{ color: wrongNetwork ? "#F59E0B" : "#A3D977" }}>
+                    Network: {wrongNetwork ? "Wrong network" : "Celo Sepolia"}
+                  </p>
+                </div>
+                <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
+                  Chat and authorization stay blocked until wallet, session, and Celo Sepolia are ready.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handlePrepareWallet}
+              disabled={isConnecting || isSwitchingChain || isSigningMessage}
+              className="mt-3 w-full py-3 rounded-xl text-sm font-semibold"
+              style={{
+                background: wrongNetwork
+                  ? "rgba(245,158,11,0.15)"
+                  : "linear-gradient(135deg, #0D4B2E 0%, #1a6b45 100%)",
+                color: wrongNetwork ? "#F59E0B" : "#A3D977",
+                opacity: isConnecting || isSwitchingChain || isSigningMessage ? 0.7 : 1,
+              }}
+            >
+              {isConnecting
+                ? "Connecting wallet..."
+                : isSwitchingChain
+                  ? "Switching to Celo Sepolia..."
+                  : isSigningMessage
+                    ? "Activating session..."
+                    : !isConnected
+                      ? "Connect wallet"
+                      : wrongNetwork
+                        ? "Switch to Celo Sepolia"
+                        : "Activate session"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── MESSAGES ────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-4 py-4" style={{ paddingBottom: "160px" }}>
@@ -683,9 +926,9 @@ export function ChatPage() {
           className="grid grid-cols-3 gap-2 mb-5"
         >
           {[
-            { label: "Yield hoje", value: "+$0.72", color: "#A3D977", icon: Sparkles },
-            { label: "Capital ativo", value: "$820", color: "var(--text-primary)", icon: DollarSign },
-            { label: "Operações", value: "47", color: "#06B6D4", icon: RotateCcw },
+            { label: "Yield hoje", value: `+$${activeYieldToday.toFixed(2)}`, color: "#A3D977", icon: Sparkles },
+            { label: "Capital ativo", value: `$${activeCapital.toFixed(2)}`, color: "var(--text-primary)", icon: DollarSign },
+            { label: "Operações", value: String(dashboard?.summary.agentOpsToday ?? 0), color: "#06B6D4", icon: RotateCcw },
           ].map(({ label, value, color, icon: Icon }) => (
             <div
               key={label}
@@ -712,6 +955,7 @@ export function ChatPage() {
               onToggleReasoning={toggleReasoning}
               onAuthorize={handleAuthorize}
               onDismiss={handleDismiss}
+              actionsDisabled={!canUseProtectedFlow}
             />
           ))}
         </AnimatePresence>
@@ -744,14 +988,14 @@ export function ChatPage() {
               key={chip.key}
               whileTap={{ scale: 0.92 }}
               onClick={() => sendMessage(chip.label.replace(/^[^ ]+ /, ""))}
-              disabled={isThinking}
+              disabled={isThinking || !canUseProtectedFlow}
               className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap"
               style={{
                 background: "var(--surface-solid)",
                 color: "var(--text-secondary)",
                 border: "1px solid var(--border-light)",
                 boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                opacity: isThinking ? 0.5 : 1,
+                opacity: isThinking || !canUseProtectedFlow ? 0.5 : 1,
               }}
             >
               {chip.label}
@@ -775,8 +1019,8 @@ export function ChatPage() {
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Pergunte ao agente..."
-              disabled={isThinking}
+              placeholder={canUseProtectedFlow ? "Pergunte ao agente..." : "Prepare wallet session first"}
+              disabled={isThinking || !canUseProtectedFlow}
               className="flex-1 bg-transparent text-sm outline-none"
               style={{ color: "var(--text-primary)" }}
             />
@@ -787,22 +1031,22 @@ export function ChatPage() {
           <motion.button
             whileTap={{ scale: 0.88 }}
             onClick={handleSend}
-            disabled={!inputText.trim() || isThinking}
+            disabled={!inputText.trim() || isThinking || !canUseProtectedFlow}
             className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
             style={{
               background:
-                inputText.trim() && !isThinking
+                inputText.trim() && !isThinking && canUseProtectedFlow
                   ? "linear-gradient(135deg, #0D4B2E, #1a6b45)"
                   : "var(--muted)",
               boxShadow:
-                inputText.trim() && !isThinking ? "0 2px 12px rgba(13,75,46,0.3)" : "none",
+                inputText.trim() && !isThinking && canUseProtectedFlow ? "0 2px 12px rgba(13,75,46,0.3)" : "none",
               transition: "background 0.2s ease",
             }}
           >
             <Send
               className="w-4.5 h-4.5"
               style={{
-                color: inputText.trim() && !isThinking ? "#A3D977" : "var(--text-muted)",
+                color: inputText.trim() && !isThinking && canUseProtectedFlow ? "#A3D977" : "var(--text-muted)",
               }}
             />
           </motion.button>

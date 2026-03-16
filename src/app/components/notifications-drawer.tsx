@@ -1,11 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   X,
-  Sparkles,
-  RotateCcw,
-  TrendingUp,
-  AlertTriangle,
   Bell,
   Activity,
   Shield,
@@ -30,69 +26,14 @@ interface Notification {
 const INITIAL_NOTIFICATIONS: Notification[] = [
   {
     id: 1,
-    type: "yield",
-    title: "+$0.45 Yield Capturado",
-    body: "O agente capturou $0.45 em rendimento noturno via Aave v3 (4.8% APY).",
-    time: "Hoje, 08:00",
-    read: false,
-    icon: Sparkles,
-    color: "#A3D977",
-    bg: "rgba(163,217,119,0.12)",
-  },
-  {
-    id: 2,
-    type: "rebalance",
-    title: "Rebalance Concluído",
-    body: "$350 realocados para maximizar rendimento. APY subiu de 4.2% → 4.8%.",
-    time: "Hoje, 03:00",
-    read: false,
-    icon: RotateCcw,
-    color: "#10B981",
-    bg: "rgba(16,185,129,0.1)",
-  },
-  {
-    id: 3,
-    type: "alert",
-    title: "Oportunidade Detectada",
-    body: "Moola oferece 5.9% APY agora. Realocar $90 geraria +$0.43/mês com baixo risco.",
-    time: "Ontem, 22:00",
-    read: false,
-    icon: TrendingUp,
-    color: "#F59E0B",
-    bg: "rgba(245,158,11,0.1)",
-  },
-  {
-    id: 4,
-    type: "protect",
-    title: "Proteção Cambial Ativa",
-    body: "BRL depreciou 1.2% hoje. Seu cUSD está protegido automaticamente.",
-    time: "Ontem, 18:30",
+    type: "success",
+    title: "Wallet synced",
+    body: "Notifications will appear here after the first real agent action.",
+    time: "Now",
     read: true,
     icon: Shield,
     color: "#3B82F6",
     bg: "rgba(59,130,246,0.1)",
-  },
-  {
-    id: 5,
-    type: "success",
-    title: "Meta Mensal Atingida!",
-    body: "Parabéns! Você atingiu $8.15 de yield este mês, 12% acima da meta.",
-    time: "13 Mar, 23:59",
-    read: true,
-    icon: CheckCircle2,
-    color: "#8B5CF6",
-    bg: "rgba(139,92,246,0.1)",
-  },
-  {
-    id: 6,
-    type: "tip",
-    title: "Dica do Agente",
-    body: "Ativando modo 'Arrojado' você poderia ganhar +$6.35/mês com o mesmo capital.",
-    time: "12 Mar, 10:00",
-    read: true,
-    icon: Zap,
-    color: "#06B6D4",
-    bg: "rgba(6,182,212,0.1)",
   },
 ];
 
@@ -167,10 +108,15 @@ function NotifItem({
 interface NotificationsDrawerProps {
   open: boolean;
   onClose: () => void;
+  items?: Notification[];
 }
 
-export function NotificationsDrawer({ open, onClose }: NotificationsDrawerProps) {
-  const [notifications, setNotifications] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
+export function NotificationsDrawer({ open, onClose, items }: NotificationsDrawerProps) {
+  const [notifications, setNotifications] = useState<Notification[]>(items?.length ? items : INITIAL_NOTIFICATIONS);
+
+  useEffect(() => {
+    setNotifications(items?.length ? items : INITIAL_NOTIFICATIONS);
+  }, [items]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 

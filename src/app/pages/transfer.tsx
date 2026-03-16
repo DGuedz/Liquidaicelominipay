@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Delete, ChevronDown, Search } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { PageHeader } from "../components/page-header";
+import { useCeloWallet } from "../hooks/use-celo-wallet";
+import { apiGet, DashboardPayload } from "../lib/api";
 
 const contacts = [
   {
@@ -39,10 +41,35 @@ const avatarColors = ["#0D4B2E", "#3B82F6", "#8B5CF6", "#F59E0B"];
 
 export function TransferPage() {
   const navigate = useNavigate();
+  const { address } = useCeloWallet();
   const [amount, setAmount] = useState("");
   const [selectedContact, setSelectedContact] = useState(contacts[0]);
   const [showContacts, setShowContacts] = useState(false);
-  const balance = 1240.50;
+  const [balance, setBalance] = useState(0);
+
+  useEffect(() => {
+    let alive = true;
+    if (!address) {
+      setBalance(0);
+      return () => {
+        alive = false;
+      };
+    }
+
+    apiGet<DashboardPayload>("/api/dashboard", { address, riskMode: "balanced" })
+      .then((payload) => {
+        if (!alive) return;
+        setBalance(payload.summary.liquidityBufferUsd || payload.summary.balanceUsd || 0);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setBalance(0);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [address]);
 
   const handleNumber = (num: string) => {
     if (amount.length >= 9) return;
@@ -89,12 +116,12 @@ export function TransferPage() {
 
   return (
     <div className="min-h-dvh bg-background flex flex-col">
-      <PageHeader title="Transferir" />
+      <PageHeader title="Transfer" />
 
       {/* Recipient Selector */}
       <div className="px-5 mb-6">
         <p className="text-xs text-text-muted mb-3 uppercase tracking-wider font-semibold">
-          Enviar para
+          Send to
         </p>
 
         {/* Contact Row */}
@@ -165,7 +192,7 @@ export function TransferPage() {
             >
               <Search className="w-5 h-5 text-text-muted" />
             </div>
-            <span className="text-xs text-text-muted">Buscar</span>
+            <span className="text-xs text-text-muted">Search</span>
           </motion.button>
         </div>
 
@@ -227,7 +254,7 @@ export function TransferPage() {
             </motion.div>
           </AnimatePresence>
           <p className="text-sm text-text-muted mt-2">
-            Saldo disponível:{" "}
+            Available balance:{" "}
             <span className="font-mono font-medium text-text-primary">
               ${balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </span>
@@ -238,7 +265,7 @@ export function TransferPage() {
               animate={{ opacity: 1, y: 0 }}
               className="text-xs text-destructive mt-1 font-medium"
             >
-              Saldo insuficiente
+              Insufficient balance
             </motion.p>
           )}
         </div>
@@ -294,8 +321,8 @@ export function TransferPage() {
           }}
         >
           {isValid
-            ? `Enviar $${numericAmount.toFixed(2)}`
-            : "Transferir"}
+            ? `Send $${numericAmount.toFixed(2)}`
+            : "Transfer"}
         </motion.button>
       </div>
     </div>

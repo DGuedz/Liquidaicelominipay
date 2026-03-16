@@ -180,7 +180,7 @@ function MyQRCode() {
           style={{ background: "rgba(163,217,119,0.15)", color: "#A3D977" }}
         >
           <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-          Recebendo · cUSD
+          Receiving · cUSD
         </div>
 
         <QRCodeSVG data={fullAddress} size={200} />
@@ -213,7 +213,7 @@ function MyQRCode() {
           ) : (
             <Copy className="w-4 h-4" />
           )}
-          <span className="text-sm">{copied ? "Copiado!" : "Copiar"}</span>
+          <span className="text-sm">{copied ? "Copied!" : "Copy"}</span>
         </motion.button>
 
         <motion.button
@@ -226,7 +226,7 @@ function MyQRCode() {
           }}
         >
           <Share2 className="w-4 h-4" />
-          <span className="text-sm">Compartilhar</span>
+          <span className="text-sm">Share</span>
         </motion.button>
 
         <motion.button
@@ -254,7 +254,7 @@ function MyQRCode() {
           className="text-xs font-semibold uppercase tracking-wider mb-2"
           style={{ color: "var(--text-muted)" }}
         >
-          Valor específico (opcional)
+          Specific amount (optional)
         </p>
         <div
           className="flex items-center gap-2 rounded-xl px-4 py-3"
@@ -274,7 +274,7 @@ function MyQRCode() {
           </span>
         </div>
         <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
-          Defina um valor para o remetente ver automaticamente
+          Set an amount for the sender to see automatically
         </p>
       </div>
     </motion.div>
@@ -312,7 +312,7 @@ export function ScanPage() {
           className="font-bold mx-auto"
           style={{ color: "var(--text-primary)", fontSize: "1.1rem" }}
         >
-          {tab === "scan" ? "Escanear QR Code" : "Meu QR Code"}
+          {tab === "scan" ? "Scan QR Code" : "My QR Code"}
         </span>
       </header>
 
@@ -326,8 +326,8 @@ export function ScanPage() {
           }}
         >
           {[
-            { id: "scan" as const, label: "Escanear", icon: Scan },
-            { id: "qr" as const, label: "Meu QR Code", icon: QrCode },
+            { id: "scan" as const, label: "Scan", icon: Scan },
+            { id: "qr" as const, label: "My QR Code", icon: QrCode },
           ].map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -372,10 +372,10 @@ export function ScanPage() {
                       className="font-bold text-lg"
                       style={{ color: "var(--text-primary)" }}
                     >
-                      QR Code Detectado!
+                      QR Code Detected!
                     </p>
                     <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-                      Destinatário: Maria Silva
+                      Recipient: Maria Silva
                     </p>
                   </div>
 
@@ -387,9 +387,9 @@ export function ScanPage() {
                     }}
                   >
                     {[
-                      { label: "Para", value: "Maria Silva" },
-                      { label: "Conta", value: "4323 7453 6932" },
-                      { label: "Rede", value: "Celo Mainnet" },
+                      { label: "To", value: "Maria Silva" },
+                      { label: "Account", value: "4323 7453 6932" },
+                      { label: "Network", value: "Celo Mainnet" },
                     ].map((r) => (
                       <div
                         key={r.label}
@@ -419,7 +419,7 @@ export function ScanPage() {
                         boxShadow: "0 4px 20px rgba(13,75,46,0.3)",
                       }}
                     >
-                      Prosseguir
+                      Proceed
                     </motion.button>
                     <motion.button
                       whileTap={{ scale: 0.95 }}
@@ -430,7 +430,7 @@ export function ScanPage() {
                         color: "var(--text-secondary)",
                       }}
                     >
-                      Cancelar
+                      Cancel
                     </motion.button>
                   </div>
                 </motion.div>
@@ -440,8 +440,8 @@ export function ScanPage() {
 
                   <p className="text-sm text-center mb-6" style={{ color: "var(--text-muted)" }}>
                     {simulating
-                      ? "Analisando QR Code..."
-                      : "Aponte para o QR Code do destinatário"}
+                      ? "Analyzing QR Code..."
+                      : "Point at the recipient's QR Code"}
                   </p>
 
                   {/* Quick presets */}
@@ -456,7 +456,7 @@ export function ScanPage() {
                         className="text-xs font-semibold uppercase tracking-wider mb-2"
                         style={{ color: "var(--text-muted)" }}
                       >
-                        Recentes
+                        Recent
                       </p>
                       <div
                         className="rounded-2xl overflow-hidden"
@@ -466,8 +466,8 @@ export function ScanPage() {
                         }}
                       >
                         {[
-                          { name: "Maria Silva", sub: "Última transação · $3.50" },
-                          { name: "Carlos Lima", sub: "Pix recorrente" },
+                          { name: "Maria Silva", sub: "Recent contact · no synced transfer yet" },
+                          { name: "Carlos Lima", sub: "Saved recipient" },
                         ].map((c, i) => (
                           <div
                             key={c.name}
@@ -509,7 +509,7 @@ export function ScanPage() {
                     >
                       <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                       <span className="text-sm font-semibold" style={{ color: "#A3D977" }}>
-                        Processando...
+                        Processing...
                       </span>
                     </motion.div>
                   )}
@@ -533,12 +533,12 @@ export function ScanPage() {
                           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                           className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white"
                         />
-                        Escaneando...
+                        Scanning...
                       </>
                     ) : (
                       <>
                         <Scan className="w-5 h-5" />
-                        Ativar Câmera
+                        Activate Camera
                       </>
                     )}
                   </motion.button>

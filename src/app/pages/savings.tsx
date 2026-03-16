@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Target,
@@ -30,6 +30,8 @@ import {
 import { useNavigate } from "react-router";
 import { BottomNavigation } from "../components/bottom-navigation";
 import { useTheme } from "../hooks/useTheme";
+import { apiGet, apiPost, SavingsGoalPayload, SavingsOverviewPayload } from "../lib/api";
+import { useCeloWallet } from "../hooks/use-celo-wallet";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -48,66 +50,27 @@ interface Goal {
   agentOptimized: boolean;
 }
 
+const GOAL_ICON_MAP: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
+  shield: EmergencyFundIcon,
+  emergency: EmergencyFundIcon,
+  travel: TravelIcon,
+  phone: SmartphoneSvg,
+  home: HouseIcon,
+  edu: EducationIcon,
+  education: EducationIcon,
+  target: Target,
+};
+
+function hydrateGoal(goal: SavingsGoalPayload): Goal {
+  return {
+    ...goal,
+    icon: GOAL_ICON_MAP[goal.emoji] || Target,
+  };
+}
+
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
-const INITIAL_GOALS: Goal[] = [
-  {
-    id: 1,
-    name: "Fundo de Emergência",
-    emoji: "shield",
-    target: 800,
-    saved: 480,
-    monthlyContribution: 40,
-    color: "#3B82F6",
-    bg: "rgba(59,130,246,0.1)",
-    deadline: "Ago 2026",
-    autoSave: true,
-    icon: EmergencyFundIcon,
-    agentOptimized: true,
-  },
-  {
-    id: 2,
-    name: "Viagem a Portugal",
-    emoji: "travel",
-    target: 1200,
-    saved: 420,
-    monthlyContribution: 60,
-    color: "#F59E0B",
-    bg: "rgba(245,158,11,0.08)",
-    deadline: "Dez 2026",
-    autoSave: true,
-    icon: TravelIcon,
-    agentOptimized: true,
-  },
-  {
-    id: 3,
-    name: "Smartphone Novo",
-    emoji: "phone",
-    target: 400,
-    saved: 320,
-    monthlyContribution: 25,
-    color: "#8B5CF6",
-    bg: "rgba(139,92,246,0.08)",
-    deadline: "Abr 2026",
-    autoSave: false,
-    icon: SmartphoneSvg,
-    agentOptimized: false,
-  },
-  {
-    id: 4,
-    name: "Curso Online",
-    emoji: "edu",
-    target: 250,
-    saved: 35,
-    monthlyContribution: 15,
-    color: "#10B981",
-    bg: "rgba(16,185,129,0.08)",
-    deadline: "Jul 2026",
-    autoSave: false,
-    icon: EducationIcon,
-    agentOptimized: false,
-  },
-];
+const INITIAL_GOALS: Goal[] = [];
 
 // ─── SVG Progress Circle ───────────────────────────────────────────────────────
 
@@ -156,7 +119,7 @@ function ProgressCircle({
 
 // ─── Agent Insight Banner ──────────────────────────────────────────────────────
 
-function AgentInsightBanner({ onChat }: { onChat: () => void }) {
+function AgentInsightBanner({ onChat, message }: { onChat: () => void; message: string }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -175,10 +138,9 @@ function AgentInsightBanner({ onChat }: { onChat: () => void }) {
         <Bot className="w-5 h-5" style={{ color: "#A3D977" }} />
       </div>
       <div className="flex-1">
-        <p className="text-sm font-semibold text-white mb-0.5">Otimização Detectada</p>
+        <p className="text-sm font-semibold text-white mb-0.5">Optimization Detected</p>
         <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.65)" }}>
-          Posso realocar <span className="text-white font-semibold">+$12/mês</span> automaticamente
-          para sua Viagem a Portugal — antecipando em <span className="text-white font-semibold">2 meses</span> a meta.
+          {message}
         </p>
         <motion.button
           whileTap={{ scale: 0.95 }}
@@ -187,7 +149,7 @@ function AgentInsightBanner({ onChat }: { onChat: () => void }) {
           style={{ background: "#A3D977", color: "#0D4B2E" }}
         >
           <Sparkles className="w-3 h-3" />
-          Conversar com Agente
+          Chat with Agent
         </motion.button>
       </div>
     </motion.div>
@@ -197,12 +159,12 @@ function AgentInsightBanner({ onChat }: { onChat: () => void }) {
 // ─── Add Goal Modal ────────────────────────────────────────────────────────────
 
 const PRESET_GOALS = [
-  { name: "Casa Própria", emoji: "🏠", target: 5000, color: "#0D4B2E", icon: Home },
-  { name: "Viagem", emoji: "✈️", target: 1200, color: "#F59E0B", icon: Plane },
-  { name: "Eletrônico", emoji: "📱", target: 400, color: "#8B5CF6", icon: Smartphone },
-  { name: "Educação", emoji: "🎓", target: 300, color: "#10B981", icon: GraduationCap },
-  { name: "Emergência", emoji: "🛡️", target: 800, color: "#3B82F6", icon: Shield },
-  { name: "Investimento", emoji: "📈", target: 2000, color: "#06B6D4", icon: TrendingUp },
+  { name: "Own Home", emoji: "🏠", target: 2000, color: "#0D4B2E", icon: Home },
+  { name: "Travel", emoji: "✈️", target: 300, color: "#F59E0B", icon: Plane },
+  { name: "Electronics", emoji: "📱", target: 250, color: "#8B5CF6", icon: Smartphone },
+  { name: "Education", emoji: "🎓", target: 400, color: "#10B981", icon: GraduationCap },
+  { name: "Emergency", emoji: "🛡️", target: 500, color: "#3B82F6", icon: Shield },
+  { name: "Investment", emoji: "📈", target: 1000, color: "#06B6D4", icon: TrendingUp },
 ];
 
 function AddGoalModal({ onClose, onAdd }: { onClose: () => void; onAdd: (name: string, emoji: string, target: number, color: string) => void }) {
@@ -246,7 +208,7 @@ function AddGoalModal({ onClose, onAdd }: { onClose: () => void; onAdd: (name: s
 
         <div className="flex items-center justify-between px-5 pb-4">
           <p className="text-base font-bold" style={{ color: "var(--text-primary)" }}>
-            Nova Meta
+            New Goal
           </p>
           <button
             onClick={onClose}
@@ -259,7 +221,7 @@ function AddGoalModal({ onClose, onAdd }: { onClose: () => void; onAdd: (name: s
 
         <div className="px-5 overflow-y-auto" style={{ maxHeight: "60dvh", paddingBottom: "2rem" }}>
           <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-            Escolha uma categoria
+            Choose a category
           </p>
           <div className="grid grid-cols-3 gap-2.5 mb-5">
             {PRESET_GOALS.map((g) => (
@@ -295,7 +257,7 @@ function AddGoalModal({ onClose, onAdd }: { onClose: () => void; onAdd: (name: s
               className="mb-5"
             >
               <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-                Valor alvo (cUSD)
+                Target Amount (cUSD)
               </p>
               <div
                 className="flex items-center gap-2 rounded-2xl px-4 py-3"
@@ -317,7 +279,7 @@ function AddGoalModal({ onClose, onAdd }: { onClose: () => void; onAdd: (name: s
                 </span>
               </div>
               <p className="text-xs mt-1.5" style={{ color: "var(--text-muted)" }}>
-                O agente vai sugerir a contribuição mensal ideal
+                The agent will suggest the ideal monthly contribution
               </p>
             </motion.div>
           )}
@@ -335,7 +297,7 @@ function AddGoalModal({ onClose, onAdd }: { onClose: () => void; onAdd: (name: s
               boxShadow: selected ? "0 4px 20px rgba(13,75,46,0.25)" : "none",
             }}
           >
-            {selected ? `Criar meta: ${selected.emoji} ${selected.name}` : "Selecione uma categoria"}
+            {selected ? `Create goal: ${selected.emoji} ${selected.name}` : "Select a category"}
           </motion.button>
         </div>
       </motion.div>
@@ -399,7 +361,7 @@ function GoalDetailDrawer({
                   {goal.name}
                 </p>
                 <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                  Meta para {goal.deadline}
+                  Goal for {goal.deadline}
                 </p>
               </div>
             </div>
@@ -435,7 +397,7 @@ function GoalDetailDrawer({
                 </span>
               </div>
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                Faltam{" "}
+                Remaining{" "}
                 <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
                   ${remaining.toFixed(2)}
                 </span>
@@ -445,7 +407,7 @@ function GoalDetailDrawer({
                 style={{ background: `${goal.color}15` }}
               >
                 <span className="text-xs font-semibold" style={{ color: goal.color }}>
-                  ~{months} meses restantes
+                  ~{months} months left
                 </span>
               </div>
             </div>
@@ -454,8 +416,8 @@ function GoalDetailDrawer({
           {/* Stats */}
           <div className="grid grid-cols-2 gap-3 mb-4">
             {[
-              { label: "Contribuição/mês", value: `$${goal.monthlyContribution}`, icon: TrendingUp, color: "#10B981" },
-              { label: "Rendimento mensal", value: `+$${(goal.saved * 0.004).toFixed(2)}`, icon: Sparkles, color: "#A3D977" },
+              { label: "Contribution/mo", value: `$${goal.monthlyContribution}`, icon: TrendingUp, color: "#10B981" },
+              { label: "Monthly Yield", value: `+$${(goal.saved * 0.004).toFixed(2)}`, icon: Sparkles, color: "#A3D977" },
             ].map(({ label, value, icon: Icon, color }) => (
               <div
                 key={label}
@@ -482,10 +444,10 @@ function GoalDetailDrawer({
               <Bot className="w-5 h-5" style={{ color: goal.autoSave ? "#A3D977" : "var(--text-muted)" }} />
               <div>
                 <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                  Auto-save pelo Agente
+                  Auto-save by Agent
                 </p>
                 <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                  {goal.autoSave ? "Agente aloca automaticamente" : "Contribuição manual"}
+                  {goal.autoSave ? "Agent allocates automatically" : "Manual contribution"}
                 </p>
               </div>
             </div>
@@ -515,7 +477,7 @@ function GoalDetailDrawer({
               }}
             >
               <Zap className="w-5 h-5" />
-              Otimizar com Agente IA
+              Optimize with AI Agent
             </motion.button>
           )}
           {goal.agentOptimized && (
@@ -525,7 +487,7 @@ function GoalDetailDrawer({
             >
               <CheckCircle2 className="w-4 h-4" style={{ color: "#A3D977" }} />
               <span className="text-sm font-semibold" style={{ color: "#A3D977" }}>
-                Já otimizado pelo Agente IA
+                Already optimized by AI Agent
               </span>
             </div>
           )}
@@ -599,7 +561,7 @@ function GoalCard({ goal, index, onClick }: { goal: Goal; index: number; onClick
           </div>
           <div className="flex items-center justify-between mt-1">
             <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-              +${goal.monthlyContribution}/mês · {goal.deadline}
+              +${goal.monthlyContribution}/mo · {goal.deadline}
             </span>
             {goal.autoSave && (
               <span className="text-xs font-medium" style={{ color: "#A3D977" }}>
@@ -620,7 +582,7 @@ function GoalCard({ goal, index, onClick }: { goal: Goal; index: number; onClick
 function SummaryHeader({ goals }: { goals: Goal[] }) {
   const totalSaved = goals.reduce((s, g) => s + g.saved, 0);
   const totalTarget = goals.reduce((s, g) => s + g.target, 0);
-  const pct = Math.round((totalSaved / totalTarget) * 100);
+  const pct = totalTarget > 0 ? Math.round((totalSaved / totalTarget) * 100) : 0;
   const monthlyYield = goals.filter((g) => g.autoSave).reduce((s, g) => s + g.saved * 0.004, 0);
 
   return (
@@ -647,7 +609,7 @@ function SummaryHeader({ goals }: { goals: Goal[] }) {
         <div className="flex items-center gap-2 mb-3">
           <Target className="w-4 h-4" style={{ color: "rgba(255,255,255,0.6)" }} />
           <span className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
-            Total economizado
+            Total Saved
           </span>
         </div>
         <div
@@ -657,7 +619,9 @@ function SummaryHeader({ goals }: { goals: Goal[] }) {
           ${totalSaved.toFixed(2)}
         </div>
         <p className="text-xs mb-4" style={{ color: "rgba(255,255,255,0.5)" }}>
-          de ${totalTarget.toFixed(0)} em {goals.length} metas · {pct}% concluído
+          {goals.length > 0
+            ? `of $${totalTarget.toFixed(0)} in ${goals.length} goals · ${pct}% completed`
+            : "Create the first goal to start tracking savings with live wallet capital"}
         </p>
 
         {/* Progress bar */}
@@ -673,9 +637,9 @@ function SummaryHeader({ goals }: { goals: Goal[] }) {
 
         <div className="grid grid-cols-3" style={{ background: "rgba(0,0,0,0.18)", borderRadius: "0.75rem" }}>
           {[
-            { label: "Metas ativas", value: String(goals.length) },
-            { label: "Auto-save", value: `${goals.filter((g) => g.autoSave).length} metas` },
-            { label: "Yield/mês", value: `+$${monthlyYield.toFixed(2)}` },
+            { label: "Active Goals", value: String(goals.length) },
+            { label: "Auto-save", value: `${goals.filter((g) => g.autoSave).length} goals` },
+            { label: "Yield/mo", value: `+$${monthlyYield.toFixed(2)}` },
           ].map((s, i) => (
             <div
               key={s.label}
@@ -701,10 +665,28 @@ function SummaryHeader({ goals }: { goals: Goal[] }) {
 export function SavingsPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
+  const { address } = useCeloWallet();
   const [goals, setGoals] = useState<Goal[]>(INITIAL_GOALS);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
-  const [optimizedGoals, setOptimizedGoals] = useState<number[]>([]);
+  const [agentInsight, setAgentInsight] = useState(
+    "Create the first goal and I will use only the productive share of the wallet to accelerate it.",
+  );
+
+  useEffect(() => {
+    let active = true;
+    apiGet<SavingsOverviewPayload>("/api/savings/goals", { address: address || "" })
+      .then((payload) => {
+        if (!active) return;
+        setGoals(payload.goals.map(hydrateGoal));
+        if (payload.insight) setAgentInsight(payload.insight);
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, [address]);
 
   const handleAddGoal = (name: string, emoji: string, target: number, color: string) => {
     const newGoal: Goal = {
@@ -722,14 +704,37 @@ export function SavingsPage() {
       agentOptimized: false,
     };
     setGoals((prev) => [...prev, newGoal]);
+
+    apiPost<{ goal: SavingsGoalPayload }>("/api/savings/goals", {
+      address: address || "",
+      name,
+      emoji,
+      target,
+      color,
+      bg: `${color}15`,
+      autoSave: false,
+      agentOptimized: false,
+    }).catch(() => {});
   };
 
   const handleToggleAutoSave = (id: number) => {
     setGoals((prev) => prev.map((g) => (g.id === id ? { ...g, autoSave: !g.autoSave } : g)));
+    const goal = goals.find((item) => item.id === id);
+    if (!goal) return;
+    apiPost<{ goal: SavingsGoalPayload }>(
+      `/api/savings/goals/${id}`,
+      { address: address || "", autoSave: !goal.autoSave },
+      "PATCH",
+    ).catch(() => {});
   };
 
   const handleOptimize = (id: number) => {
     setGoals((prev) => prev.map((g) => (g.id === id ? { ...g, agentOptimized: true, autoSave: true } : g)));
+    apiPost<{ goal: SavingsGoalPayload }>(
+      `/api/savings/goals/${id}`,
+      { address: address || "", agentOptimized: true, autoSave: true },
+      "PATCH",
+    ).catch(() => {});
   };
 
   return (
@@ -740,11 +745,11 @@ export function SavingsPage() {
           <div className="flex items-center gap-2 mb-0.5">
             <Target className="w-5 h-5" style={{ color: "#0D4B2E" }} />
             <h1 className="font-bold" style={{ color: "var(--text-primary)", fontSize: "1.5rem" }}>
-              Poupança
+              Savings
             </h1>
           </div>
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            Metas otimizadas pelo Agente IA
+            Goals optimized by AI Agent
           </p>
         </div>
         <motion.button
@@ -764,22 +769,32 @@ export function SavingsPage() {
       <SummaryHeader goals={goals} />
 
       {/* AI Insight Banner */}
-      <AgentInsightBanner onChat={() => navigate("/chat")} />
+      <AgentInsightBanner onChat={() => navigate("/chat")} message={agentInsight} />
 
       {/* Goals list */}
       <div className="px-5 mb-4">
         <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-          Minhas Metas
+          My Goals
         </p>
         <div className="space-y-3">
-          {goals.map((goal, i) => (
+          {goals.length > 0 ? goals.map((goal, i) => (
             <GoalCard
               key={goal.id}
               goal={goal}
               index={i}
               onClick={() => setSelectedGoal(goal)}
             />
-          ))}
+          )) : (
+            <div
+              className="rounded-2xl p-4"
+              style={{ background: "var(--surface-solid)", boxShadow: "0 2px 10px rgba(0,0,0,0.06)" }}
+            >
+              <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>No goals yet</p>
+              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                Start from the current wallet capital and create the first target when you are ready.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -795,13 +810,13 @@ export function SavingsPage() {
           <div className="flex items-center gap-2 mb-2">
             <Globe className="w-4 h-4" style={{ color: "#A3D977" }} />
             <span className="text-xs font-semibold" style={{ color: "#A3D977" }}>
-              Como o Agente ajuda suas metas
+              How the Agent helps your goals
             </span>
           </div>
           {[
-            "Aloca automaticamente o excesso de liquidez para cada meta",
-            "Aplica em protocolos Celo para gerar yield enquanto você poupa",
-            "Rebalanceia prioridades quando seu perfil financeiro muda",
+            "Automatically allocates excess liquidity to each goal",
+            "Invests in Celo protocols to generate yield while you save",
+            "Rebalances priorities when your financial profile changes",
           ].map((tip, i) => (
             <div key={i} className="flex items-start gap-2 mt-1.5">
               <span className="text-xs mt-0.5" style={{ color: "#A3D977" }}>▸</span>

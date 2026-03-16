@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -14,6 +14,22 @@ import {
   Fingerprint,
   Sparkles,
 } from "lucide-react";
+import { CELO_CHAIN_ID } from "../lib/celo-wallet";
+import { useCeloWallet } from "../hooks/use-celo-wallet";
+import { LiquidLogo } from "../components/LiquidLogo";
+import { useTheme } from "../hooks/useTheme";
+import {
+  ActivationRoutePayload,
+  apiGet,
+  apiPost,
+  DashboardPayload,
+  FaucetClaimPayload,
+  FaucetStatusPayload,
+  SelfStatusPayload,
+  SelfRegistrationPayload,
+  SelfPollPayload,
+} from "../lib/api";
+import { ensureWalletAuthSession } from "../lib/wallet-auth";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type RiskId = "conservative" | "balanced" | "aggressive";
@@ -21,31 +37,31 @@ type RiskId = "conservative" | "balanced" | "aggressive";
 const RISK_OPTS = [
   {
     id: "conservative" as RiskId,
-    label: "Conservador",
+    label: "Conservative",
     apy: "3.2–4.2%",
     color: "#3B82F6",
     bg: "rgba(59,130,246,0.12)",
     icon: Shield,
-    sub: "Segurança acima de tudo",
+    sub: "Safety first",
   },
   {
     id: "balanced" as RiskId,
-    label: "Balanceado",
+    label: "Balanced",
     apy: "4.2–9.1%",
     color: "#A3D977",
     bg: "rgba(163,217,119,0.12)",
     icon: Activity,
-    sub: "Melhor custo-benefício",
+    sub: "Best value",
     recommended: true,
   },
   {
     id: "aggressive" as RiskId,
-    label: "Arrojado",
+    label: "Aggressive",
     apy: "9–18%",
     color: "#F59E0B",
     bg: "rgba(245,158,11,0.12)",
     icon: Zap,
-    sub: "Maximizar rendimento",
+    sub: "Maximize yield",
   },
 ];
 
@@ -111,10 +127,11 @@ function FloatingCoins() {
 
 // ─── Step 0: Welcome (compressed — was 2 steps, now 1) ────────────────────────
 function StepWelcome({ onNext, onSkip }: { onNext: () => void; onSkip: () => void }) {
+  const { isDark } = useTheme();
   const highlights = [
-    { icon: TrendingUp, color: "#A3D977", label: "4.8% APY médio", sub: "Yield automático 24/7" },
-    { icon: Zap, color: "#10B981", label: "3 toques por ação", sub: "PIX, recarga, remessa" },
-    { icon: Shield, color: "#3B82F6", label: "DeFi Invisível", sub: "Celo seguro no fundo" },
+    { icon: TrendingUp, color: "#A3D977", label: "4.8% APY avg", sub: "Auto-yield 24/7" },
+    { icon: Zap, color: "#10B981", label: "3 taps per action", sub: "PIX, top-up, remittance" },
+    { icon: Shield, color: "#3B82F6", label: "Invisible DeFi", sub: "Secured by Celo" },
   ];
 
   return (
@@ -129,23 +146,7 @@ function StepWelcome({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
           transition={{ type: "spring", stiffness: 220, damping: 18, delay: 0.1 }}
           className="relative mb-6"
         >
-          <div
-            className="w-24 h-24 rounded-[2rem] flex items-center justify-center"
-            style={{
-              background: "linear-gradient(145deg, #0B3D25 0%, #0D4B2E 60%, #12593A 100%)",
-              boxShadow: "0 16px 48px rgba(13,75,46,0.45)",
-            }}
-          >
-            <TrendingUp className="w-12 h-12 text-white" />
-          </div>
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-            className="absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center"
-            style={{ background: "#A3D977" }}
-          >
-            <Bot className="w-4 h-4" style={{ color: "#0D4B2E" }} />
-          </motion.div>
+          <LiquidLogo size={96} variant="icon" theme="auto" background="auto" animate={true} />
         </motion.div>
 
         <motion.h1
@@ -171,7 +172,7 @@ function StepWelcome({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
           className="text-sm mb-6 max-w-[260px]"
           style={{ color: "var(--text-secondary)", lineHeight: 1.5 }}
         >
-          Seu dinheiro rende enquanto você vive. Agente autônomo no Celo.
+          Your money earns while you live. Autonomous agent on Celo.
         </motion.p>
 
         {/* Compact value highlights */}
@@ -203,12 +204,12 @@ function StepWelcome({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
         </motion.div>
       </div>
 
-      {/* CTAs */}
+      {/* CTAs & Footer */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.65 }}
-        className="w-full max-w-[320px] flex flex-col gap-3"
+        className="w-full max-w-[320px] flex flex-col gap-3 mt-4"
       >
         <button
           onClick={onNext}
@@ -218,7 +219,7 @@ function StepWelcome({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
             boxShadow: "0 8px 32px rgba(13,75,46,0.4)",
           }}
         >
-          Começar em 15 segundos
+          Start in 15 seconds
           <ArrowRight className="w-5 h-5" />
         </button>
         <button
@@ -226,8 +227,18 @@ function StepWelcome({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
           className="text-xs py-2"
           style={{ color: "var(--text-muted)" }}
         >
-          Já tenho conta — Entrar direto
+          I have an account — Log in
         </button>
+
+        {/* Brand Footer */}
+        <div className="mt-8 pt-6 pb-8 border-t border-border flex flex-col items-center">
+          <div className="flex justify-center mb-4">
+            <LiquidLogo size={120} variant="full" theme="auto" background="auto" />
+          </div>
+          <p className="text-xs text-text-muted text-center max-w-[240px] leading-relaxed">
+            Treasury Operating System · Build Agents for the Real World V2 · 2026
+          </p>
+        </div>
       </motion.div>
     </div>
   );
@@ -237,36 +248,354 @@ function StepWelcome({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
 function StepConnect({ onNext }: { onNext: () => void }) {
   const [phase, setPhase] = useState<"idle" | "connecting" | "connected" | "verifying" | "done">("idle");
   const [selfEnabled, setSelfEnabled] = useState(true);
+  const [inlineError, setInlineError] = useState("");
+  const [inlineSuccess, setInlineSuccess] = useState("");
+  const [faucetStatus, setFaucetStatus] = useState<FaucetStatusPayload | null>(null);
+  const [selfStatus, setSelfStatus] = useState<SelfStatusPayload | null>(null);
+  const [activationRoute, setActivationRoute] = useState<ActivationRoutePayload | null>(null);
+  const [isClaimingFaucet, setIsClaimingFaucet] = useState(false);
+  const [isVerifyingSelf, setIsVerifyingSelf] = useState(false);
+  const timersRef = useRef<number[]>([]);
+  const {
+    address,
+    isConnected,
+    isMiniPay,
+    connectorName,
+    shortAddress,
+    hasConnector,
+    wrongNetwork,
+    isConnecting,
+    isSwitchingChain,
+    isSigningMessage,
+    connectWallet,
+    switchToCelo,
+    signWalletMessage,
+  } = useCeloWallet();
+  const selfIsRequired = selfStatus?.requiredForAgent ?? true;
+  const requiresSelfVerification = selfIsRequired || selfEnabled;
 
-  const handleConnect = () => {
-    setPhase("connecting");
-    setTimeout(() => {
-      setPhase("connected");
-      if (selfEnabled) {
-        setTimeout(() => {
-          setPhase("verifying");
-          setTimeout(() => setPhase("done"), 1800);
-        }, 600);
-      } else {
-        setPhase("done");
-      }
-    }, 1600);
+  const refreshActivationRoute = async (targetAddress = address, networkOkay = !wrongNetwork) => {
+    if (!targetAddress) {
+      setActivationRoute(null);
+      return null;
+    }
+    const payload = await apiGet<ActivationRoutePayload>("/api/router/activation", {
+      address: targetAddress,
+      correctNetwork: networkOkay ? "true" : "false",
+    });
+    setActivationRoute(payload);
+    return payload;
   };
 
-  const isDone = phase === "done" || (phase === "connected" && !selfEnabled);
+  const clearTimers = () => {
+    timersRef.current.forEach((id) => window.clearTimeout(id));
+    timersRef.current = [];
+  };
+
+  useEffect(() => {
+    return () => clearTimers();
+  }, []);
+
+  useEffect(() => {
+    if (isConnected && phase === "idle") {
+      setPhase("connected");
+    }
+  }, [isConnected, phase]);
+
+  useEffect(() => {
+    let alive = true;
+    if (!address) {
+      setFaucetStatus(null);
+      setActivationRoute(null);
+      return () => {
+        alive = false;
+      };
+    }
+
+    apiGet<FaucetStatusPayload>("/api/testnet/faucet", { address })
+      .then((payload) => {
+        if (!alive) return;
+        setFaucetStatus(payload);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setFaucetStatus(null);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [address]);
+
+  useEffect(() => {
+    let alive = true;
+    if (!address) {
+      setSelfStatus(null);
+      return () => {
+        alive = false;
+      };
+    }
+
+    apiGet<SelfStatusPayload>("/api/self/status", { address })
+      .then((payload) => {
+        if (!alive) return;
+        setSelfStatus(payload);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setSelfStatus(null);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [address]);
+
+  useEffect(() => {
+    let alive = true;
+    if (!address) {
+      setActivationRoute(null);
+      return () => {
+        alive = false;
+      };
+    }
+
+    refreshActivationRoute(address, !wrongNetwork)
+      .then((payload) => {
+        if (!alive || !payload) return;
+        setActivationRoute(payload);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setActivationRoute(null);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [address, wrongNetwork]);
+
+  useEffect(() => {
+    if (!isConnected) {
+      setPhase("idle");
+      return;
+    }
+
+    if (wrongNetwork) {
+      setPhase("connected");
+      return;
+    }
+
+    if (activationRoute?.nextAction === "activate_agent" || activationRoute?.nextAction === "open_dashboard") {
+      setPhase("done");
+      return;
+    }
+
+    if (phase !== "verifying") {
+      setPhase("connected");
+    }
+  }, [isConnected, wrongNetwork, activationRoute?.nextAction, phase]);
+
+  const handleConnect = async () => {
+    setInlineError("");
+    setInlineSuccess("");
+    clearTimers();
+
+    if (!hasConnector) {
+      setInlineError("Nenhuma carteira detectada. Abra no MiniPay ou MetaMask e tente novamente.");
+      return;
+    }
+
+    try {
+      setPhase("connecting");
+      const session = await connectWallet();
+      if (session.chainId !== CELO_CHAIN_ID) {
+        await switchToCelo();
+      }
+      const connectedAddress = session.accounts?.[0] || address;
+      if (connectedAddress) {
+        await ensureWalletAuthSession(connectedAddress, signWalletMessage);
+        const [nextSelfStatus, nextFaucetStatus, nextRoute] = await Promise.all([
+          apiGet<SelfStatusPayload>("/api/self/status", { address: connectedAddress }),
+          apiGet<FaucetStatusPayload>("/api/testnet/faucet", { address: connectedAddress }),
+          refreshActivationRoute(connectedAddress, true),
+        ]);
+        setSelfStatus(nextSelfStatus);
+        setFaucetStatus(nextFaucetStatus);
+        if (nextRoute) setActivationRoute(nextRoute);
+      }
+      setPhase("connected");
+    } catch (error) {
+      setPhase("idle");
+      setInlineError(error instanceof Error ? error.message : "Failed to connect wallet.");
+    }
+  };
+
+  const handleEnsureSession = async () => {
+    if (!address) {
+      setInlineError("Connect a wallet before signing the LiquidAI session.");
+      return;
+    }
+
+    setInlineError("");
+    setInlineSuccess("");
+    try {
+      await ensureWalletAuthSession(address, signWalletMessage);
+      const nextRoute = await refreshActivationRoute(address, !wrongNetwork);
+      if (nextRoute) setActivationRoute(nextRoute);
+    } catch (error) {
+      setInlineError(error instanceof Error ? error.message : "Failed to activate the session.");
+    }
+  };
+
+  const handleSwitchNetwork = async () => {
+    setInlineError("");
+    setInlineSuccess("");
+    try {
+      await switchToCelo();
+      if (isConnected) {
+        setPhase("connected");
+        const nextRoute = await refreshActivationRoute(address, true);
+        if (nextRoute) setActivationRoute(nextRoute);
+      }
+    } catch (error) {
+      setInlineError(error instanceof Error ? error.message : "Failed to switch to Celo network.");
+    }
+  };
+
+  const handleClaimFaucet = async () => {
+    if (!address) {
+      setInlineError("Connect a wallet before requesting demo funds.");
+      return;
+    }
+
+    setInlineError("");
+    setInlineSuccess("");
+    setIsClaimingFaucet(true);
+    try {
+      await ensureWalletAuthSession(address, signWalletMessage);
+      const claim = await apiPost<FaucetClaimPayload>("/api/testnet/faucet/claim", {
+        address,
+      });
+      const [nextStatus, nextRoute] = await Promise.all([
+        apiGet<FaucetStatusPayload>("/api/testnet/faucet", { address }),
+        refreshActivationRoute(address, !wrongNetwork),
+      ]);
+      setFaucetStatus(nextStatus);
+      if (nextRoute) setActivationRoute(nextRoute);
+      setInlineSuccess(`Wallet funded: +${claim.nativeAmount} CELO + ${claim.stableAmount} ${claim.stableToken}`);
+    } catch (error) {
+      setInlineError(error instanceof Error ? error.message : "Failed to claim demo funds.");
+    } finally {
+      setIsClaimingFaucet(false);
+    }
+  };
+
+  const handleVerifySelf = async () => {
+    if (!address) {
+      setInlineError("Connect a wallet before verifying with Self.");
+      return;
+    }
+
+    setInlineError("");
+    setInlineSuccess("");
+    setIsVerifyingSelf(true);
+    setPhase("verifying");
+    
+    try {
+      await ensureWalletAuthSession(address, signWalletMessage);
+      
+      // 1. Start Registration Session
+      const session = await apiPost<SelfRegistrationPayload>("/api/self/start-registration", {
+        address,
+      });
+
+      // 2. Ideally show QR Code / Deep Link here. 
+      // For this MVP/Demo flow, we'll auto-poll assuming the user is "doing it" or it's a mock.
+      // In a real UI, we'd set a state `showQR` with `session.deepLink` and wait.
+      console.log("Self Session Started:", session);
+      
+      if (session.mode === "mock") {
+         // Mock is instant
+         setInlineSuccess("Mock verification instant success.");
+      } else if (session.deepLink) {
+         setInlineSuccess("Aguardando confirmação no app Self...");
+         // Abre o deep link no MiniPay/Mobile
+         window.open(session.deepLink, "_blank");
+      } else {
+         setInlineSuccess("Verifique no seu app Self...");
+         await new Promise(r => setTimeout(r, 3000));
+      }
+
+      // 3. Poll for completion
+      let verified = false;
+      let attempts = 0;
+      
+      while (!verified && attempts < 12) { // 12 tentativas de 5s = 1 minuto
+        attempts++;
+        await new Promise(r => setTimeout(r, 5000));
+        
+        try {
+          const pollResult = await apiGet<SelfPollPayload>("/api/self/poll-registration", {
+            address,
+            sessionToken: session.sessionToken
+          });
+          if (pollResult.verified) {
+            verified = true;
+            break;
+          }
+        } catch (e) {
+          console.warn("Poll falhou, tentando novamente...", e);
+        }
+      }
+
+      if (!verified) {
+         throw new Error("Tempo limite de verificação excedido. Tente novamente.");
+      }
+
+      const nextRoute = await refreshActivationRoute(address, !wrongNetwork);
+      // Refresh status to confirm backend sees it as verified
+      const finalStatus = await apiGet<SelfStatusPayload>("/api/self/status", { address });
+      setSelfStatus(finalStatus);
+      
+      if (nextRoute) setActivationRoute(nextRoute);
+      setInlineSuccess("Self verification recorded. Agent activation is now unlocked.");
+      setPhase("connected");
+
+    } catch (error) {
+      setPhase("connected");
+      setInlineError(error instanceof Error ? error.message : "Failed to verify with Self.");
+    } finally {
+      setIsVerifyingSelf(false);
+    }
+  };
+
+  const isBusy =
+    phase === "connecting" ||
+    phase === "verifying" ||
+    isConnecting ||
+    isSwitchingChain ||
+    isSigningMessage ||
+    isClaimingFaucet ||
+    isVerifyingSelf;
+  const isDone = Boolean(activationRoute?.nextAction === "activate_agent" || activationRoute?.nextAction === "open_dashboard");
+  const isTreasuryWallet =
+    Boolean(address) &&
+    Boolean(faucetStatus?.backendAddress) &&
+    address?.toLowerCase() === faucetStatus?.backendAddress?.toLowerCase();
 
   return (
     <div className="flex flex-col h-full px-6 pt-10 pb-8">
       <div className="mb-5">
         <p className="text-xs uppercase tracking-widest font-semibold mb-2" style={{ color: "#A3D977" }}>
-          Passo 1 de 2
+          Step 1 of 2
         </p>
         <h2 className="font-bold" style={{ color: "var(--text-primary)", fontSize: "1.5rem", lineHeight: 1.2 }}>
-          Conecte sua carteira
-          <br />& verifique identidade
+          Connect Wallet
+          <br />Fund & Verify
         </h2>
         <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
-          MiniPay + Self Protocol · ZK Proof · Sem expor dados
+          MiniPay + Self Protocol + Sepolia faucet
         </p>
       </div>
 
@@ -339,13 +668,15 @@ function StepConnect({ onNext }: { onNext: () => void }) {
                 background:
                   phase === "done"
                     ? "linear-gradient(135deg, #3B82F6, #6366F1)"
-                    : selfEnabled
+                    : requiresSelfVerification
                     ? "rgba(59,130,246,0.08)"
                     : "var(--muted)",
-                border: "2px solid " + (selfEnabled ? "rgba(59,130,246,0.25)" : "var(--border-light)"),
+                border:
+                  "2px solid " +
+                  (requiresSelfVerification ? "rgba(59,130,246,0.25)" : "var(--border-light)"),
                 boxShadow: phase === "done" ? "0 8px 28px rgba(59,130,246,0.3)" : "none",
                 transition: "all 0.4s ease",
-                opacity: selfEnabled ? 1 : 0.4,
+                opacity: requiresSelfVerification ? 1 : 0.4,
               }}
             >
               {phase === "done" ? (
@@ -353,7 +684,14 @@ function StepConnect({ onNext }: { onNext: () => void }) {
               ) : (
                 <Fingerprint
                   className="w-8 h-8"
-                  style={{ color: phase === "verifying" ? "#3B82F6" : selfEnabled ? "#3B82F6" : "var(--text-muted)" }}
+                  style={{
+                    color:
+                      phase === "verifying"
+                        ? "#3B82F6"
+                        : requiresSelfVerification
+                        ? "#3B82F6"
+                        : "var(--text-muted)",
+                  }}
                 />
               )}
               {phase === "verifying" && (
@@ -381,47 +719,210 @@ function StepConnect({ onNext }: { onNext: () => void }) {
             {phase === "idle" && (
               <>
                 <p className="font-semibold text-base" style={{ color: "var(--text-primary)" }}>
-                  Pronto para conectar
+                  Ready to connect
                 </p>
                 <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-                  Opera Mini MiniPay detectado
+                  {hasConnector
+                    ? isMiniPay
+                      ? "MiniPay detected"
+                      : "Browser wallet detected"
+                    : "Open in MiniPay or MetaMask to continue"}
                 </p>
               </>
             )}
             {phase === "connecting" && (
               <>
-                <p className="font-semibold text-base" style={{ color: "var(--text-primary)" }}>Conectando MiniPay...</p>
-                <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Autenticando na rede Celo</p>
+                <p className="font-semibold text-base" style={{ color: "var(--text-primary)" }}>Connecting MiniPay...</p>
+                <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Authenticating on Celo network</p>
               </>
             )}
-            {phase === "connected" && selfEnabled && (
+            {phase === "connected" && requiresSelfVerification && (
               <>
                 <p className="font-semibold text-base" style={{ color: "#A3D977" }}>
-                  MiniPay ✓ · $1,240.50 cUSD
+                  {shortAddress || "Wallet connected"} ✓
                 </p>
-                <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Verificando identidade com Self...</p>
+                <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
+                  {activationRoute?.nextAction === "verify_self"
+                    ? `Connection active via ${connectorName}. Verify with Self to unlock agent automation.`
+                    : activationRoute?.nextAction === "claim_faucet"
+                    ? `Connection active via ${connectorName}. Claim demo funds before continuing.`
+                    : activationRoute?.nextAction === "activate_session"
+                    ? `Connection active via ${connectorName}. Sign the LiquidAI session to continue.`
+                    : `Connection active via ${connectorName}.`}
+                </p>
               </>
             )}
             {phase === "verifying" && (
               <>
-                <p className="font-semibold text-base" style={{ color: "#3B82F6" }}>Gerando ZK Proof...</p>
+                <p className="font-semibold text-base" style={{ color: "#3B82F6" }}>Validating Self proof...</p>
                 <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-                  Zero dados expostos · Anti-Sybil
+                  Backend unlocks the agent only after this step.
                 </p>
               </>
             )}
             {phase === "done" && (
               <>
                 <p className="font-semibold text-base" style={{ color: "#A3D977" }}>
-                  Tudo conectado! 🎉
+                  All connected!
                 </p>
                 <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-                  {selfEnabled ? "MiniPay + Self ID verificado" : "MiniPay conectado"}
+                  Wallet funded and ready for agent activation
                 </p>
               </>
             )}
           </motion.div>
         </AnimatePresence>
+
+        {isConnected && wrongNetwork && (
+          <div
+            className="w-full rounded-2xl p-4"
+            style={{
+              background: "rgba(245,158,11,0.08)",
+              border: "1px solid rgba(245,158,11,0.25)",
+            }}
+          >
+            <p className="text-sm font-semibold" style={{ color: "#F59E0B" }}>
+              Different network detected
+            </p>
+            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+              Switch to Celo Sepolia to activate the demo flow.
+            </p>
+            <button
+              onClick={handleSwitchNetwork}
+              className="mt-3 px-3 py-1.5 rounded-full text-xs font-semibold"
+              style={{ background: "#F59E0B", color: "#1A1A1A" }}
+            >
+              {isSwitchingChain ? "Switching..." : "Switch to Celo"}
+            </button>
+          </div>
+        )}
+
+        {isConnected && requiresSelfVerification && !wrongNetwork && !selfStatus?.verified && (
+          <div
+            className="w-full rounded-2xl p-4"
+            style={{
+              background: "rgba(59,130,246,0.06)",
+              border: "1px solid rgba(59,130,246,0.18)",
+            }}
+          >
+            <p className="text-sm font-semibold" style={{ color: "#3B82F6" }}>
+              Verificação Self Obrigatória
+            </p>
+            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+              A ativação do agente ficará bloqueada até que sua identidade seja verificada via Self Protocol (Prova ZK).
+            </p>
+          </div>
+        )}
+
+        {activationRoute?.blockers?.length ? (
+          <div
+            className="w-full rounded-2xl p-4"
+            style={{
+              background: "rgba(245,158,11,0.06)",
+              border: "1px solid rgba(245,158,11,0.18)",
+            }}
+          >
+            <p className="text-sm font-semibold" style={{ color: "#F59E0B" }}>
+              Próximo passo
+            </p>
+            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+              {activationRoute.blockers[0].includes("Complete Self verification") 
+                ? "Complete a verificação Self para desbloquear a inteligência do agente." 
+                : activationRoute.blockers[0]}
+            </p>
+          </div>
+        ) : null}
+
+        {isConnected && !wrongNetwork && faucetStatus && (activationRoute?.nextAction === "claim_faucet" || isDone) && (
+          <div
+            className="w-full rounded-2xl p-4"
+            style={{
+              background: "rgba(59,130,246,0.06)",
+              border: "1px solid rgba(59,130,246,0.18)",
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: "rgba(59,130,246,0.12)" }}
+              >
+                <Wallet className="w-5 h-5" style={{ color: "#3B82F6" }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                  {isDone ? "Wallet funded" : "Demo faucet ready"}
+                </p>
+                <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                  {isDone
+                    ? `Balance detected: ${activationRoute?.balances.native.balance ?? 0} CELO and ${activationRoute?.balances.stable.balance ?? 0} ${activationRoute?.balances.stable.token ?? faucetStatus.claimAmount.stableToken}.`
+                    : `Claim +${faucetStatus.claimAmount.nativeAmount} CELO and +${faucetStatus.claimAmount.stableAmount} ${faucetStatus.claimAmount.stableToken} before running the agent.`}
+                </p>
+
+                {faucetStatus.claimState.lastClaim && (
+                  <p className="text-xs mt-2 break-all" style={{ color: "var(--text-primary)" }}>
+                    Last tx: {faucetStatus.claimState.lastClaim.nativeTxHash}
+                  </p>
+                )}
+
+                <div className="flex items-center justify-between gap-3 mt-3">
+                  <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+                    {isTreasuryWallet
+                      ? "Connect a different wallet to simulate fresh-user funding."
+                      : faucetStatus.claimState.remainingMs > 0 && faucetStatus.claimState.nextEligibleAt
+                        ? `Cooldown until ${new Date(faucetStatus.claimState.nextEligibleAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}`
+                        : "One tap funding inside the app."}
+                  </span>
+                  <button
+                    onClick={handleClaimFaucet}
+                    disabled={isDone || isClaimingFaucet || faucetStatus.claimState.remainingMs > 0 || isTreasuryWallet}
+                    className="px-3 py-2 rounded-full text-xs font-semibold"
+                    style={{
+                      background:
+                        isDone || isClaimingFaucet || faucetStatus.claimState.remainingMs > 0 || isTreasuryWallet
+                          ? "rgba(13,75,46,0.12)"
+                          : "#0D4B2E",
+                      color:
+                        isDone || isClaimingFaucet || faucetStatus.claimState.remainingMs > 0 || isTreasuryWallet
+                          ? "var(--text-muted)"
+                          : "#FFFFFF",
+                    }}
+                  >
+                    {isDone ? "Funded" : isClaimingFaucet ? "Funding..." : "Get test funds"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {inlineError && (
+          <div
+            className="w-full rounded-2xl p-3 text-xs"
+            style={{
+              color: "#EF4444",
+              background: "rgba(239,68,68,0.08)",
+              border: "1px solid rgba(239,68,68,0.2)",
+            }}
+          >
+            {inlineError}
+          </div>
+        )}
+
+        {inlineSuccess && (
+          <div
+            className="w-full rounded-2xl p-3 text-xs"
+            style={{
+              color: "#10B981",
+              background: "rgba(16,185,129,0.08)",
+              border: "1px solid rgba(16,185,129,0.2)",
+            }}
+          >
+            {inlineSuccess}
+          </div>
+        )}
 
         {/* Self toggle */}
         {phase === "idle" && (
@@ -443,18 +944,25 @@ function StepConnect({ onNext }: { onNext: () => void }) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                Self Protocol
+                Self Protocol ID
               </p>
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                ZK proof · Anti-Sybil · Sem expor dados
+                {selfIsRequired
+                  ? "Obrigatório para segurança · Prova ZK · Anti-Sybil"
+                  : "Prova ZK Opcional · Anti-Sybil · Privacidade total"}
               </p>
             </div>
             <button
-              onClick={() => setSelfEnabled((v) => !v)}
+              onClick={() => {
+                if (!selfIsRequired) setSelfEnabled((v) => !v);
+              }}
+              disabled={selfIsRequired}
               className="w-11 h-6 rounded-full flex items-center px-0.5 transition-all duration-300 flex-shrink-0"
               style={{
-                background: selfEnabled ? "#3B82F6" : "var(--muted)",
-                justifyContent: selfEnabled ? "flex-end" : "flex-start",
+                background: requiresSelfVerification ? "#3B82F6" : "var(--muted)",
+                justifyContent: requiresSelfVerification ? "flex-end" : "flex-start",
+                opacity: selfIsRequired ? 0.85 : 1,
+                cursor: selfIsRequired ? "not-allowed" : "pointer",
               }}
             >
               <motion.div
@@ -480,28 +988,53 @@ function StepConnect({ onNext }: { onNext: () => void }) {
             boxShadow: "0 6px 24px rgba(13,75,46,0.35)",
           }}
         >
-          Continuar
+          Continue
           <ChevronRight className="w-5 h-5" />
         </motion.button>
       ) : (
         <motion.button
           whileTap={{ scale: 0.97 }}
-          onClick={handleConnect}
-          disabled={phase === "connecting" || phase === "connected" || phase === "verifying"}
+          onClick={
+            wrongNetwork
+              ? handleSwitchNetwork
+              : activationRoute?.nextAction === "activate_session"
+                ? handleEnsureSession
+              : phase === "connected" && requiresSelfVerification && !selfStatus?.verified
+                ? handleVerifySelf
+              : activationRoute?.nextAction === "claim_faucet"
+                ? handleClaimFaucet
+                : handleConnect
+          }
+          disabled={isBusy}
           className="w-full py-4 rounded-full font-semibold flex items-center justify-center gap-2"
           style={{
             background:
-              phase !== "idle"
+              phase !== "idle" || wrongNetwork
                 ? "rgba(13,75,46,0.4)"
                 : "linear-gradient(135deg, #0D4B2E 0%, #1a6b45 100%)",
             color: "#fff",
-            boxShadow: phase === "idle" ? "0 6px 24px rgba(13,75,46,0.35)" : "none",
+            boxShadow: phase === "idle" && !wrongNetwork ? "0 6px 24px rgba(13,75,46,0.35)" : "none",
           }}
         >
-          {phase === "idle" ? (
+          {phase === "idle" && !wrongNetwork ? (
             <>
               <Wallet className="w-5 h-5" />
-              Conectar MiniPay
+              {isMiniPay ? "Conectar MiniPay" : "Conectar carteira"}
+            </>
+          ) : activationRoute?.nextAction === "activate_session" ? (
+            <>
+              <Fingerprint className="w-5 h-5" />
+              {isSigningMessage ? "Signing session..." : "Sign session"}
+            </>
+          ) : phase === "connected" && requiresSelfVerification && !selfStatus?.verified ? (
+            <>
+              <Fingerprint className="w-5 h-5" />
+              {isVerifyingSelf ? "Gerando Link Self..." : "Desbloquear com Self ID"}
+            </>
+          ) : activationRoute?.nextAction === "claim_faucet" ? (
+            <>
+              <Wallet className="w-5 h-5" />
+              {isClaimingFaucet ? "Funding..." : "Get test funds"}
             </>
           ) : (
             <>
@@ -510,7 +1043,15 @@ function StepConnect({ onNext }: { onNext: () => void }) {
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                 className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white"
               />
-              {phase === "connecting" ? "Conectando..." : "Verificando identidade..."}
+              {isSwitchingChain
+                ? "Trocando para Celo..."
+                : isSigningMessage
+                ? "Signing session..."
+                : phase === "connecting"
+                ? "Conectando..."
+                : phase === "verifying"
+                  ? "Verificando identidade..."
+                  : "Conectando..."}
             </>
           )}
         </motion.button>
@@ -522,26 +1063,57 @@ function StepConnect({ onNext }: { onNext: () => void }) {
 // ─── Step 2: Risk Setup ────────────────────────────────────────────────────────
 function StepRisk({ onFinish }: { onFinish: (risk: RiskId) => void }) {
   const [selected, setSelected] = useState<RiskId>("balanced");
+  const [dashboard, setDashboard] = useState<DashboardPayload | null>(null);
+  const { address } = useCeloWallet();
   const sel = RISK_OPTS.find((r) => r.id === selected)!;
 
+  useEffect(() => {
+    let alive = true;
+
+    if (!address) {
+      setDashboard(null);
+      return () => {
+        alive = false;
+      };
+    }
+
+    apiGet<DashboardPayload>("/api/dashboard", { address, riskMode: selected })
+      .then((payload) => {
+        if (!alive) return;
+        setDashboard(payload);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setDashboard(null);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [address, selected]);
+
+  const projectedMonthlyYield = dashboard?.summary.monthlyYieldUsd ?? 0;
+  const trackedCapitalUsd = dashboard?.summary.balanceUsd ?? 0;
+  const formattedTrackedCapital = `$${trackedCapitalUsd.toFixed(trackedCapitalUsd >= 10 ? 2 : 2)}`;
+
   const projections: Record<RiskId, string> = {
-    conservative: "4.10",
-    balanced: "8.15",
-    aggressive: "14.50",
+    conservative: projectedMonthlyYield.toFixed(2),
+    balanced: projectedMonthlyYield.toFixed(2),
+    aggressive: projectedMonthlyYield.toFixed(2),
   };
 
   return (
     <div className="flex flex-col h-full px-6 pt-10 pb-8">
       <div className="mb-5">
         <p className="text-xs uppercase tracking-widest font-semibold mb-2" style={{ color: "#A3D977" }}>
-          Passo 2 de 2 · Último
+          Step 2 of 2 · Final
         </p>
         <h2 className="font-bold" style={{ color: "var(--text-primary)", fontSize: "1.5rem", lineHeight: 1.2 }}>
-          Como prefere que seu
-          <br />agente invista?
+          How should your
+          <br />agent invest?
         </h2>
         <p className="text-xs mt-1.5" style={{ color: "var(--text-muted)" }}>
-          Você pode alterar a qualquer momento nas configurações
+          You can change this anytime in settings
         </p>
       </div>
 
@@ -567,7 +1139,7 @@ function StepRisk({ onFinish }: { onFinish: (risk: RiskId) => void }) {
                   className="absolute top-2.5 right-3 text-xs font-bold px-2 py-0.5 rounded-full"
                   style={{ background: "#A3D977", color: "#0D4B2E", fontSize: "9px" }}
                 >
-                  Recomendado
+                  Recommended
                 </div>
               )}
               <div
@@ -603,10 +1175,10 @@ function StepRisk({ onFinish }: { onFinish: (risk: RiskId) => void }) {
       >
         <div>
           <div className="text-xs font-semibold mb-0.5" style={{ color: sel.color }}>
-            Projeção mensal · $1.240 investidos
+            {trackedCapitalUsd > 0 ? `Monthly projection · ${formattedTrackedCapital} tracked` : "Monthly projection · awaiting wallet capital"}
           </div>
           <div className="font-mono font-bold" style={{ color: "var(--text-primary)", fontSize: "1.4rem" }}>
-            +${projections[selected]}/mês
+            +${projections[selected]}/mo
           </div>
         </div>
         <TrendingUp className="w-7 h-7" style={{ color: sel.color, opacity: 0.6 }} />
@@ -622,87 +1194,313 @@ function StepRisk({ onFinish }: { onFinish: (risk: RiskId) => void }) {
         }}
       >
         <Sparkles className="w-5 h-5" />
-        Ativar Agente IA
+        Activate AI Agent
       </motion.button>
     </div>
   );
 }
 
-// ─── Step 3: Launch (faster — 400ms each) ─────────────────────────────────────
+// ─── Step 3: Launch (Chat Style) ───────────────────────────────────────────────
+
+interface ChatMessage {
+  id: string;
+  role: "agent" | "system";
+  text: string;
+  type?: "text" | "proof" | "error" | "analysis";
+  proofData?: {
+    txHash: string;
+    status: string;
+    fee: string;
+  };
+  analysisData?: {
+    protocols: { name: string; apy: string; color: string }[];
+  };
+}
+
 function StepLaunch({ onDone }: { onDone: () => void }) {
-  const [phase, setPhase] = useState(0);
-  const steps = [
-    { icon: Bot, label: "Configurando agente..." },
-    { icon: Activity, label: "Conectando protocolos Celo..." },
-    { icon: TrendingUp, label: "Analisando oportunidades..." },
-    { icon: Sparkles, label: "Pronto para otimizar! 🎉" },
-  ];
+  const { address, wrongNetwork, signWalletMessage } = useCeloWallet();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isTyping, setIsTyping] = useState(true);
+  const [waitingApproval, setWaitingApproval] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const hasStarted = useRef(false);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
-    let i = 0;
-    const id = setInterval(() => {
-      i++;
-      setPhase(i);
-      if (i >= steps.length) {
-        clearInterval(id);
-        setTimeout(onDone, 500);
+    scrollToBottom();
+  }, [messages, isTyping]);
+
+  useEffect(() => {
+    if (hasStarted.current) return;
+    hasStarted.current = true;
+
+    let cancelled = false;
+    const timers: number[] = [];
+
+    const addMessage = (
+      text: string,
+      role: "agent" | "system" = "agent",
+      type: "text" | "proof" | "error" | "analysis" = "text",
+      extraData?: any
+    ) => {
+      if (cancelled) return;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Math.random().toString(36).substr(2, 9),
+          role,
+          text,
+          type,
+          proofData: type === "proof" ? extraData : undefined,
+          analysisData: type === "analysis" ? extraData : undefined,
+        },
+      ]);
+    };
+
+    const wait = (ms: number) => new Promise<void>((resolve) => {
+      const id = window.setTimeout(resolve, ms);
+      timers.push(id);
+    });
+
+    const run = async () => {
+      try {
+        // 1. Initial greeting
+        await wait(600);
+        setIsTyping(false);
+        addMessage("Initializing secure environment...");
+        
+        // 2. Scanning (Fast)
+        await wait(800);
+        setIsTyping(true);
+        await wait(1000);
+        setIsTyping(false);
+        addMessage("Scanning Celo liquidity pools (Aave, Mento, Uniswap)...");
+
+        // 3. Market Analysis
+        await wait(800);
+        setIsTyping(true);
+        await wait(1200); 
+        setIsTyping(false);
+        
+        addMessage("Market Analysis Complete", "system", "analysis", {
+          protocols: [
+            { name: "Mento (cREAL)", apy: "6.2%", color: "#A3D977" },
+            { name: "Aave V3 (USDC)", apy: "4.5%", color: "#8B5CF6" },
+            { name: "Uniswap (CELO)", apy: "5.8%", color: "#EC4899" },
+          ]
+        });
+
+        // 4. PAUSE -> Wait for user approval
+        setWaitingApproval(true);
+
+      } catch (runError) {
+        if (cancelled) return;
+        setIsTyping(false);
+        addMessage(runError instanceof Error ? runError.message : "Activation failed.", "system", "error");
       }
-    }, 420);
-    return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+      timers.forEach((id) => window.clearTimeout(id));
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); 
+
+  const handleApprove = async () => {
+    setWaitingApproval(false);
+    setProcessing(true);
+    setIsTyping(true);
+
+    try {
+      if (!address) throw new Error("Wallet disconnected");
+
+      // Real backend execution
+      await ensureWalletAuthSession(address, signWalletMessage);
+      const response = await apiPost<{
+        settlement: {
+          txHash?: string;
+          onChainProof?: { receiptStatus?: string; feeCurrency?: string; };
+        };
+      }>("/api/agent/authorize", {
+        address,
+        actionId: `onboarding-activation-${Date.now()}`,
+        accepted: true,
+      });
+
+      setIsTyping(false);
+      
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Math.random().toString(36).substr(2, 9),
+          role: "agent",
+          text: "Optimization complete. Yield strategy active.",
+        },
+        {
+          id: Math.random().toString(36).substr(2, 9),
+          role: "system",
+          text: "Settlement Proof Generated",
+          type: "proof",
+          proofData: {
+            txHash: response.settlement.txHash || "0x...",
+            status: response.settlement.onChainProof?.receiptStatus || "success",
+            fee: response.settlement.onChainProof?.feeCurrency || "cUSD",
+          }
+        }
+      ]);
+
+      // Auto-redirect
+      setTimeout(() => {
+        onDone();
+      }, 2000);
+
+    } catch (error) {
+      setIsTyping(false);
+      setProcessing(false);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Math.random().toString(36).substr(2, 9),
+          role: "system",
+          text: error instanceof Error ? error.message : "Allocation failed.",
+          type: "error",
+        },
+      ]);
+    }
+  };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full px-6 text-center">
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 3, repeat: 1, ease: "easeInOut" }}
-        className="w-24 h-24 rounded-3xl flex items-center justify-center mb-8 relative"
-        style={{
-          background: "linear-gradient(145deg, #0B3D25, #0D4B2E, #12593A)",
-          boxShadow: "0 16px 48px rgba(13,75,46,0.4)",
-        }}
-      >
-        <Bot className="w-12 h-12" style={{ color: "#A3D977" }} />
-        <motion.div
-          animate={{ scale: [1, 1.6, 1], opacity: [0.5, 0, 0.5] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-          className="absolute inset-0 rounded-3xl"
-          style={{ border: "2px solid #A3D977" }}
-        />
-      </motion.div>
+    <div className="flex flex-col h-full bg-[var(--background)]">
+      {/* Header */}
+      <div className="px-6 pt-10 pb-4 border-b border-[var(--border-light)] bg-[var(--background)] z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[rgba(13,75,46,0.12)]">
+            <Bot className="w-6 h-6 text-[#0D4B2E]" />
+          </div>
+          <div>
+            <h2 className="font-bold text-lg text-[var(--text-primary)]">LiquidAI Agent</h2>
+            <p className="text-xs text-[#A3D977] font-medium flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#A3D977] animate-pulse" />
+              Online
+            </p>
+          </div>
+        </div>
+      </div>
 
-      <h2 className="font-bold mb-6" style={{ color: "var(--text-primary)", fontSize: "1.5rem" }}>
-        Ativando seu Agente
-      </h2>
-
-      <div className="space-y-2.5 w-full max-w-[280px]">
-        {steps.map(({ icon: Icon, label }, i) => (
+      {/* Chat Area */}
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+        {messages.map((msg) => (
           <motion.div
-            key={label}
-            initial={{ opacity: 0, x: -12 }}
-            animate={
-              phase > i ? { opacity: 1, x: 0 } : phase === i ? { opacity: 0.4, x: 0 } : { opacity: 0, x: -12 }
-            }
-            transition={{ duration: 0.3 }}
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5"
-            style={{ background: phase > i ? "rgba(163,217,119,0.12)" : "var(--surface-solid)" }}
+            key={msg.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`flex ${msg.role === "system" ? "justify-center" : "justify-start"}`}
           >
-            <div
-              className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: phase > i ? "#A3D977" : "var(--muted)" }}
-            >
-              {phase > i ? (
-                <Check className="w-3.5 h-3.5" style={{ color: "#0D4B2E" }} strokeWidth={2.5} />
-              ) : (
-                <Icon className="w-3.5 h-3.5" style={{ color: "var(--text-muted)" }} />
-              )}
-            </div>
-            <span className="text-sm text-left" style={{ color: phase > i ? "#A3D977" : "var(--text-muted)" }}>
-              {label}
-            </span>
+            {msg.role === "agent" && (
+              <div className="flex items-start gap-3 max-w-[90%]">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[var(--surface-solid)] border border-[var(--border-light)] flex-shrink-0 mt-1">
+                  <Bot className="w-4 h-4 text-[var(--text-muted)]" />
+                </div>
+                <div className="bg-[var(--surface-solid)] rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm border border-[var(--border-light)]">
+                  <p className="text-sm text-[var(--text-primary)] leading-relaxed">{msg.text}</p>
+                </div>
+              </div>
+            )}
+
+            {msg.role === "system" && msg.type === "analysis" && (
+              <div className="w-full max-w-[280px] bg-[var(--surface-solid)] border border-[var(--border-light)] rounded-2xl p-4 text-left shadow-sm">
+                 <div className="flex items-center gap-2 mb-3">
+                   <TrendingUp className="w-4 h-4 text-[#A3D977]" />
+                   <p className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wide">Market Analysis</p>
+                 </div>
+                 <div className="space-y-2">
+                   {msg.analysisData?.protocols.map((p) => (
+                     <div key={p.name} className="flex items-center justify-between">
+                       <span className="text-xs font-medium text-[var(--text-secondary)]">{p.name}</span>
+                       <span className="text-xs font-bold" style={{ color: p.color }}>{p.apy}</span>
+                     </div>
+                   ))}
+                 </div>
+                 <div className="mt-3 pt-3 border-t border-[var(--border-light)] flex items-center justify-between">
+                   <span className="text-[10px] text-[var(--text-muted)]">Est. Monthly Yield</span>
+                   <span className="text-xs font-bold text-[#A3D977]">+0.8%</span>
+                 </div>
+                 
+                 {/* Approval Button inside the card (or below) */}
+                 {waitingApproval && (
+                   <motion.button
+                     initial={{ opacity: 0, scale: 0.95 }}
+                     animate={{ opacity: 1, scale: 1 }}
+                     whileTap={{ scale: 0.97 }}
+                     onClick={handleApprove}
+                     className="w-full mt-3 py-2.5 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2"
+                     style={{
+                       background: "linear-gradient(135deg, #0D4B2E 0%, #1a6b45 100%)",
+                       boxShadow: "0 4px 12px rgba(13,75,46,0.2)",
+                     }}
+                   >
+                     Deploy Strategy
+                     <ArrowRight className="w-3.5 h-3.5" />
+                   </motion.button>
+                 )}
+              </div>
+            )}
+
+            {msg.role === "system" && msg.type === "proof" && (
+              <div className="w-full max-w-[280px] bg-[rgba(163,217,119,0.08)] border border-[rgba(163,217,119,0.22)] rounded-2xl p-4 text-left">
+                 <div className="flex items-center gap-2 mb-2">
+                   <Check className="w-4 h-4 text-[#A3D977]" />
+                   <p className="text-xs font-bold text-[#A3D977] uppercase tracking-wide">Settlement Proof</p>
+                 </div>
+                 <p className="text-[11px] font-mono text-[var(--text-secondary)] break-all bg-[rgba(255,255,255,0.05)] p-2 rounded-lg mb-2">
+                   {msg.proofData?.txHash}
+                 </p>
+                 <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)]">
+                   <span>Status: {msg.proofData?.status}</span>
+                   <span>Fee: {msg.proofData?.fee}</span>
+                 </div>
+              </div>
+            )}
+
+            {msg.role === "system" && msg.type === "error" && (
+              <div className="bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] rounded-xl px-4 py-3 text-xs text-[#EF4444]">
+                Error: {msg.text}
+              </div>
+            )}
           </motion.div>
         ))}
+
+        {isTyping && (
+           <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-start gap-3"
+          >
+            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[var(--surface-solid)] border border-[var(--border-light)] flex-shrink-0 mt-1">
+              <Bot className="w-4 h-4 text-[var(--text-muted)]" />
+            </div>
+            <div className="bg-[var(--surface-solid)] rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm border border-[var(--border-light)] flex items-center gap-1.5">
+              <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0 }} className="w-1.5 h-1.5 rounded-full bg-[var(--text-muted)] opacity-40" />
+              <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-1.5 h-1.5 rounded-full bg-[var(--text-muted)] opacity-40" />
+              <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-1.5 h-1.5 rounded-full bg-[var(--text-muted)] opacity-40" />
+            </div>
+          </motion.div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Footer / CTA */}
+      <div className="p-6 bg-[var(--background)] border-t border-[var(--border-light)]">
+        <p className="text-center text-xs text-[var(--text-muted)] animate-pulse">
+          {waitingApproval ? "Waiting for approval..." : processing ? "Allocating capital..." : "Finalizing setup..."}
+        </p>
       </div>
     </div>
   );
@@ -738,7 +1536,7 @@ export function OnboardingPage() {
               boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
             }}
           >
-            Pular
+            Skip
           </button>
         </motion.div>
       )}

@@ -24,54 +24,68 @@ interface AgentEvent {
   ts: string;
 }
 
+interface AgentPulseProps {
+  stats?: {
+    ops: number;
+    totalYield: number;
+    apy: number;
+  };
+  feed?: Array<{
+    title: string;
+    detail?: string;
+    amount?: string;
+    ts?: string;
+    kind?: EventKind;
+  }>;
+}
+
 const EVENT_POOL: Omit<AgentEvent, "id" | "ts">[] = [
   {
     kind: "yield",
-    title: "Yield Capturado",
-    detail: "Aave v3 · cUSD lending",
-    amount: "+$0.08",
+    title: "Yield Captured",
+    detail: "First registered compound yield",
+    amount: "+$0.00",
   },
   {
     kind: "rebalance",
-    title: "Rebalanceamento",
-    detail: "Morpho → Aave · APY +0.4%",
-    amount: "$350",
+    title: "Rebalance",
+    detail: "Route recalculated to maintain best APY",
   },
   {
     kind: "opportunity",
-    title: "Oportunidade Detectada",
-    detail: "Pool cUSD/USDC · 5.1% APY",
-    amount: "↑ 5.1%",
+    title: "Opportunity Detected",
+    detail: "On-chain pool above current blend",
+    amount: "watch",
   },
   {
     kind: "jit",
     title: "JIT Funding",
-    detail: "Buffer reposto para PIX",
-    amount: "$45",
+    detail: "Buffer replenished for PIX",
+    amount: "ready",
   },
   {
     kind: "protection",
-    title: "Proteção Cambial",
-    detail: "BRL -0.8% · cUSD estável",
-    amount: "Escudo ✓",
+    title: "Currency Protection",
+    detail: "BRL -0.8% · cUSD stable",
+    amount: "Shield ✓",
   },
   {
     kind: "loop",
     title: "Morpho Loop",
-    detail: "stCELO 2x leverage · ativo",
+    detail: "stCELO 2x leverage · active",
     amount: "+3.2%",
   },
   {
     kind: "yield",
-    title: "Yield Noturno",
-    detail: "Composto reinvestido automaticamente",
-    amount: "+$0.14",
+    title: "Overnight Yield",
+    detail: "Compound automatically reinvested",
+    amount: "+$0.00",
   },
   {
     kind: "rebalance",
-    title: "Alocação Otimizada",
-    detail: "Mento V3 → spread reduzido",
-    amount: "$70",
+    title: "Optimized Allocation",
+    detail: "Mento V3 → reduced spread",
+    amount: "stable",
   },
 ];
 
@@ -107,19 +121,27 @@ const INITIAL: AgentEvent[] = [
 
 const INTERVALS = [7000, 11000, 15000, 9000, 13000]; // irregular = realistic
 
-export function AgentPulse() {
+export function AgentPulse({ stats, feed }: AgentPulseProps) {
   const navigate = useNavigate();
   const { isDark } = useTheme();
   const [events, setEvents] = useState<AgentEvent[]>(INITIAL);
   const [latest, setLatest] = useState<AgentEvent | null>(null);
-  const [totalYield, setTotalYield] = useState(18.60);
-  const [ops, setOps] = useState(47);
+  const [totalYield, setTotalYield] = useState(stats?.totalYield ?? 0);
+  const [ops, setOps] = useState(stats?.ops ?? 0);
   const [isLive, setIsLive] = useState(true);
   const poolIdx = useRef(3);
   const intervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const controlledFeed = Boolean(feed?.length);
+
+  useEffect(() => {
+    if (!stats) return;
+    setTotalYield(stats.totalYield);
+    setOps(stats.ops);
+  }, [stats]);
+
   const scheduleNext = () => {
-    if (!isLive) return;
+    if (!isLive || controlledFeed) return;
     const delay = INTERVALS[Math.floor(Math.random() * INTERVALS.length)];
     intervalRef.current = setTimeout(() => {
       const template = EVENT_POOL[poolIdx.current % EVENT_POOL.length];
@@ -136,10 +158,22 @@ export function AgentPulse() {
   };
 
   useEffect(() => {
+    if (controlledFeed) return;
     scheduleNext();
     return () => { if (intervalRef.current) clearTimeout(intervalRef.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [controlledFeed]);
+
+  const displayEvents = controlledFeed
+    ? (feed || []).map((event, index) => ({
+        id: 10_000 + index,
+        kind: event.kind || "rebalance",
+        title: event.title,
+        detail: event.detail || "",
+        amount: event.amount,
+        ts: event.ts || now(),
+      }))
+    : events;
 
   // Pause on blur
   useEffect(() => {
@@ -196,11 +230,11 @@ export function AgentPulse() {
         className="grid grid-cols-3 divide-x"
         style={{ borderBottom: "1px solid var(--border-light)", divideColor: "var(--border-light)" as string }}
       >
-        {[
-          { label: "Ops hoje", value: ops.toString(), color: "#A3D977" },
-          { label: "Yield total", value: `$${totalYield.toFixed(2)}`, color: "#10B981" },
-          { label: "APY atual", value: "4.8%", color: "#F59E0B" },
-        ].map(({ label, value, color }, i) => (
+          {[
+            { label: "Ops hoje", value: ops.toString(), color: "#A3D977" },
+            { label: "Yield total", value: `$${totalYield.toFixed(2)}`, color: "#10B981" },
+            { label: "APY atual", value: `${(stats?.apy ?? 0).toFixed(1)}%`, color: "#F59E0B" },
+          ].map(({ label, value, color }, i) => (
           <div
             key={label}
             className="flex flex-col items-center py-2.5"
@@ -259,7 +293,7 @@ export function AgentPulse() {
 
       {/* Event log */}
       <div className="px-4 py-3 space-y-2.5 max-h-44 overflow-hidden">
-        {events.slice(latest ? 0 : 0, 4).map((ev, i) => {
+        {displayEvents.slice(0, 4).map((ev, i) => {
           const style = KIND_STYLE[ev.kind];
           return (
             <motion.div
@@ -298,7 +332,7 @@ export function AgentPulse() {
         style={{ borderTop: "1px solid var(--border-light)", paddingTop: 8 }}
       >
         <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-          Próximo rebalance em ~{Math.floor(Math.random() * 8 + 2)}h
+          {controlledFeed ? "Sincronizado com estado on-chain" : `Próximo rebalance em ~${Math.floor(Math.random() * 8 + 2)}h`}
         </span>
         <button
           onClick={() => navigate("/agent")}

@@ -18,9 +18,9 @@ interface NavItem {
 const navItems: NavItem[] = [
   { icon: HomeIcon, label: "Home", path: "/" },
   { icon: AnalyticsIcon, label: "Analytics", path: "/analytics" },
-  { icon: AgentIcon, label: "Agente", path: "/agent" },
-  { icon: SavingsIcon, label: "Poupança", path: "/savings" },
-  { icon: ProfileIcon, label: "Perfil", path: "/profile" },
+  { icon: AgentIcon, label: "Agent", path: "/agent" },
+  { icon: SavingsIcon, label: "Savings", path: "/savings" },
+  { icon: ProfileIcon, label: "Profile", path: "/profile" },
 ];
 
 export function BottomNavigation() {

@@ -1,255 +1,78 @@
-<div align="center">
+# 🌊 LiquidAI | Agentic Treasury OS
+**Transforming idle capital into an autonomous Micro-AMM on Celo.**
 
-<img src="https://img.shields.io/badge/Celo-FCFF52?style=for-the-badge&logo=celo&logoColor=black" />
-<img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" />
-<img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" />
-<img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" />
-<img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" />
+[![Built for MiniPay](https://img.shields.io/badge/Built_for-MiniPay-10B981?style=for-the-badge)](https://minipay.opera.com/)
+[![Network Celo Alfajores](https://img.shields.io/badge/Network-Celo_Alfajores-06B6D4?style=for-the-badge)](https://celo.org/)
+[![Identity Self ZK](https://img.shields.io/badge/Identity-Self_ZK-EC4899?style=for-the-badge)](https://ai.self.xyz)
+[![Standard ERC-8004 Intents](https://img.shields.io/badge/Standard-ERC--8004_Intents-F59E0B?style=for-the-badge)](https://8004scan.io/)
 
-# 🌊 LiquidAI
+LiquidAI is an autonomous financial infrastructure designed for the real economy in emerging markets. It acts as an **Invisible DeFi Orchestrator**, automatically routing idle stablecoin balances into yield-bearing strategies (like stCELO and Aave) and executing Just-In-Time (JIT) liquidity swaps via Mento Protocol when payments are due.
 
-### Treasury Operating System for MiniPay Users
-
-**Build Agents for the Real World V2 · Celo Hackathon 2026**
-
-[Live Demo](https://liquidai.vercel.app) · [Pitch Deck](#) · [Video Demo](#)
-
-</div>
+**Built for the "Build Agents for the Real World V2" Hackathon.**
 
 ---
 
-## 🎯 O Problema
+## 🏆 Hackathon Tracks Targeted
 
-**12 milhões de usuários MiniPay. 0% protegidos da inflação local.**
-
-O usuário médio da MiniPay (Opera Mini integrada) possui ~$1.200 em cUSD, realiza microtransações diárias abaixo de $5 e perde ~$57/ano em poder de compra sem nenhum mecanismo de proteção — enquanto a infraestrutura DeFi do Celo permanece invisível e inacessível para ele.
-
-## 💡 A Solução
-
-**LiquidAI** é um **Sistema Operacional de Tesouraria** mobile-first que usa um **agente autônomo** para otimizar liquidez automaticamente, seguindo a filosofia **"Invisible DeFi"** — máximo de 3 toques por qualquer ação.
-
-```
-Usuário deposita cUSD → Agente otimiza 24/7 → Yield chega automaticamente
-```
+1. **Build for MiniPay:** 100% Mobile-first UI, bundle size < 2MB, implicit wallet detection (`window.ethereum.isMiniPay`), and zero gas friction (Fee Abstraction via cUSD).
+2. **Best Agent on Celo:** Not just a chatbot, but a determinist financial agent that creates execution plans, respects strict risk policies, and automates Treasury Management.
+3. **Highest Rank on AgentScan:** Fully compliant with **ERC-8004**. Every liquidity optimization generates a unique `intentId` and logs a "Proof-of-Ship" attestation to the **Karma Protocol** to build on-chain agent reputation.
 
 ---
 
-## ✨ Features
+## 🧠 The "Invisible DeFi" Architecture
 
-| Feature | Descrição |
-|---|---|
-| 🤖 **Agente Autônomo** | Rebalanceamento, yield capture e proteção cambial automáticos 24/7 |
-| ⚡ **Regra dos 3 Toques** | PIX, recarga, remessa — qualquer ação em ≤ 3 interações |
-| 🌊 **DeFi Invisível** | Morpho, Aave v3, Mento V3 no fundo — usuário vê só o resultado |
-| 🪪 **Self Protocol** | Verificação de identidade com ZK Proof — sem expor dados pessoais |
-| 📊 **Agent Pulse Live** | Feed em tempo real das ações do agente na home |
-| 🛡️ **Proteção Cambial** | cUSD como hedge automático contra inflação BRL/naira/peso |
-| 💳 **MiniPay Native** | Integração direta com Opera Mini MiniPay |
+LiquidAI hides the complexity of Web3 behind a "3-Tap Rule" UX, while leveraging an institutional-grade backend:
+
+*   **Fee Abstraction (cUSD Gasless):** Users never need native CELO. Our Viem/Wagmi implementation forces `feeCurrency` to cUSD for all operations.
+*   **Self Protocol Anti-Sybil Gate:** Autonomous session keys (ERC-4337) are strictly gated. The backend only provisions agent control after verifying the user's Zero-Knowledge Proof of humanity via the `@selfxyz/agent-sdk`.
+*   **Mento Broker & SortedOracles:** The agent consults Celo's native `SortedOracles` to prevent price manipulation and uses Mento's `getAmountOut` for atomic, low-slippage swaps.
+*   **Karma Ledger (Proof-of-Ship):** Every successful rebalance or yield harvest triggers our `karma-service.mjs`, permanently logging the agent's economic efficiency and updating its reputation score.
 
 ---
 
-## 🏗️ Arquitetura
+## 🚀 How to Run locally (Testnet-First)
 
-```
-LiquidAI
-├── Camada de Interface (React + Tailwind CSS v4)
-│   ├── Mobile-first, 390px target (MiniPay/Opera Mini)
-│   ├── Paleta verde fintech (#0D4B2E, #A3D977)
-│   └── 32 ícones SVG premium custom (strokeWidth 1.5)
-│
-├── Camada de Agente (Autônomo)
-│   ├── Yield Engine → Aave v3 + Morpho Looping
-│   ├── Rebalance Engine → Mento V3 cUSD/cBRL/cKES
-│   ├── JIT Funding → Buffer para microtransações
-│   └── Opportunity Scanner → APY monitoring
-│
-├── Camada de Protocolo (Celo)
-│   ├── Mento V3 (stablecoins nativas)
-│   ├── Aave v3 on Celo (lending)
-│   ├── Morpho (looping strategy)
-│   └── Daimo (cross-chain bridge Base↔Celo)
-│
-└── Camada de Identidade
-    └── Self Protocol (ZK Proof, anti-sybil)
-```
+LiquidAI is built to be tested natively inside the MiniPay environment using the Celo Alfajores Testnet.
 
----
-
-## 🚀 Quick Start
-
-### Pré-requisitos
-
-- Node.js 18+
-- pnpm (recomendado) ou npm
-
-### Instalação
-
+### 1. Installation
 ```bash
-# Clone o repositório
-git clone https://github.com/DGuedz/liquidai.git
-cd liquidai
-
-# Instale as dependências
-pnpm install
-
-# Configure variáveis de ambiente
-cp .env.example .env.local
-
-# Inicie o servidor de desenvolvimento
-pnpm dev
+git clone https://github.com/your-org/liquid-ai.git
+cd liquid-ai
+npm install
 ```
 
-Acesse `http://localhost:5173`
-
-### Build para Produção
-
-```bash
-pnpm build
-pnpm preview
-```
-
----
-
-## 🔧 Variáveis de Ambiente
-
+### 2. Environment Variables (`.env.local`)
+Copy `.env.example` to `.env.local` and add your Alfajores testnet keys:
 ```env
-# Celo Network
-VITE_CELO_RPC_URL=https://forno.celo.org
-VITE_CELO_CHAIN_ID=42220
-
-# WalletConnect (MiniPay integration)
-VITE_WALLETCONNECT_PROJECT_ID=your_project_id
-
-# Self Protocol
-VITE_SELF_APP_ID=your_self_app_id
-VITE_SELF_SCOPE=liquidai-v1
-
-# Aave v3 Subgraph
-VITE_AAVE_SUBGRAPH_URL=https://api.thegraph.com/subgraphs/name/aave/protocol-v3-celo
-
-# Analytics (opcional)
-VITE_POSTHOG_KEY=your_posthog_key
+NEXT_PUBLIC_ALFAJORES_RPC=https://alfajores-forno.celo-testnet.org
+PRIVATE_KEY=0x... # (Used strictly in the backend KMS for Session Keys)
+NEXT_PUBLIC_KARMA_ENDPOINT=https://api.karma.xyz/v1/attestations
 ```
 
----
-
-## 📱 Páginas & Rotas
-
-| Rota | Descrição |
-|---|---|
-| `/` | Dashboard principal (Home) |
-| `/landing` | Landing page pública |
-| `/onboarding` | Setup inicial (MiniPay + Self + Risk) |
-| `/agent` | Painel do Agente Autônomo |
-| `/analytics` | Analytics detalhados |
-| `/savings` | Metas de poupança |
-| `/transfer` | Transferência / PIX |
-| `/scan` | QR Code scanner |
-| `/card` | Cartão virtual |
-| `/chat` | Chat com Agente IA |
-| `/profile` | Perfil + 9 sub-rotas |
-
----
-
-## 🌊 Estratégia de Yield
-
-### Conservador (3.2–4.2% APY)
-- Aave v3 cUSD lending (base yield)
-- Mento V3 spread capture
-
-### Balanceado (4.2–9.1% APY) ⭐ Recomendado
-- Aave v3 + Morpho optimization
-- JIT liquidity provision
-- Automated rebalancing
-
-### Arrojado (9–18% APY)
-- Morpho looping strategy (stCELO 2x)
-- Cross-chain yield (Daimo bridge Base↔Celo)
-- LP positions concentradas
-
----
-
-## 🤝 Protocolos Integrados
-
-| Protocolo | Função | Status |
-|---|---|---|
-| **Mento V3** | Stablecoins nativas Celo | ✅ Integrado |
-| **Aave v3** | Lending/Borrowing | ✅ Integrado |
-| **Morpho** | Yield optimization | ✅ Integrado |
-| **Daimo** | Cross-chain bridge | 🔄 Em desenvolvimento |
-| **Self Protocol** | Identity/ZK Proof | ✅ Integrado |
-| **Rain Cards** | Cartão físico DeFi | 🔄 Roadmap Q3 |
-
----
-
-## 📊 Oportunidade de Mercado
-
-```
-TAM (DeFi LatAm 2026):     $14.4B
-MiniPay usuários ativos:    12M+
-Avg. saldo por usuário:     $1.200 cUSD
-Custo anual da inação:      -$57/usuário
-Inflação BRL (jan-mar/26):  4.8%
+### 3. Start the Development Server & Tunnel
+```bash
+npm run dev
+# In another terminal, expose the server for MiniPay testing:
+ngrok http 3000
 ```
 
----
-
-## 🛤️ Roadmap
-
-```
-Q1 2026 (Hackathon MVP) ✅
-├── Dashboard mobile-first
-├── Agente autônomo (mock)
-├── MiniPay integration
-├── Self Protocol ZK Proof
-└── Onboarding < 15 segundos
-
-Q2 2026
-├── Smart contracts em produção (Celo Mainnet)
-├── BaaS parceiros: Rain + Daimo
-├── Notificações push (yield alerts)
-└── 500 usuários beta
-
-Q3 2026
-├── Cartão físico Celo (Rain Cards)
-├── Credit Engine (micro-empréstimos)
-├── Expansion: Nigéria (cKES), Argentina (cUSD)
-└── 10.000 usuários ativos
-
-Q4 2026
-├── RWA como colateral
-├── DAO governance token
-├── BaaS API para terceiros
-└── 100.000 usuários ativos
-```
+### 4. Test in MiniPay (Android Emulator or Physical Device)
+1. Open the **Opera Mini Beta** app.
+2. Go to MiniPay Settings -> About -> Tap "Version" repeatedly to enable **Developer Mode**.
+3. Toggle **Use Testnet (Alfajores)**.
+4. Tap **Load Test Page** and paste your `ngrok` HTTPS URL.
+5. Experience LiquidAI natively!
 
 ---
 
-## 🏆 Hackathon
+## 🗺️ Post-Hackathon Vision: "Yield-Backed Banking"
 
-**Build Agents for the Real World V2 · Celo · Março 2026**
+We didn't just build a hackathon project; we built the liquidity engine for the next generation of Neo-banks on Celo.
 
-- **Categoria:** AI Agents + DeFi
-- **Target:** MiniPay users (Opera Mini, mercados emergentes)
-- **USP:** Único "Treasury OS" com agente autônomo para o usuário médio
-
----
-
-## 👨‍💻 Equipe
-
-**[doublegreen / DGuedz](https://github.com/DGuedz)**
-Founder, CEO & Tech Lead · [Black Mindz Labs](https://blackmindzlabs.com)
-Web3 · RWA · DeFi · IA
+*   **Q2 2026:** **BaaS & Real-World Ramps:** Direct PIX/Fiat routing to Celo via Mento and Daimo SDK.
+*   **Q3 2026:** **LiquidAI Physical Card:** Swipe a card in the real world; the agent uses Just-In-Time (JIT) `remove_liquidity` to pay for coffee using your yield.
+*   **Q4 2026:** **Collateralized Credit Engine:** Use idle productive capital (stCELO/Aave) to issue instant, low-interest credit lines using Untangled Finance (RWA).
 
 ---
-
-## 📄 Licença
-
-MIT © 2026 Black Mindz Labs
-
----
-
-<div align="center">
-  <p>Feito com 🌊 e ☕ no Brasil</p>
-  <p><strong>Powered by Celo · Invisible DeFi</strong></p>
-</div>
+*Built with ⚡️ (and Extreme Programming) by the LiquidAI Team.*

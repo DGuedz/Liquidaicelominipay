@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import {
   ArrowLeft, Download, TrendingUp, DollarSign, RotateCcw, Shield,
@@ -6,63 +6,58 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useTheme } from "../hooks/useTheme";
-
-const REPORTS = [
-  {
-    id: 1,
-    title: "Relatório de Março 2026",
-    period: "01/03 – 15/03/2026",
-    status: "new",
-    yield: "+$4.20",
-    txCount: 23,
-    apyAvg: "4.8%",
-    color: "#A3D977",
-    bg: "rgba(163,217,119,0.1)",
-  },
-  {
-    id: 2,
-    title: "Relatório de Fevereiro 2026",
-    period: "01/02 – 28/02/2026",
-    status: "ready",
-    yield: "+$7.50",
-    txCount: 41,
-    apyAvg: "4.6%",
-    color: "#10B981",
-    bg: "rgba(16,185,129,0.1)",
-  },
-  {
-    id: 3,
-    title: "Relatório de Janeiro 2026",
-    period: "01/01 – 31/01/2026",
-    status: "ready",
-    yield: "+$6.90",
-    txCount: 38,
-    apyAvg: "4.2%",
-    color: "#3B82F6",
-    bg: "rgba(59,130,246,0.1)",
-  },
-  {
-    id: 4,
-    title: "Q4 2025 — Resumo Anual",
-    period: "Out – Dez 2025",
-    status: "ready",
-    yield: "+$18.40",
-    txCount: 112,
-    apyAvg: "3.9%",
-    color: "#8B5CF6",
-    bg: "rgba(139,92,246,0.1)",
-  },
-];
+import { useCeloWallet } from "../hooks/use-celo-wallet";
+import { apiGet, DashboardPayload } from "../lib/api";
 
 export function ProfileRelatoriosPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
+  const { address } = useCeloWallet();
   const [downloading, setDownloading] = useState<number | null>(null);
+  const [dashboard, setDashboard] = useState<DashboardPayload | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    if (!address) {
+      setDashboard(null);
+      return () => {
+        alive = false;
+      };
+    }
+
+    apiGet<DashboardPayload>("/api/dashboard", { address, riskMode: "balanced" })
+      .then((payload) => {
+        if (!alive) return;
+        setDashboard(payload);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setDashboard(null);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [address]);
 
   const handleDownload = (id: number) => {
     setDownloading(id);
     setTimeout(() => setDownloading(null), 1800);
   };
+
+  const liveReport = dashboard
+    ? {
+        id: 1,
+        title: "Current Wallet Snapshot",
+        period: "Live · Celo Sepolia",
+        status: "new",
+        yield: `+$${dashboard.summary.monthlyYieldUsd.toFixed(2)}`,
+        txCount: dashboard.summary.agentOpsToday,
+        apyAvg: `${dashboard.summary.apy.toFixed(2)}%`,
+        color: "#A3D977",
+        bg: "rgba(163,217,119,0.1)",
+      }
+    : null;
 
   return (
     <div className="min-h-dvh bg-background pb-12">
@@ -75,8 +70,8 @@ export function ProfileRelatoriosPage() {
           <ArrowLeft className="w-5 h-5" style={{ color: "var(--text-primary)" }} />
         </button>
         <div>
-          <h1 className="font-bold text-text-primary">Relatórios</h1>
-          <p className="text-xs text-text-muted">Histórico completo do agente</p>
+          <h1 className="font-bold text-text-primary">Reports</h1>
+          <p className="text-xs text-text-muted">Complete agent history</p>
         </div>
       </header>
 
@@ -88,25 +83,29 @@ export function ProfileRelatoriosPage() {
           className="rounded-2xl p-5"
           style={{ background: "linear-gradient(135deg, #0D4B2E, #1a6b45)", boxShadow: "0 4px 20px rgba(13,75,46,0.25)" }}
         >
-          <p className="text-xs text-white/50 uppercase tracking-wider mb-3">YTD · Jan–Mar 2026</p>
+          <p className="text-xs text-white/50 uppercase tracking-wider mb-3">Live Snapshot</p>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-xs text-white/40">Total Yield</p>
-              <p className="text-2xl font-mono font-bold text-white">$18.60</p>
-              <p className="text-xs mt-1" style={{ color: "#A3D977" }}>+73% vs Q4 2025</p>
+              <p className="text-xs text-white/40">Projected Yield</p>
+              <p className="text-2xl font-mono font-bold text-white">
+                {dashboard ? `$${dashboard.summary.monthlyYieldUsd.toFixed(2)}` : "--"}
+              </p>
+              <p className="text-xs mt-1" style={{ color: "#A3D977" }}>
+                {dashboard ? `${dashboard.summary.apy.toFixed(2)}% APY blended` : "Connect a wallet to sync"}
+              </p>
             </div>
             <div>
-              <p className="text-xs text-white/40">Transações</p>
-              <p className="text-2xl font-mono font-bold text-white">102</p>
-              <p className="text-xs mt-1" style={{ color: "#A3D977" }}>47 pelo agente</p>
+              <p className="text-xs text-white/40">Operations</p>
+              <p className="text-2xl font-mono font-bold text-white">{dashboard?.summary.agentOpsToday ?? 0}</p>
+              <p className="text-xs mt-1" style={{ color: "#A3D977" }}>Since wallet activation</p>
             </div>
           </div>
           <div className="mt-4 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}>
             <div className="flex gap-4">
               {[
-                { label: "APY Médio", value: "4.8%", icon: TrendingUp },
-                { label: "Proteção Cambial", value: "3x", icon: Shield },
-                { label: "Rebalances", value: "47", icon: RotateCcw },
+                { label: "Avg APY", value: dashboard ? `${dashboard.summary.apy.toFixed(2)}%` : "--", icon: TrendingUp },
+                { label: "Liquidity Buffer", value: dashboard ? `$${dashboard.summary.liquidityBufferUsd.toFixed(2)}` : "--", icon: Shield },
+                { label: "Rebalances", value: String(dashboard?.summary.agentOpsToday ?? 0), icon: RotateCcw },
               ].map(({ label, value, icon: Icon }) => (
                 <div key={label} className="flex-1 text-center">
                   <Icon className="w-4 h-4 mx-auto mb-1 text-white/40" />
@@ -122,10 +121,10 @@ export function ProfileRelatoriosPage() {
       {/* Report list */}
       <div className="px-5 mb-5">
         <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3 px-1">
-          Relatórios Mensais
+          Monthly Reports
         </p>
         <div className="space-y-3">
-          {REPORTS.map((r, i) => (
+          {liveReport ? [liveReport].map((r, i) => (
             <motion.div
               key={r.id}
               initial={{ opacity: 0, y: 8 }}
@@ -147,7 +146,7 @@ export function ProfileRelatoriosPage() {
                     <p className="text-sm font-semibold text-text-primary">{r.title}</p>
                     {r.status === "new" && (
                       <span className="text-xs px-1.5 py-0.5 rounded-full font-semibold" style={{ background: "rgba(163,217,119,0.12)", color: "#A3D977", fontSize: "9px" }}>
-                        Novo
+                        New
                       </span>
                     )}
                   </div>
@@ -161,8 +160,8 @@ export function ProfileRelatoriosPage() {
               <div className="grid grid-cols-3 gap-2 mb-3">
                 {[
                   { label: "Yield", value: r.yield, color: "#A3D977" },
-                  { label: "APY Médio", value: r.apyAvg, color: "var(--text-primary)" },
-                  { label: "Transações", value: r.txCount.toString(), color: "var(--text-primary)" },
+                  { label: "Avg APY", value: r.apyAvg, color: "var(--text-primary)" },
+                  { label: "Transactions", value: r.txCount.toString(), color: "var(--text-primary)" },
                 ].map(({ label, value, color }) => (
                   <div
                     key={label}
@@ -185,10 +184,20 @@ export function ProfileRelatoriosPage() {
                 }}
               >
                 <Download className="w-3.5 h-3.5" />
-                {downloading === r.id ? "Baixando PDF..." : "Baixar PDF"}
+                {downloading === r.id ? "Downloading PDF..." : "Download PDF"}
               </button>
             </motion.div>
-          ))}
+          )) : (
+            <div
+              className="rounded-2xl p-4"
+              style={{ background: "var(--surface-solid)", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
+            >
+              <p className="text-sm font-semibold text-text-primary">No reports yet</p>
+              <p className="text-xs text-text-muted mt-1">
+                Monthly reports will appear after the wallet starts generating agent activity.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -200,7 +209,7 @@ export function ProfileRelatoriosPage() {
         >
           <Calendar className="w-5 h-5 flex-shrink-0" style={{ color: "#A3D977" }} />
           <p className="text-xs text-text-secondary flex-1 leading-relaxed">
-            Relatórios gerados automaticamente todo dia 1º. Próximo: <span style={{ color: "#A3D977", fontWeight: 600 }}>01/04/2026</span>.
+            Reports are generated after the wallet accumulates enough activity. Current mode: <span style={{ color: "#A3D977", fontWeight: 600 }}>{address ? "tracking live snapshot" : "awaiting wallet sync"}</span>.
           </p>
         </div>
       </div>

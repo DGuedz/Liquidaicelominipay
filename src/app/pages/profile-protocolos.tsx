@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowLeft, TrendingUp, CheckCircle2, Plus, ChevronDown, ChevronUp,
@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useTheme } from "../hooks/useTheme";
+import { useCeloWallet } from "../hooks/use-celo-wallet";
+import { apiGet, DashboardPayload } from "../lib/api";
 
 const PROTOCOLS = [
   {
@@ -13,45 +15,45 @@ const PROTOCOLS = [
     name: "Aave v3",
     type: "Lending",
     apy: "4.8%",
-    allocated: 820,
-    pct: 66,
+    allocated: 0,
+    pct: 0,
     color: "#A3D977",
     bg: "rgba(163,217,119,0.1)",
-    connected: true,
-    risk: "Baixo",
+    connected: false,
+    risk: "Low",
     riskColor: "#A3D977",
-    desc: "O maior protocolo de empréstimo DeFi. Seu capital gera rendimento emprestado a outros usuários com supercolateralização.",
-    chain: "Celo Mainnet",
+    desc: "The largest DeFi lending protocol. Your capital generates yield by lending to other users with overcollateralization.",
+    chain: "Waiting sync",
   },
   {
     id: "morpho",
     name: "Morpho (Mondo)",
     type: "Looping · stCELO",
     apy: "9.1%",
-    allocated: 350,
-    pct: 28,
+    allocated: 0,
+    pct: 0,
     color: "#10B981",
     bg: "rgba(16,185,129,0.1)",
-    connected: true,
-    risk: "Médio",
+    connected: false,
+    risk: "Medium",
     riskColor: "#F59E0B",
-    desc: "Looping de stCELO com alavancagem 2x gerenciada pelo agente. APY turbinado sem liquidações abruptas graças ao rebalance contínuo.",
-    chain: "Celo Mainnet",
+    desc: "stCELO looping with 2x leverage managed by agent. Boosted APY without abrupt liquidations thanks to continuous rebalancing.",
+    chain: "Waiting sync",
   },
   {
     id: "mento",
     name: "Mento V3",
     type: "Stable AMM · FX",
     apy: "3.8%",
-    allocated: 70,
-    pct: 6,
+    allocated: 0,
+    pct: 0,
     color: "#06B6D4",
     bg: "rgba(6,182,212,0.1)",
-    connected: true,
-    risk: "Muito Baixo",
+    connected: false,
+    risk: "Very Low",
     riskColor: "#A3D977",
-    desc: "Liquidez nativa cUSD↔cBRL↔cEUR. Rota de conversão PIX com spread 40% menor que V2. Seu buffer de liquidez para saques rápidos.",
-    chain: "Celo Mainnet",
+    desc: "Native liquidity cUSD↔cBRL↔cEUR. PIX conversion route with 40% lower spread than V2. Your liquidity buffer for fast withdrawals.",
+    chain: "Waiting sync",
   },
   {
     id: "curve",
@@ -63,10 +65,10 @@ const PROTOCOLS = [
     color: "#8B5CF6",
     bg: "rgba(139,92,246,0.1)",
     connected: false,
-    risk: "Baixo",
+    risk: "Low",
     riskColor: "#A3D977",
-    desc: "AMM especializada em stablecoins com baixo impermanent loss. Disponível para ativação no perfil Balanceado+.",
-    chain: "Celo Mainnet",
+    desc: "AMM specialized in stablecoins with low impermanent loss. Available for activation in Balanced+ profile.",
+    chain: "Waiting sync",
   },
   {
     id: "untangled",
@@ -78,18 +80,64 @@ const PROTOCOLS = [
     color: "#F59E0B",
     bg: "rgba(245,158,11,0.1)",
     connected: false,
-    risk: "Alto",
+    risk: "High",
     riskColor: "#EF4444",
-    desc: "Ativos do mundo real tokenizados. Empréstimos de PMEs LatAm com rendimento acima do mercado. Exclusivo perfil Arrojado.",
-    chain: "Celo Mainnet",
+    desc: "Tokenized real-world assets. LatAm SME loans with above-market yield. Exclusive to Aggressive profile.",
+    chain: "Waiting sync",
   },
 ];
+
+const PROTOCOL_META = Object.fromEntries(PROTOCOLS.map((protocol) => [protocol.id, protocol]));
 
 export function ProfileProtocolosPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
+  const { address } = useCeloWallet();
   const [expanded, setExpanded] = useState<string | null>("aave");
-  const totalAllocated = PROTOCOLS.filter((p) => p.connected).reduce((s, p) => s + p.allocated, 0);
+  const [dashboard, setDashboard] = useState<DashboardPayload | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    if (!address) {
+      setDashboard(null);
+      return () => {
+        alive = false;
+      };
+    }
+
+    apiGet<DashboardPayload>("/api/dashboard", { address, riskMode: "balanced" })
+      .then((payload) => {
+        if (!alive) return;
+        setDashboard(payload);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setDashboard(null);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [address]);
+
+  const displayProtocols = useMemo(() => {
+    const connections = dashboard?.liquidityNetwork.connections || [];
+    const activeIds = new Set(connections.map((connection) => connection.id));
+
+    return PROTOCOLS.map((protocol) => {
+      const live = connections.find((connection) => connection.id === protocol.id);
+      return {
+        ...protocol,
+        apy: live ? `${live.apyValue.toFixed(2)}%` : protocol.apy,
+        allocated: live ? live.amountUsd : 0,
+        pct: live ? Math.round(live.pct) : 0,
+        connected: activeIds.has(protocol.id),
+        chain: live?.source?.includes("onchain") ? "On-chain" : protocol.chain,
+      };
+    });
+  }, [dashboard]);
+
+  const totalAllocated = displayProtocols.filter((p) => p.connected).reduce((s, p) => s + p.allocated, 0);
 
   return (
     <div className="min-h-dvh bg-background pb-12">
@@ -102,9 +150,9 @@ export function ProfileProtocolosPage() {
           <ArrowLeft className="w-5 h-5" style={{ color: "var(--text-primary)" }} />
         </button>
         <div>
-          <h1 className="font-bold text-text-primary">Protocolos DeFi</h1>
+          <h1 className="font-bold text-text-primary">DeFi Protocols</h1>
           <p className="text-xs text-text-muted">
-            {PROTOCOLS.filter((p) => p.connected).length} conectados · ${totalAllocated.toLocaleString("en-US")} alocados
+            {displayProtocols.filter((p) => p.connected).length} connected · ${totalAllocated.toFixed(2)} allocated
           </p>
         </div>
       </header>
@@ -118,11 +166,11 @@ export function ProfileProtocolosPage() {
           style={{ background: "var(--surface-solid)", boxShadow: "0 2px 10px rgba(0,0,0,0.06)" }}
         >
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-text-primary">Alocação Ativa</p>
-            <p className="text-xs font-mono font-bold" style={{ color: "#A3D977" }}>${totalAllocated.toLocaleString("en-US")}</p>
+            <p className="text-sm font-semibold text-text-primary">Active Allocation</p>
+            <p className="text-xs font-mono font-bold" style={{ color: "#A3D977" }}>${totalAllocated.toFixed(2)}</p>
           </div>
           <div className="flex h-2.5 rounded-full overflow-hidden gap-px">
-            {PROTOCOLS.filter((p) => p.connected && p.pct > 0).map((p) => (
+            {displayProtocols.filter((p) => p.connected && p.pct > 0).map((p) => (
               <motion.div
                 key={p.id}
                 initial={{ width: 0 }}
@@ -133,7 +181,7 @@ export function ProfileProtocolosPage() {
             ))}
           </div>
           <div className="flex flex-wrap gap-2 mt-2.5">
-            {PROTOCOLS.filter((p) => p.connected && p.pct > 0).map((p) => (
+            {displayProtocols.filter((p) => p.connected && p.pct > 0).map((p) => (
               <div key={p.id} className="flex items-center gap-1">
                 <div className="w-2 h-2 rounded-full" style={{ background: p.color }} />
                 <span className="text-xs text-text-muted">{p.name} {p.pct}%</span>
@@ -146,10 +194,10 @@ export function ProfileProtocolosPage() {
       {/* Protocol list */}
       <div className="px-5 mb-5">
         <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3 px-1">
-          Todos os Protocolos
+          All Protocols
         </p>
         <div className="space-y-3">
-          {PROTOCOLS.map((p, i) => (
+          {displayProtocols.map((p, i) => (
             <motion.div
               key={p.id}
               initial={{ opacity: 0, y: 6 }}
@@ -207,9 +255,9 @@ export function ProfileProtocolosPage() {
                       <p className="text-xs text-text-secondary leading-relaxed mb-3">{p.desc}</p>
                       <div className="grid grid-cols-2 gap-2 mb-3">
                         {[
-                          { label: "Alocado", value: p.allocated > 0 ? `$${p.allocated}` : "Inativo" },
-                          { label: "Participação", value: p.pct > 0 ? `${p.pct}%` : "—" },
-                          { label: "Rede", value: p.chain, span: true },
+                          { label: "Allocated", value: p.allocated > 0 ? `$${p.allocated}` : "Inactive" },
+                          { label: "Share", value: p.pct > 0 ? `${p.pct}%` : "—" },
+                          { label: "Network", value: p.chain, span: true },
                         ].map(({ label, value, span }) => (
                           <div
                             key={label}
@@ -217,7 +265,7 @@ export function ProfileProtocolosPage() {
                             style={{ background: "var(--muted)" }}
                           >
                             <p className="text-xs text-text-muted">{label}</p>
-                            <p className="text-sm font-mono font-semibold text-text-primary mt-0.5">{value}</p>
+                            <p className="text-sm font-mono font-semibold text-text-primary mt-0.5">{typeof value === "number" ? value.toFixed(2) : value}</p>
                           </div>
                         ))}
                       </div>
@@ -227,7 +275,7 @@ export function ProfileProtocolosPage() {
                             className="flex-1 py-2.5 rounded-xl text-xs font-semibold"
                             style={{ background: "rgba(239,68,68,0.08)", color: "#EF4444", border: "1px solid rgba(239,68,68,0.15)" }}
                           >
-                            Desconectar
+                            Disconnect
                           </button>
                         ) : (
                           <button
@@ -235,7 +283,7 @@ export function ProfileProtocolosPage() {
                             style={{ background: "rgba(163,217,119,0.1)", color: "#A3D977", border: "1px solid rgba(163,217,119,0.25)" }}
                           >
                             <Plus className="w-3.5 h-3.5" />
-                            Ativar Protocolo
+                            Activate Protocol
                           </button>
                         )}
                         <a
@@ -262,7 +310,7 @@ export function ProfileProtocolosPage() {
           style={{ background: "var(--surface-solid)", border: "1.5px dashed rgba(163,217,119,0.35)", color: "#A3D977" }}
         >
           <Plus className="w-4 h-4" />
-          Adicionar Protocolo Personalizado
+          Add Custom Protocol
         </button>
       </div>
     </div>

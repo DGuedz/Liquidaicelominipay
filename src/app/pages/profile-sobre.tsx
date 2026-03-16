@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { ArrowLeft, ExternalLink, Star, Zap, Shield, Globe, TrendingUp } from "lucide-react";
+import { ArrowLeft, ExternalLink, Star, Zap, Shield, Globe, TrendingUp, BookOpen, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useTheme } from "../hooks/useTheme";
 
@@ -77,8 +77,7 @@ export function ProfileSobrePage() {
           style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.06)" }}
         >
           <p className="text-sm text-text-secondary leading-relaxed">
-            LiquidAI é um <span className="font-semibold text-text-primary">Sistema Operacional de Tesouraria</span> para o usuário médio da MiniPay — aquele que tem{" "}
-            <span style={{ color: "#A3D977", fontWeight: 600 }}>$1.200 em cUSD</span>, realiza microtransações diárias abaixo de $5 e precisa de proteção real contra a inflação local.
+            LiquidAI é um <span className="font-semibold text-text-primary">Sistema Operacional de Tesouraria</span> para o usuário da MiniPay que começa com o capital real da própria wallet, faz microtransações diárias e precisa preservar liquidez sem deixar saldo parado.
           </p>
           <p className="text-sm text-text-secondary leading-relaxed mt-3">
             Nossa filosofia é <span className="font-semibold text-text-primary">Invisible DeFi</span>: o máximo de 3 toques por ação, com complexidade DeFi zero — o agente faz tudo automaticamente.
@@ -138,6 +137,25 @@ export function ProfileSobrePage() {
             </motion.div>
           ))}
         </div>
+      </div>
+
+      {/* Project Brief Link */}
+      <div className="px-5 mb-5">
+        <button
+          onClick={() => navigate("/brief")}
+          className="w-full flex items-center justify-between p-4 rounded-2xl border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <BookOpen className="w-5 h-5 text-primary" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-bold text-primary">Project Brief & Handoff</p>
+              <p className="text-xs text-text-muted">Documentação técnica completa</p>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-primary/60" />
+        </button>
       </div>
 
       {/* Links */}

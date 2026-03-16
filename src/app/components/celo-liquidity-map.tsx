@@ -20,6 +20,26 @@ interface Protocol {
   dur: string;
 }
 
+interface ControlledConnection {
+  id: string;
+  apy: string;
+}
+
+interface ControlledNetworkState {
+  status: "standby" | "optimized";
+  sourceAmountUsd: number;
+  yieldCapturedUsd: number;
+  activeProtocolIds: string[];
+  connections: ControlledConnection[];
+  ctaLabel: string;
+  canOptimize: boolean;
+}
+
+interface CeloLiquidityMapProps {
+  network?: ControlledNetworkState | null;
+  onOptimize?: () => Promise<void> | void;
+}
+
 // ─── Category colour system ───────────────────────────────────────────────────
 const CAT = {
   amm:     { fill: "#064E3B", stroke: "#10B981", particle: "#10B981", label: "Stable AMM" },
@@ -27,6 +47,25 @@ const CAT = {
   rwa:     { fill: "#5C2900", stroke: "#F59E0B", particle: "#F59E0B", label: "RWA Pool"   },
   other:   { fill: "#1E293B", stroke: "#64748B", particle: "#94A3B8", label: "Other"      },
 } as const;
+
+const NODE_RADIUS = 13;
+const NODE_DIAMETER = NODE_RADIUS * 2;
+
+const LOGO_MAP: Record<string, string> = {
+  // ── Valora address-metadata (Celo native / ecosystem) ─────────────────────
+  mento: "https://raw.githubusercontent.com/valora-inc/address-metadata/main/assets/tokens/cUSD.png",
+  moola: "https://raw.githubusercontent.com/valora-inc/address-metadata/main/assets/tokens/MOO.png",
+  ethichub: "https://raw.githubusercontent.com/valora-inc/address-metadata/main/assets/tokens/ETHIX.png",
+  ube: "https://raw.githubusercontent.com/valora-inc/address-metadata/main/assets/tokens/UBE.png",
+
+  // ── Trust Wallet Assets (EVM) ──────────────────────────────────────────────
+  curve: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xD533a949740bb3306d119CC777fa900bA034cd52/logo.png",
+  uni: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984/logo.png",
+  aave: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9/logo.png",
+  morpho: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x9994E35Db50125E0DF82e4c2dde62496CE330999/logo.png",
+  sushi: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x6B3595068778DD592e39A122f4f5a5cF09C90fE2/logo.png",
+  pool: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x0cEC1A9154Ff802e7934Fc916Ed7Cb50Bde0f41E/logo.png",
+};
 
 // ─── Fixed positions ──────────────────────────────────────────────────────────
 const AI   = { cx: 148, cy: 188 };
@@ -71,20 +110,49 @@ function Particles({ path, color, dur }: { path: string; color: string; dur: str
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export function CeloLiquidityMap() {
+export function CeloLiquidityMap({ network, onOptimize }: CeloLiquidityMapProps = {}) {
   const { isDark } = useTheme();
   const [phase,       setPhase]       = useState<Phase>("idle");
   const [runKey,      setRunKey]      = useState(0);
   const [activeIds,   setActiveIds]   = useState<Set<string>>(new Set());
   const [counter,     setCounter]     = useState(0);
   const [yieldTarget, setYieldTarget] = useState(32.5);
+  const [remoteOptimizing, setRemoteOptimizing] = useState(false);
+  const [selectedProtocol, setSelectedProtocol] = useState<Protocol | null>(null);
 
-  const isRunning = phase === "running";
-  const isDone    = phase === "done";
+  const controlled = Boolean(network);
+  const controlledApyMap = new Map(
+    (network?.connections || []).map((connection) => [connection.id, connection.apy]),
+  );
+  const effectivePhase: Phase = remoteOptimizing
+    ? "running"
+    : controlled
+      ? network?.status === "optimized"
+        ? "done"
+        : "idle"
+      : phase;
+  const effectiveActiveIds = controlled ? new Set(network?.activeProtocolIds || []) : activeIds;
+  const effectiveCounter = controlled ? Number(network?.yieldCapturedUsd || 0) : counter;
+  const sourceAmountUsd = Number(network?.sourceAmountUsd || 350);
+
+  const isRunning = effectivePhase === "running";
+  const isDone    = effectivePhase === "done";
   const isActive  = isRunning || isDone;
 
   // ── handlers ───────────────────────────────────────────────────────────────
   const handleOptimize = () => {
+    if (controlled) {
+      if (!onOptimize || remoteOptimizing || network?.canOptimize === false) return;
+      const maybePromise = onOptimize();
+      if (maybePromise && typeof (maybePromise as Promise<void>).then === "function") {
+        setRemoteOptimizing(true);
+        (maybePromise as Promise<void>).finally(() => {
+          setRemoteOptimizing(false);
+        });
+      }
+      return;
+    }
+
     if (phase !== "idle") return;
 
     // Guarantee at least one node per category, then random extras
@@ -109,13 +177,15 @@ export function CeloLiquidityMap() {
 
   // ── phase transitions ──────────────────────────────────────────────────────
   useEffect(() => {
+    if (controlled) return;
     if (phase !== "running") return;
     const t = setTimeout(() => setPhase("done"), 4500);
     return () => clearTimeout(t);
-  }, [phase, runKey]);
+  }, [controlled, phase, runKey]);
 
   // ── yield counter ──────────────────────────────────────────────────────────
   useEffect(() => {
+    if (controlled) return;
     if (phase !== "done") return;
     const STEPS = 52;
     const MS    = 1300 / STEPS;
@@ -126,10 +196,11 @@ export function CeloLiquidityMap() {
       if (step >= STEPS) clearInterval(id);
     }, MS);
     return () => clearInterval(id);
-  }, [phase, yieldTarget]);
+  }, [controlled, phase, yieldTarget]);
 
   // ── auto-reset ─────────────────────────────────────────────────────────────
   useEffect(() => {
+    if (controlled) return;
     if (phase !== "done") return;
     const t = setTimeout(() => {
       setPhase("idle");
@@ -137,7 +208,7 @@ export function CeloLiquidityMap() {
       setActiveIds(new Set());
     }, 6500);
     return () => clearTimeout(t);
-  }, [phase]);
+  }, [controlled, phase]);
 
   // ── derived style helpers ──────────────────────────────────────────────────
   const idlePathColor   = isDark ? "rgba(163,217,119,0.14)" : "#DDE3EA";
@@ -239,22 +310,36 @@ export function CeloLiquidityMap() {
           />
 
           {/* ════════════════════════════════════════
-              PROTOCOL PATHS
+              PROTOCOL PATHS (Vein Animation)
           ════════════════════════════════════════ */}
           {PROTOCOLS.map((p) => {
-            const active = activeIds.has(p.id);
+            const active = effectiveActiveIds.has(p.id);
             const cat    = CAT[p.category];
+            
             return (
-              <path
+              <motion.path
                 key={`path-${p.id}`}
                 d={p.path}
                 fill="none"
                 stroke={active ? cat.stroke : idlePathColor}
-                strokeWidth={active ? 1.8 : 0.9}
-                strokeDasharray={active ? undefined : "3 3"}
-                opacity={active ? 1 : isActive ? 0.28 : 0.7}
-                filter={active ? "url(#clm-path)" : undefined}
-                style={{ transition: "stroke 0.4s ease, opacity 0.4s ease, stroke-width 0.3s ease" }}
+                strokeWidth={active ? 2 : 0.9}
+                strokeDasharray={active ? "4 4" : "3 3"}
+                initial={false}
+                animate={active ? {
+                  strokeDashoffset: [0, -24],
+                  strokeWidth: [2, 2.8, 2],
+                  strokeOpacity: [0.8, 1, 0.8],
+                } : {
+                  strokeDashoffset: 0,
+                  strokeWidth: 0.9,
+                  strokeOpacity: 0.7
+                }}
+                transition={active ? {
+                  strokeDashoffset: { duration: 1, repeat: Infinity, ease: "linear" },
+                  strokeWidth: { duration: 0.8, repeat: Infinity, ease: "easeInOut" }, // Heartbeat rhythm
+                  strokeOpacity: { duration: 0.8, repeat: Infinity, ease: "easeInOut" }
+                } : { duration: 0.4 }}
+                style={{ filter: active ? "url(#clm-path)" : undefined }}
               />
             );
           })}
@@ -271,7 +356,7 @@ export function CeloLiquidityMap() {
           ════════════════════════════════════════ */}
           {isRunning &&
             PROTOCOLS.map((p) =>
-              activeIds.has(p.id) ? (
+              effectiveActiveIds.has(p.id) ? (
                 <Particles
                   key={`pt-${p.id}-${runKey}`}
                   path={p.path}
@@ -313,12 +398,12 @@ export function CeloLiquidityMap() {
             <text x="5" y={IDLE.cy + 22}
               fill={isDark ? "#4A6A52" : "#718096"}
               fontSize="7" fontFamily="system-ui, sans-serif">
-              Liquidez
+              Liquidity
             </text>
             <text x="5" y={IDLE.cy + 32}
               fill="#A3D977" fontSize="7" fontWeight="600"
               fontFamily="ui-monospace, monospace">
-              $350
+              ${sourceAmountUsd >= 100 ? Math.round(sourceAmountUsd) : sourceAmountUsd.toFixed(2)}
             </text>
           </g>
 
@@ -376,7 +461,13 @@ export function CeloLiquidityMap() {
               fontSize="8" fontFamily="system-ui"
               style={{ transition: "fill 0.4s" }}
             >
-              {isRunning ? "routing funds..." : isDone ? "optimized ✓" : "standby"}
+              {isRunning
+                ? "routing funds..."
+                : isDone
+                ? "optimized ✓"
+                : controlled && network?.canOptimize === false
+                ? "connections stable"
+                : "standby"}
             </text>
           </g>
 
@@ -384,15 +475,27 @@ export function CeloLiquidityMap() {
               PROTOCOL NODES
           ════════════════════════════════════════ */}
           {PROTOCOLS.map((p) => {
-            const isSelected = activeIds.has(p.id);
+            const isSelected = effectiveActiveIds.has(p.id);
+            const isFocused = selectedProtocol?.id === p.id;
             const cat        = CAT[p.category];
             const nodeFill   = isSelected ? cat.fill : dimNodeFill;
             const nodeStroke = isSelected ? cat.stroke : dimNodeStroke;
 
             return (
-              <g key={p.id}>
+              <g 
+                key={p.id} 
+                onClick={(e) => { e.stopPropagation(); if (isSelected) setSelectedProtocol(p); }}
+                style={{ cursor: isSelected ? "pointer" : "default" }}
+              >
+                {/* Selection Halo */}
+                {isFocused && (
+                  <circle cx={p.cx} cy={p.cy} r={NODE_RADIUS + 8} fill="none" stroke={cat.stroke} strokeWidth="1.5" strokeDasharray="2 2">
+                    <animateTransform attributeName="transform" type="rotate" from={`0 ${p.cx} ${p.cy}`} to={`360 ${p.cx} ${p.cy}`} dur="4s" repeatCount="indefinite" />
+                  </circle>
+                )}
+
                 {/* Done glow pulse ring */}
-                {isSelected && isDone && (
+                {isSelected && isDone && !isFocused && (
                   <circle cx={p.cx} cy={p.cy} r="17" fill="none" stroke={cat.stroke} strokeWidth="1">
                     <animate attributeName="r"       values="17;28;17" dur="2.1s" repeatCount="indefinite" />
                     <animate attributeName="opacity" values="0.7;0;0.7" dur="2.1s" repeatCount="indefinite" />
@@ -409,7 +512,7 @@ export function CeloLiquidityMap() {
 
                 {/* Main circle */}
                 <circle
-                  cx={p.cx} cy={p.cy} r="13"
+                  cx={p.cx} cy={p.cy} r={NODE_RADIUS}
                   fill={nodeFill}
                   stroke={nodeStroke}
                   strokeWidth={isSelected ? "1.8" : "1"}
@@ -428,6 +531,30 @@ export function CeloLiquidityMap() {
                 >
                   {p.short}
                 </text>
+
+                {/* Protocol logo image (fallback = short text above) */}
+                {LOGO_MAP[p.id] && (
+                  <>
+                    <defs>
+                      <clipPath id={`clip-${p.id}`}>
+                        <circle cx={p.cx} cy={p.cy} r={NODE_RADIUS} />
+                      </clipPath>
+                    </defs>
+                    <image
+                      href={LOGO_MAP[p.id]}
+                      x={p.cx - NODE_RADIUS}
+                      y={p.cy - NODE_RADIUS}
+                      width={NODE_DIAMETER}
+                      height={NODE_DIAMETER}
+                      preserveAspectRatio="xMidYMid slice"
+                      clipPath={`url(#clip-${p.id})`}
+                      opacity={isSelected ? 1 : 0.72}
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                  </>
+                )}
 
                 {/* Protocol name label */}
                 <text
@@ -452,7 +579,7 @@ export function CeloLiquidityMap() {
                   opacity={isSelected && isActive ? 1 : 0}
                   style={{ transition: "opacity 0.4s" }}
                 >
-                  {p.apy}
+                  {controlledApyMap.get(p.id) || p.apy}
                 </text>
               </g>
             );
@@ -471,11 +598,11 @@ export function CeloLiquidityMap() {
       </div>
 
       {/* ── CTA BUTTON ─────────────────────────────────────────────────────── */}
-      <div className="px-4 pb-4">
+      <div className="px-4 pb-4 relative z-10">
         <motion.button
           whileTap={{ scale: 0.96 }}
           onClick={handleOptimize}
-          disabled={phase !== "idle"}
+          disabled={controlled ? remoteOptimizing || network?.canOptimize === false : phase !== "idle"}
           className="w-full py-3.5 rounded-xl flex items-center justify-center gap-2"
           style={{
             background: isDone
@@ -492,20 +619,127 @@ export function CeloLiquidityMap() {
             transition: "background 0.4s ease, box-shadow 0.4s ease",
           }}
         >
-          {isDone ? (
+          {isDone && !remoteOptimizing ? (
             <CheckCircle2 className="w-4 h-4" />
           ) : (
             <Zap className="w-4 h-4" style={{ color: "#A3D977" }} />
           )}
           <span className="text-sm font-semibold">
-            {isDone
-              ? `+$${counter.toFixed(2)} Yield Capturado`
-              : isRunning
-              ? `Roteando ${activeIds.size} pools...`
-              : "Optimize Liquidity"}
+            {controlled
+              ? remoteOptimizing
+                ? `Routing ${effectiveActiveIds.size || 1} pools...`
+                : isDone
+                  ? `+$${effectiveCounter.toFixed(2)} Yield Captured`
+                  : network?.ctaLabel || "Optimize Liquidity"
+              : isDone
+                ? `+$${effectiveCounter.toFixed(2)} Yield Captured`
+                : isRunning
+                  ? `Routing ${effectiveActiveIds.size} pools...`
+                  : "Optimize Liquidity"}
           </span>
         </motion.button>
       </div>
+
+      {/* ── DETAIL OVERLAY (Interactive Vein) ────────────────────────────── */}
+      <AnimatePresence>
+        {selectedProtocol && (
+          <motion.div
+            initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+            animate={{ opacity: 1, backdropFilter: "blur(4px)" }}
+            exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+            className="absolute inset-0 z-20 flex items-end justify-center pb-4 px-4"
+            style={{ background: "rgba(0,0,0,0.4)" }}
+            onClick={() => setSelectedProtocol(null)}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="w-full rounded-2xl p-5"
+              style={{
+                background: "var(--surface-solid)",
+                border: "1px solid var(--border-light)",
+                boxShadow: "0 -8px 32px rgba(0,0,0,0.3)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-4 mb-4">
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  style={{ background: CAT[selectedProtocol.category].fill }}
+                >
+                  <img 
+                    src={LOGO_MAP[selectedProtocol.id]} 
+                    alt={selectedProtocol.label} 
+                    className="w-8 h-8 rounded-full"
+                    onError={(e) => { e.currentTarget.style.display = 'none' }} 
+                  />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg" style={{ color: "var(--text-primary)" }}>
+                    {selectedProtocol.label}
+                  </h3>
+                  <p className="text-xs font-mono" style={{ color: CAT[selectedProtocol.category].stroke }}>
+                    {selectedProtocol.apy} APY · {CAT[selectedProtocol.category].label}
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setSelectedProtocol(null)}
+                  className="ml-auto text-xs font-bold px-2 py-1 rounded hover:bg-white/10"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  CLOSE
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="p-3 rounded-xl bg-[rgba(0,0,0,0.2)]">
+                  <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide">Liquidity</p>
+                  <p className="font-mono text-lg font-bold" style={{ color: "var(--text-primary)" }}>
+                    {selectedProtocol.id === 'mento' ? '$55.20' : selectedProtocol.id === 'aave' ? '$32.10' : '$12.40'}
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl bg-[rgba(0,0,0,0.2)]">
+                  <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide">Yield Earned</p>
+                  <p className="font-mono text-lg font-bold" style={{ color: "#10B981" }}>
+                    {selectedProtocol.id === 'mento' ? '+$0.42' : selectedProtocol.id === 'aave' ? '+$0.18' : '+$0.05'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => {
+                    // Simulation: Remove node from active set
+                    if (selectedProtocol) {
+                      const id = selectedProtocol.id;
+                      if (!controlled) {
+                        setActiveIds(prev => {
+                          const next = new Set(prev);
+                          next.delete(id);
+                          return next;
+                        });
+                      }
+                      setSelectedProtocol(null);
+                    }
+                  }}
+                  className="flex-1 py-3 rounded-xl font-semibold text-sm border hover:bg-white/5 active:scale-95 transition-all"
+                  style={{ borderColor: "var(--border-light)", color: "var(--text-primary)" }}
+                >
+                  Withdraw
+                </button>
+                <button 
+                  className="flex-1 py-3 rounded-xl font-semibold text-sm text-white hover:opacity-90 active:scale-95 transition-all"
+                  style={{ background: CAT[selectedProtocol.category].stroke }}
+                >
+                  Adjust Cap
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

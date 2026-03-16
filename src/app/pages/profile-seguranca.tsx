@@ -170,7 +170,7 @@ export function ProfileSegurancaPage() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-text-primary">Limite por transação</p>
-              <p className="text-xs text-text-muted mt-0.5">Agente não pode mover mais que $50/tx sem 2FA</p>
+              <p className="text-xs text-text-muted mt-0.5">O agente pede confirmação extra acima do limite configurado.</p>
             </div>
             <Toggle enabled={agentLimit} onToggle={() => setAgentLimit((v) => !v)} color="#F59E0B" />
           </div>
@@ -208,39 +208,27 @@ export function ProfileSegurancaPage() {
               <Key className="w-4.5 h-4.5" style={{ color: "#EF4444" }} />
             </div>
             <div>
-              <p className="text-sm font-medium text-text-primary">Seed Phrase</p>
-              <p className="text-xs text-text-muted">12 palavras · MiniPay / Celo</p>
+              <p className="text-sm font-medium text-text-primary">Recovery Phrase</p>
+              <p className="text-xs text-text-muted">Gerenciada pela sua wallet (MiniPay / MetaMask)</p>
             </div>
           </div>
 
-          {showSeed ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="p-3 rounded-xl mb-3 grid grid-cols-3 gap-2"
-              style={{ background: "var(--muted)" }}
-            >
-              {["turtle", "lens", "voyage", "oracle", "flame", "dusk", "river", "token", "vault", "chain", "mist", "dawn"].map((word, i) => (
-                <div key={i} className="flex items-center gap-1">
-                  <span className="text-xs text-text-muted">{i + 1}.</span>
-                  <span className="text-xs font-mono font-semibold text-text-primary">{word}</span>
-                </div>
-              ))}
-            </motion.div>
-          ) : (
-            <div
-              className="p-3 rounded-xl mb-3 flex items-center gap-2"
-              style={{ background: "var(--muted)" }}
-            >
-              <EyeOff className="w-4 h-4 text-text-muted flex-shrink-0" />
-              <p className="text-xs text-text-muted">•••• •••• •••• •••• •••• ••••</p>
-            </div>
-          )}
+          <div
+            className="p-3 rounded-xl mb-3 flex items-center gap-2"
+            style={{ background: "var(--muted)" }}
+          >
+            {showSeed
+              ? <Eye className="w-4 h-4 text-text-muted flex-shrink-0" />
+              : <EyeOff className="w-4 h-4 text-text-muted flex-shrink-0" />}
+            <p className="text-xs text-text-muted">
+              LiquidAI never stores or reveals your recovery phrase. Export it only from the wallet provider when needed.
+            </p>
+          </div>
 
           <div className="flex items-start gap-2 mb-3 p-2.5 rounded-xl" style={{ background: "rgba(239,68,68,0.06)" }}>
             <AlertTriangle className="w-3.5 h-3.5 text-red-500 flex-shrink-0 mt-0.5" />
             <p className="text-xs" style={{ color: "#EF4444" }}>
-              Nunca compartilhe sua seed phrase. Nenhuma pessoa da LiquidAI irá pedi-la.
+              Nunca compartilhe sua recovery phrase. O app não exibe palavras reais e nenhuma pessoa da LiquidAI irá pedi-la.
             </p>
           </div>
 
@@ -253,7 +241,7 @@ export function ProfileSegurancaPage() {
               border: `1px solid ${showSeed ? "rgba(239,68,68,0.2)" : "rgba(163,217,119,0.2)"}`,
             }}
           >
-            {showSeed ? "Ocultar Seed Phrase" : "Revelar Seed Phrase"}
+            {showSeed ? "Hide recovery guidance" : "Show recovery guidance"}
           </button>
         </motion.div>
       </div>

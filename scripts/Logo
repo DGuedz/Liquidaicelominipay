@@ -1,0 +1,495 @@
+Ah, desculpe pelo mal-entendido! Se o seu time de branding está precisando da marca LiquidAI para os materiais de divulgação, eles vão gostar de saber que ela é gerada completamente via código em SVG.
+
+Você encontra o código-fonte integral da logo aqui:
+
+/src/app/components/liquidai-logo.tsx
+
+Como você indicou no snippet, o círculo central interativo do logotipo está sendo desenhado nativamente ali com:
+
+<circle cx="250" cy="195" r="130"
+  fill={theme === "light" ? "#C6F0D8" : "#041A0D"}
+  stroke={`url(#${id}-g)`} strokeWidth={hovered ? "3" : "2"}
+  filter={`url(#${id}-blur)`}
+  style={{ transition: "stroke-width 0.3s ease" }}
+/>
+O legal dessa abordagem baseada em código é que as variantes da marca (Ícone e Logotipo Completo) têm propriedades de animação interativas quando o usuário interage e suportam ambos os temas, claro e escuro.
+
+Seu time de branding pode copiar todo o código SVG diretamente desse arquivo (liquidai-logo.tsx) ou renderizar o componente e baixar o vetor diretamente do navegador para usar nas redes da Celo!
+
+quero o codigo completo com detalhes na frente do codigo.
+Entendido! Aqui está a versão completa do arquivo que gera o logotipo do LiquidAI. O arquivo original contém todas as três versões do logo: o Ícone (IconMark), a versão Completa (FullMark) e a versão só de Texto (WordMark).
+
+Seu time de design pode copiar esse código e salvar como um arquivo SVG estático ou usar as lógicas já prontas no código para extrair o visual.
+
+Arquivo: /src/app/components/liquidai-logo.tsx
+/**
+ * LiquidAI Logo — Sistema de identidade visual
+ * Variantes: full | horizontal | icon | wordmark
+ * Temas: dark | light | auto
+ */
+
+import { useState } from "react";
+
+interface LogoProps {
+  variant?: "full" | "horizontal" | "icon" | "wordmark";
+  theme?: "dark" | "light" | "auto";
+  size?: number;
+  className?: string;
+  animate?: boolean;
+}
+
+export function LiquidAILogo({
+  variant = "full",
+  theme = "dark",
+  size,
+  className = "",
+  animate = false,
+}: LogoProps) {
+  if (variant === "icon") return <IconMark size={size ?? 48} theme={theme} animate={animate} className={className} />;
+  if (variant === "wordmark") return <WordMark size={size ?? 120} theme={theme} className={className} />;
+  return <FullMark size={size ?? 120} theme={theme} animate={animate} className={className} />;
+}
+
+// ─── Color tokens ─────────────────────────────────────────────────────────────
+
+function colors(theme: "dark" | "light" | "auto") {
+  if (theme === "light") {
+    return {
+      bg: "#F0FDF4",
+      surface: "#E8FBF0",
+      text: "#0A0E1A",
+      sub: "#16A34A",
+      border: "rgba(22,163,74,0.2)",
+    };
+  }
+  return {
+    bg: "#0A0E1A",
+    surface: "#0F1829",
+    text: "#FFFFFF",
+    sub: "#35D07F",
+    border: "rgba(53,208,127,0.2)",
+  };
+}
+
+// ─── Icon Mark ────────────────────────────────────────────────────────────────
+
+function IconMark({
+  size,
+  theme,
+  animate,
+  className,
+}: {
+  size: number;
+  theme: "dark" | "light" | "auto";
+  animate: boolean;
+  className: string;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const c = colors(theme);
+  const id = `icon-${theme}-${size}`;
+  const live = animate || hovered;
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 200 200"
+      width={size}
+      height={size}
+      className={className}
+      style={{ cursor: "pointer" }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <defs>
+        <linearGradient id={`${id}-g`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={hovered ? "#5FFFAA" : "#35D07F"} />
+          <stop offset="100%" stopColor={hovered ? "#25B060" : "#1A8A4A"} />
+        </linearGradient>
+        <linearGradient id={`${id}-gold`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FCFF52" />
+          <stop offset="100%" stopColor="#F0C030" />
+        </linearGradient>
+        <radialGradient id={`${id}-glow`} cx="50%" cy="42%" r="50%">
+          <stop offset="0%" stopColor="#35D07F" stopOpacity={hovered ? "0.28" : "0.18"} />
+          <stop offset="100%" stopColor={c.bg} stopOpacity="0" />
+        </radialGradient>
+        <filter id={`${id}-blur`}>
+          <feGaussianBlur stdDeviation="4" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id={`${id}-dropglow`}>
+          <feGaussianBlur stdDeviation={hovered ? "8" : "4"} result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <clipPath id={`${id}-clip`}><circle cx="100" cy="100" r="67" /></clipPath>
+      </defs>
+
+      {/* Container */}
+      <rect width="200" height="200" fill={c.surface} rx="44" />
+      <circle cx="100" cy="100" r="90" fill={`url(#${id}-glow)`} />
+
+      {/* Orbital ring */}
+      <circle cx="100" cy="100" r="80" fill="none" stroke={`url(#${id}-g)`}
+        strokeWidth="1.5" strokeDasharray="5 3.5" opacity={hovered ? "0.6" : "0.35"}
+        style={{ transition: "opacity 0.4s ease" }}
+      />
+      <circle cx="100" cy="100" r="70" fill="none" stroke="#35D07F" strokeWidth="0.8"
+        opacity={hovered ? "0.25" : "0.12"}
+        style={{ transition: "opacity 0.4s ease" }}
+      />
+
+      {/* Inner surface */}
+      <circle cx="100" cy="100" r="68" fill={c.bg === "#0A0E1A" ? "#0B1520" : "#E8FBF0"} />
+
+      {/* Liquid waves */}
+      <g clipPath={`url(#${id}-clip)`}>
+        <path
+          d={live
+            ? "M28,114 Q55,100 82,114 Q109,128 136,114 Q163,100 172,110 L172,180 L28,180 Z"
+            : "M28,122 Q55,108 82,122 Q109,136 136,122 Q163,108 172,118 L172,180 L28,180 Z"
+          }
+          fill="#35D07F" opacity={live ? "0.16" : "0.10"}
+          style={{ transition: "all 0.5s ease" }}
+        >
+          {live && <animate attributeName="d"
+            values="M28,122 Q55,108 82,122 Q109,136 136,122 Q163,108 172,118 L172,180 L28,180 Z;M28,110 Q55,96 82,110 Q109,124 136,110 Q163,96 172,106 L172,180 L28,180 Z;M28,122 Q55,108 82,122 Q109,136 136,122 Q163,108 172,118 L172,180 L28,180 Z"
+            dur="3s" repeatCount="indefinite" />}
+        </path>
+        <path
+          d={live
+            ? "M28,124 Q60,110 92,124 Q124,138 156,124 L172,132 L172,180 L28,180 Z"
+            : "M28,132 Q60,118 92,132 Q124,146 156,132 L172,140 L172,180 L28,180 Z"
+          }
+          fill="#35D07F" opacity={live ? "0.10" : "0.06"}
+          style={{ transition: "all 0.5s ease" }}
+        >
+          {live && <animate attributeName="d"
+            values="M28,132 Q60,118 92,132 Q124,146 156,132 L172,140 L172,180 L28,180 Z;M28,120 Q60,106 92,120 Q124,134 156,120 L172,128 L172,180 L28,180 Z;M28,132 Q60,118 92,132 Q124,146 156,132 L172,140 L172,180 L28,180 Z"
+            dur="3.8s" repeatCount="indefinite" />}
+        </path>
+      </g>
+
+      {/* ── Liquid drop — falls onto gold dot, then rises back ── */}
+      <g>
+        <path
+          d="M100,34 C100,34 73,62 71,84 C69,109 81,126 100,126 C119,126 131,109 129,84 C127,62 100,34 100,34 Z"
+          fill={`url(#${id}-g)`}
+          filter={`url(#${id}-dropglow)`}
+        >
+          {live && (
+            <animateTransform
+              attributeName="transform"
+              type="translate"
+              values="0,0; 0,18; 0,18; 0,0"
+              keyTimes="0; 0.38; 0.42; 1"
+              dur="3.2s"
+              repeatCount="indefinite"
+              calcMode="spline"
+              keySplines="0.6,0,0.8,1; 0,0,1,1; 0,0.6,0.4,1"
+            />
+          )}
+        </path>
+        {/* Drop inner shine */}
+        <path
+          d="M100,50 C100,50 83,72 82,86 C81,100 87,113 97,118"
+          fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"
+          opacity={hovered ? "0.6" : "0.38"}
+          style={{ transition: "opacity 0.3s ease" }}
+        />
+      </g>
+
+      {/* ── Gold node — receives drop, brightens on impact ── */}
+      <circle cx="100" cy="142" r="5" fill={`url(#${id}-gold)`}>
+        {live && (
+          <animate attributeName="r"
+            values="5;5;8;5" keyTimes="0;0.38;0.44;1"
+            dur="3.2s" repeatCount="indefinite" />
+        )}
+      </circle>
+
+      {/* Splash ring — expands on impact */}
+      {live && (
+        <circle cx="100" cy="142" r="5" fill="none" stroke="#FCFF52" strokeWidth="1.5">
+          <animate attributeName="r"
+            values="5;5;34;34" keyTimes="0;0.38;0.62;1"
+            dur="3.2s" repeatCount="indefinite" />
+          <animate attributeName="opacity"
+            values="0;0.75;0;0" keyTimes="0;0.38;0.64;1"
+            dur="3.2s" repeatCount="indefinite" />
+        </circle>
+      )}
+
+      {/* Secondary pulse ring */}
+      {live ? (
+        <circle cx="100" cy="142" r="11" fill="none" stroke="#FCFF52" strokeWidth="1.2">
+          <animate attributeName="r"
+            values="11;11;24;11" keyTimes="0;0.40;0.58;1"
+            dur="3.2s" repeatCount="indefinite" />
+          <animate attributeName="opacity"
+            values="0.3;0.3;0;0.3" keyTimes="0;0.40;0.64;1"
+            dur="3.2s" repeatCount="indefinite" />
+        </circle>
+      ) : (
+        <circle cx="100" cy="142" r="11" fill="none" stroke="#FCFF52" strokeWidth="1" opacity="0.35" />
+      )}
+
+      {/* ── Neural nodes — receive liquidity in staggered cascade ── */}
+      {[
+        { x: 76,  y: 152, t: 0.41 },
+        { x: 124, y: 152, t: 0.44 },
+        { x: 82,  y: 134, t: 0.47 },
+        { x: 118, y: 134, t: 0.50 },
+        { x: 100, y: 158, t: 0.43 },
+      ].map((n, i) => {
+        const end = Math.min(n.t + 0.14, 0.98);
+        const kt = `0;${n.t};${end};1`;
+        return (
+          <g key={i}>
+            <line x1="100" y1="142" x2={n.x} y2={n.y} stroke="#35D07F"
+              strokeWidth={hovered ? "1.4" : "0.8"}
+              opacity={hovered ? "0.6" : "0.32"}
+              style={{ transition: "all 0.3s ease" }}
+            >
+              {live && <>
+                <animate attributeName="strokeWidth" values="0.8;0.8;3;0.8" keyTimes={kt} dur="3.2s" repeatCount="indefinite" />
+                <animate attributeName="opacity"    values="0.32;0.32;1;0.32" keyTimes={kt} dur="3.2s" repeatCount="indefinite" />
+              </>}
+            </line>
+            <circle cx={n.x} cy={n.y} r="2.5" fill="#35D07F"
+              opacity={hovered ? "0.9" : "0.65"}
+              style={{ transition: "all 0.3s ease" }}
+            >
+              {live && <>
+                <animate attributeName="r"       values="2.5;2.5;5;2.5" keyTimes={kt} dur="3.2s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.65;0.65;1;0.65" keyTimes={kt} dur="3.2s" repeatCount="indefinite" />
+                <animate attributeName="fill"    values="#35D07F;#35D07F;#FCFF52;#35D07F" keyTimes={kt} dur="3.2s" repeatCount="indefinite" />
+              </>}
+            </circle>
+          </g>
+        );
+      })}
+
+      {/* Celo orbit ellipse + dot — rotates when live */}
+      <ellipse cx="100" cy="88" rx="52" ry="13" fill="none" stroke="#35D07F"
+        strokeWidth="0.8" opacity={hovered ? "0.45" : "0.22"}
+        style={{ transition: "opacity 0.4s ease" }}
+        transform="rotate(-18, 100, 88)">
+        {live && <animateTransform attributeName="transform" type="rotate"
+          from="0 100 88" to="360 100 88" dur="5s" repeatCount="indefinite" />}
+      </ellipse>
+      <circle cx="143" cy="72" r={hovered ? "5.5" : "4"} fill="#35D07F"
+        opacity="0.6" filter={`url(#${id}-blur)`}
+        style={{ transition: "r 0.3s ease" }}
+      />
+    </svg>
+  );
+}
+
+// ─── Full Mark (icon + stacked text) ─────────────────────────────────────────
+
+function FullMark({
+  size,
+  theme,
+  animate,
+  className,
+}: {
+  size: number;
+  theme: "dark" | "light" | "auto";
+  animate: boolean;
+  className: string;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const c = colors(theme);
+  const id = `full-${theme}-${size}`;
+  const W = 500;
+  const H = 520;
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox={`0 0 ${W} ${H}`}
+      width={size}
+      height={(size * H) / W}
+      className={className}
+      style={{ cursor: "pointer" }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <defs>
+        <linearGradient id={`${id}-g`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={hovered ? "#5FFFAA" : "#35D07F"} />
+          <stop offset="100%" stopColor={hovered ? "#25B060" : "#1A8A4A"} />
+        </linearGradient>
+        <linearGradient id={`${id}-gold`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FCFF52" />
+          <stop offset="100%" stopColor="#F0C030" />
+        </linearGradient>
+        <radialGradient id={`${id}-glow`} cx="50%" cy="42%" r="50%">
+          <stop offset="0%" stopColor="#35D07F" stopOpacity={hovered ? "0.28" : "0.14"} />
+          <stop offset="100%" stopColor={c.bg} stopOpacity="0" />
+        </radialGradient>
+        <filter id={`${id}-blur`}>
+          <feGaussianBlur stdDeviation="5" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id={`${id}-dropglow`}>
+          <feGaussianBlur stdDeviation={hovered ? "10" : "5"} result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+      </defs>
+
+      {/* BG glow */}
+      <circle cx="250" cy="195" r="220" fill={`url(#${id}-glow)`}
+        style={{ transition: "all 0.4s ease" }} />
+
+      {/* Outer dashed ring */}
+      <circle cx="250" cy="195" r="145" fill="none" stroke={`url(#${id}-g)`}
+        strokeWidth="1.5" strokeDasharray="6 4" opacity={hovered ? "0.65" : "0.35"}
+        style={{ transition: "opacity 0.4s ease" }}
+      />
+      <circle cx="250" cy="195" r="158" fill="none" stroke="#35D07F" strokeWidth="0.6"
+        opacity={hovered ? "0.28" : "0.12"}
+        style={{ transition: "opacity 0.4s ease" }}
+      />
+
+      {/* Main circle */}
+      <circle cx="250" cy="195" r="130"
+        fill={theme === "light" ? "#C6F0D8" : "#041A0D"}
+        stroke={`url(#${id}-g)`} strokeWidth={hovered ? "3" : "2"}
+        filter={`url(#${id}-blur)`}
+        style={{ transition: "stroke-width 0.3s ease" }}
+      />
+
+      {/* Liquid waves inside */}
+      <clipPath id={`${id}-cclip`}><circle cx="250" cy="195" r="128" /></clipPath>
+      <g clipPath={`url(#${id}-cclip)`}>
+        <path
+          d={hovered
+            ? "M108,228 Q148,210 188,228 Q228,246 268,228 Q308,210 392,226 L392,340 L108,340 Z"
+            : "M108,242 Q148,224 188,242 Q228,260 268,242 Q308,224 392,240 L392,340 L108,340 Z"
+          }
+          fill="#35D07F" opacity={hovered ? "0.18" : "0.09"}
+          style={{ transition: "all 0.5s ease" }}
+        />
+        <path
+          d={hovered
+            ? "M108,244 Q155,226 202,244 Q249,262 296,244 Q340,228 392,240 L392,340 L108,340 Z"
+            : "M108,258 Q155,240 202,258 Q249,276 296,258 Q340,242 392,254 L392,340 L108,340 Z"
+          }
+          fill="#35D07F" opacity={hovered ? "0.12" : "0.05"}
+          style={{ transition: "all 0.5s ease" }}
+        />
+      </g>
+
+      {/* Drop — sobe levemente no hover */}
+      <g style={{ transform: hovered ? "translateY(-10px)" : "translateY(0px)", transition: "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)", transformOrigin: "250px 170px" }}>
+        <path
+          d="M250,98 C250,98 207,148 204,180 C201,216 220,244 250,244 C280,244 299,216 296,180 C293,148 250,98 250,98 Z"
+          fill={`url(#${id}-g)`}
+          filter={`url(#${id}-dropglow)`}
+        />
+        {/* Shine interna */}
+        <path
+          d="M250,118 C250,118 228,152 226,176 C224,198 233,218 246,226"
+          fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"
+          opacity={hovered ? "0.65" : "0.38"}
+          style={{ transition: "opacity 0.3s ease" }}
+        />
+        {/* Reflexo extra no hover */}
+        {hovered && (
+          <ellipse cx="230" cy="130" rx="10" ry="6"
+            fill="white" opacity="0.18"
+            transform="rotate(-30, 230, 130)"
+          />
+        )}
+      </g>
+
+      {/* AI pulse */}
+      <circle cx="250" cy="248" r="6" fill={`url(#${id}-gold)`} />
+      {(animate || hovered) ? (
+        <circle cx="250" cy="248" r="13" fill="none" stroke="#FCFF52"
+          strokeWidth={hovered ? "1.5" : "1"}
+          opacity={hovered ? "0.5" : "0.3"}>
+          <animate attributeName="r" values="13;20;13" dur={hovered ? "1.2s" : "2s"} repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.5;0;0.5" dur={hovered ? "1.2s" : "2s"} repeatCount="indefinite" />
+        </circle>
+      ) : (
+        <circle cx="250" cy="248" r="13" fill="none" stroke="#FCFF52" strokeWidth="1" opacity="0.3" />
+      )}
+
+      {/* Neural nodes — aparecem mais vivos no hover */}
+      {[
+        { x: 215, y: 262 }, { x: 285, y: 262 },
+        { x: 222, y: 244 }, { x: 278, y: 244 }, { x: 250, y: 274 },
+      ].map((n, i) => (
+        <g key={i}>
+          <line x1="250" y1="248" x2={n.x} y2={n.y} stroke="#35D07F"
+            strokeWidth={hovered ? "1.4" : "0.9"}
+            opacity={hovered ? "0.6" : "0.32"}
+            style={{ transition: "all 0.3s ease" }}
+          />
+          <circle cx={n.x} cy={n.y} r={hovered ? "4" : "3"} fill="#35D07F"
+            opacity={hovered ? "0.9" : "0.65"}
+            style={{ transition: "all 0.3s ease" }}
+          />
+        </g>
+      ))}
+
+      {/* Orbit — gira no hover via animação SVG */}
+      <ellipse cx="250" cy="185" rx="88" ry="19" fill="none" stroke="#35D07F"
+        strokeWidth="0.9" opacity={hovered ? "0.45" : "0.2"}
+        style={{ transition: "opacity 0.4s ease" }}
+        transform="rotate(-20, 250, 185)">
+        {hovered && <animateTransform attributeName="transform" type="rotate"
+          from="0 250 185" to="360 250 185" dur="4s" repeatCount="indefinite" />}
+      </ellipse>
+      <circle cx="324" cy="163" r={hovered ? "7" : "5.5"} fill="#35D07F"
+        opacity="0.55" filter={`url(#${id}-blur)`}
+        style={{ transition: "r 0.3s ease" }}
+      />
+    </svg>
+  );
+}
+
+// ─── Word Mark only ───────────────────────────────────────────────────────────
+
+function WordMark({
+  size,
+  theme,
+  className,
+}: {
+  size: number;
+  theme: "dark" | "light" | "auto";
+  className: string;
+}) {
+  const c = colors(theme);
+  const id = `word-${theme}-${size}`;
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 300 60"
+      width={size}
+      height={(size * 60) / 300}
+      className={className}
+    >
+      <defs>
+        <linearGradient id={`${id}-g`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#35D07F" />
+          <stop offset="100%" stopColor="#1A8A4A" />
+        </linearGradient>
+      </defs>
+      <text x="0" y="42" fill={c.text} fontSize="48"
+        fontFamily="'SF Pro Display','Inter','Helvetica Neue',sans-serif"
+        fontWeight="700" letterSpacing="-1.5">
+        Liquid
+      </text>
+      <text x="0" y="42" fill={`url(#${id}-g)`} fontSize="48"
+        fontFamily="'SF Pro Display','Inter','Helvetica Neue',sans-serif"
+        fontWeight="700" letterSpacing="-1.5">
+        {"       AI"}
+      </text>
+    </svg>
+  );
+}
+home

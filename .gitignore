@@ -1,0 +1,38 @@
+node_modules
+dist
+.env.local
+.env
+.env.*
+!.env.example
+.liquidai-api.pid
+.liquidai-web.pid
+.liquidai-api.log
+.liquidai-web.log
+
+# System
+.DS_Store
+Thumbs.db
+
+# Logs & Pids
+*.log
+*.pid
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+.playwright-cli/
+test-results/
+playwright-report/
+blob-report/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Output Artifacts
+output/playwright/

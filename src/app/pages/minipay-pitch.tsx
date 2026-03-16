@@ -17,12 +17,13 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useTheme } from "../hooks/useTheme";
+import { LiquidLogo } from "../components/LiquidLogo";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 const STATS = [
-  { value: "12M+", label: "Usuários MiniPay", icon: Users },
-  { value: "4.8%", label: "APY médio", icon: TrendingUp },
-  { value: "< $5", label: "Microtransações", icon: Zap },
+  { value: "12M+", label: "MiniPay Users", icon: Users },
+  { value: "4.8%", label: "Avg APY", icon: TrendingUp },
+  { value: "< $5", label: "Micro-transactions", icon: Zap },
 ];
 
 const PILLARS = [
@@ -30,29 +31,29 @@ const PILLARS = [
     icon: Bot,
     color: "#A3D977",
     bg: "rgba(163,217,119,0.12)",
-    title: "Sua Reserva Trabalha 24/7",
+    title: "Your Reserve Works 24/7",
     description:
-      "Com $1.200 cUSD parados na MiniPay, a inflação local come seu dinheiro mesmo em dólar. O LiquidAI Agent aloca automaticamente em protocolos Celo para gerar +4.8% APY — sem você precisar entender DeFi.",
-    badge: "+$8/mês",
+      "With $1,200 cUSD idle in MiniPay, local inflation eats your money even in dollars. LiquidAI Agent automatically allocates to Celo protocols to generate +4.8% APY — without you needing to understand DeFi.",
+    badge: "+$8/mo",
     badgeColor: "#A3D977",
   },
   {
     icon: Zap,
     color: "#10B981",
     bg: "rgba(16,185,129,0.1)",
-    title: "Pronto para o Dia a Dia",
+    title: "Ready for Daily Life",
     description:
-      "PIX de $3,50, recarga de $2, remessa P2P — tudo funciona como antes. O agente mantém $350 em liquidez imediata enquanto o restante rende. Liquidação em 1 segundo na rede Celo.",
-    badge: "≤ 3 toques",
+      "$3.50 PIX, $2 top-up, P2P remittance — everything works as before. The agent keeps $350 in immediate liquidity while the rest earns yield. 1-second settlement on Celo network.",
+    badge: "≤ 3 taps",
     badgeColor: "#10B981",
   },
   {
     icon: Globe,
     color: "#06B6D4",
     bg: "rgba(6,182,212,0.1)",
-    title: "Brasil, Argentina, África",
+    title: "Brazil, Argentina, Africa",
     description:
-      "Sem palavras difíceis do mundo cripto. Se você sabe enviar uma mensagem no WhatsApp, você sabe usar o LiquidAI. Interface em português, design familiar, resultados reais.",
+      "No complex crypto jargon. If you can send a WhatsApp message, you can use LiquidAI. Localized interface, familiar design, real results.",
     badge: "Invisible DeFi",
     badgeColor: "#06B6D4",
   },
@@ -60,21 +61,21 @@ const PILLARS = [
     icon: Fingerprint,
     color: "#8B5CF6",
     bg: "rgba(139,92,246,0.1)",
-    title: "Apenas Para Humanos Reais",
+    title: "Real Humans Only",
     description:
-      "A integração com o Self Protocol garante verificação de identidade via ZK Proof sem expor seus dados. 1 humano = 1 conta. Robôs e sybils são bloqueados, humanos ganham taxas premium.",
+      "Self Protocol integration ensures identity verification via ZK Proof without exposing your data. 1 human = 1 account. Bots and sybils are blocked, humans get premium rates.",
     badge: "Anti-Sybil",
     badgeColor: "#8B5CF6",
   },
 ];
 
 const COMPARISON = [
-  { feature: "Proteção contra inflação", minipay: false, liquidai: true },
-  { feature: "Yield automático 4.8%", minipay: false, liquidai: true },
-  { feature: "Liquidez imediata PIX", minipay: true, liquidai: true },
-  { feature: "Agente IA 24/7", minipay: false, liquidai: true },
-  { feature: "Verificação Anti-Sybil", minipay: false, liquidai: true },
-  { feature: "Interface familiar", minipay: true, liquidai: true },
+  { feature: "Inflation protection", minipay: false, liquidai: true },
+  { feature: "Auto-yield 4.8%", minipay: false, liquidai: true },
+  { feature: "Instant liquidity (PIX)", minipay: true, liquidai: true },
+  { feature: "24/7 AI Agent", minipay: false, liquidai: true },
+  { feature: "Anti-Sybil Verification", minipay: false, liquidai: true },
+  { feature: "Familiar interface", minipay: true, liquidai: true },
 ];
 
 // ─── Section header ───────────────────────────────────────────────────────────
@@ -170,15 +171,7 @@ export function MiniPayPitchPage() {
         }}
       >
         <div className="flex items-center gap-2.5">
-          <div
-            className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background: "#0D4B2E" }}
-          >
-            <TrendingUp className="w-4 h-4" style={{ color: "#A3D977" }} />
-          </div>
-          <span className="font-bold text-base" style={{ color: "var(--text-primary)" }}>
-            LiquidAI
-          </span>
+          <LiquidLogo size={120} variant="wordmark" theme="auto" />
         </div>
         <div
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
@@ -226,7 +219,7 @@ export function MiniPayPitchPage() {
               letterSpacing: "-0.02em",
             }}
           >
-            Seu cUSD protegido{" "}
+            Your cUSD protected{" "}
             <span
               style={{
                 background: "linear-gradient(135deg, #A3D977, #10B981)",
@@ -235,9 +228,9 @@ export function MiniPayPitchPage() {
                 backgroundClip: "text",
               }}
             >
-              da inflação.
+              from inflation.
             </span>{" "}
-            Rendendo.
+            Earning.
           </motion.h1>
 
           <motion.p
@@ -247,9 +240,8 @@ export function MiniPayPitchPage() {
             className="mb-8 text-sm leading-relaxed"
             style={{ color: "var(--text-secondary)", maxWidth: "340px" }}
           >
-            Mais de 12 milhões de pessoas usam a MiniPay para guardar saldo e
-            pagar o dia a dia. O LiquidAI transforma esse saldo em um ativo que
-            trabalha 24/7 — sem você precisar saber o que é DeFi.
+            Over 12 million people use MiniPay to hold balance and pay for daily life. 
+            LiquidAI transforms this balance into an asset that works 24/7 — without you needing to understand DeFi.
           </motion.p>
 
           {/* Stats Row */}
@@ -278,7 +270,7 @@ export function MiniPayPitchPage() {
                   >
                     {s.value}
                   </span>
-                  <span className="text-xs text-center mt-0.5" style={{ color: "var(--text-muted)" }}>
+                  <span className="text-center mt-0.5" style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
                     {s.label}
                   </span>
                 </div>
@@ -298,12 +290,12 @@ export function MiniPayPitchPage() {
             }}
           >
             <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="w-4 h-4" style={{ color: "#A3D977" }} />
-              <span className="text-sm font-semibold text-white">Simulação: saldo de $1.200 cUSD</span>
+              <LiquidLogo size={24} variant="icon" theme="auto" background="transparent" className="mr-1" />
+              <span className="text-sm font-semibold text-white">Simulation: $1,200 cUSD balance</span>
             </div>
             {[
-              { label: "Sem LiquidAI (parado)", value: "$1.200", sub: "Inflação local: -8%/ano", color: "#EF4444" },
-              { label: "Com LiquidAI (APY 4.8%)", value: "$1.257,60", sub: "+$57,60 em 12 meses", color: "#A3D977" },
+              { label: "Without LiquidAI (idle)", value: "$1,200.00", sub: "Local inflation: -8%/yr", color: "#EF4444" },
+              { label: "With LiquidAI (4.8% APY)", value: "$1,257.60", sub: "+$57.60 in 12 months", color: "#A3D977" },
             ].map((row, i) => (
               <div
                 key={row.label}
@@ -328,7 +320,7 @@ export function MiniPayPitchPage() {
             >
               <CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: "#A3D977" }} />
               <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>
-                <span className="font-semibold text-white">$57,60 extras por ano</span> apenas por deixar o agente trabalhar — sem risco adicional
+                <span className="font-semibold text-white">$57.60 extra per year</span> just by letting the agent work — no extra risk
               </p>
             </div>
           </motion.div>
@@ -337,9 +329,9 @@ export function MiniPayPitchPage() {
 
       {/* ── PILLARS ─────────────────────────────────────────── */}
       <div className="px-5 mb-8">
-        <SectionLabel text="Por que LiquidAI" />
+        <SectionLabel text="Why LiquidAI" />
         <h2 className="mb-5" style={{ color: "var(--text-primary)", fontSize: "1.25rem", fontWeight: 700 }}>
-          Invisible DeFi para o mundo real
+          Invisible DeFi for the Real World
         </h2>
         <div className="flex flex-col gap-4">
           {PILLARS.map((pillar, i) => (
@@ -350,7 +342,7 @@ export function MiniPayPitchPage() {
 
       {/* ── COMPARISON TABLE ────────────────────────────────── */}
       <div className="px-5 mb-8">
-        <SectionLabel text="Comparativo" />
+        <SectionLabel text="Comparison" />
         <h2 className="mb-4" style={{ color: "var(--text-primary)", fontSize: "1.25rem", fontWeight: 700 }}>
           MiniPay vs LiquidAI
         </h2>
@@ -363,7 +355,7 @@ export function MiniPayPitchPage() {
             className="grid grid-cols-3 px-4 py-3"
             style={{ background: "var(--card-bg)", borderBottom: "1px solid var(--border-light)" }}
           >
-            <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Recurso</span>
+            <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Feature</span>
             <span className="text-xs font-semibold text-center" style={{ color: "var(--text-muted)" }}>MiniPay</span>
             <span className="text-xs font-semibold text-center" style={{ color: "#A3D977" }}>LiquidAI</span>
           </div>
@@ -392,28 +384,28 @@ export function MiniPayPitchPage() {
 
       {/* ── HOW IT WORKS ────────────────────────────────────── */}
       <div className="px-5 mb-8">
-        <SectionLabel text="Como funciona" />
+        <SectionLabel text="How it works" />
         <h2 className="mb-5" style={{ color: "var(--text-primary)", fontSize: "1.25rem", fontWeight: 700 }}>
-          3 toques, sem complicação
+          3 taps, zero complexity
         </h2>
         <div className="flex flex-col gap-3">
           {[
             {
               step: "01",
-              title: "Conecte sua MiniPay",
-              desc: "Abra o LiquidAI dentro do Opera Mini. Sem seed phrase, sem complexidade.",
+              title: "Connect MiniPay",
+              desc: "Open LiquidAI inside Opera Mini. No seed phrase, no complexity.",
               color: "#A3D977",
             },
             {
               step: "02",
-              title: "Verifique com Self",
-              desc: "1 selfie + passaporte = identidade comprovada via ZK Proof. Dados jamais expostos.",
+              title: "Verify with Self",
+              desc: "1 selfie + passport = identity proven via ZK Proof. Data never exposed.",
               color: "#10B981",
             },
             {
               step: "03",
-              title: "O agente cuida do resto",
-              desc: "O LiquidAI Agent otimiza seu cUSD 24/7, mantendo liquidez para seus gastos diários.",
+              title: "Agent takes over",
+              desc: "LiquidAI Agent optimizes your cUSD 24/7, keeping liquidity for your daily spending.",
               color: "#06B6D4",
             },
           ].map((item, i) => (
@@ -479,23 +471,12 @@ export function MiniPayPitchPage() {
         </div>
       </div>
 
-      {/* ── CTA ─────────────────────────────────────────────── */}
-      <div className="px-5">
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={() => navigate("/")}
-          className="w-full py-4 rounded-full font-bold text-base flex items-center justify-center gap-2 mb-3"
-          style={{
-            background: "linear-gradient(135deg, #0D4B2E 0%, #1a6b45 100%)",
-            color: "#FFFFFF",
-            boxShadow: "0 6px 28px rgba(13,75,46,0.35)",
-          }}
-        >
-          Experimentar Agora
-          <ArrowRight className="w-5 h-5" />
-        </motion.button>
-        <p className="text-center text-xs" style={{ color: "var(--text-muted)" }}>
-          Auditoria completa · Zero taxas ocultas · Liquidação em 1s · Rede Celo
+      <div className="mt-12 px-5 pb-8 text-center border-t pt-8" style={{ borderColor: "var(--border-light)" }}>
+        <div className="flex justify-center mb-4">
+          <LiquidLogo size={48} variant="full" theme="auto" background="auto" />
+        </div>
+        <p className="text-xs" style={{ color: "var(--text-muted)", lineHeight: 1.6 }}>
+          Treasury Operating System · Build Agents for the Real World V2 · 2026
         </p>
       </div>
     </div>

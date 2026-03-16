@@ -1,14 +1,15 @@
 import { useNavigate } from "react-router";
 import { motion } from "motion/react";
-import { TrendingUp, Shield, Zap, ArrowRight, Bot, Sparkles, Globe, Lock, ChevronDown } from "lucide-react";
+import { Shield, Zap, ArrowRight, Bot, Sparkles, Globe, Lock, ChevronDown, Target } from "lucide-react";
+import { LiquidLogo } from "../components/LiquidLogo";
 
 export function LandingPage() {
   const navigate = useNavigate();
 
   const stats = [
-    { label: "Capital Optimizado", value: "$2.4B+" },
-    { label: "APY Médio", value: "4.2%" },
-    { label: "Usuários Ativos", value: "12K+" },
+    { label: "Optimized Capital", value: "$2.4B+" },
+    { label: "Avg APY", value: "4.2%" },
+    { label: "Active Users", value: "12K+" },
   ];
 
   const features = [
@@ -16,29 +17,29 @@ export function LandingPage() {
       icon: Bot,
       color: "#0D4B2E",
       bg: "#E8F5E9",
-      title: "Agente Financeiro Autônomo",
-      description: "IA que monitora e otimiza seu capital automaticamente, 24/7, sem intervenção manual.",
+      title: "Autonomous Financial Agent",
+      description: "AI that monitors and optimizes your capital automatically, 24/7, without manual intervention.",
     },
     {
       icon: Shield,
       color: "#3B82F6",
       bg: "#EFF6FF",
-      title: "Segurança Bancária",
-      description: "Infraestrutura de nível institucional com total transparência e controle do usuário.",
+      title: "Bank-Grade Security",
+      description: "Institutional-grade infrastructure with total transparency and user control.",
     },
     {
       icon: Zap,
       color: "#F59E0B",
       bg: "#FFFBEB",
-      title: "Regra dos 3 Toques",
-      description: "Qualquer operação financeira concluída em até 3 interações. Simples assim.",
+      title: "3-Tap Rule",
+      description: "Any financial operation completed in up to 3 interactions. Simple as that.",
     },
     {
       icon: Globe,
       color: "#8B5CF6",
       bg: "#F5F3FF",
       title: "Invisible DeFi",
-      description: "Infraestrutura avançada operando no background. Você vê apenas resultados.",
+      description: "Advanced infrastructure operating in the background. You only see results.",
     },
   ];
 
@@ -78,23 +79,16 @@ export function LandingPage() {
             initial={{ scale: 0, rotate: -10 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
-            className="w-20 h-20 mx-auto mb-6 rounded-3xl flex items-center justify-center relative"
-            style={{
-              background: "linear-gradient(135deg, #0D4B2E 0%, #1a6b45 100%)",
-              boxShadow: "0 8px 32px rgba(13,75,46,0.3)",
-            }}
+            className="mb-6 flex justify-center"
           >
-            <TrendingUp className="w-10 h-10 text-white" />
-            <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-secondary flex items-center justify-center">
-              <Bot className="w-3 h-3 text-white" />
-            </div>
+            <LiquidLogo size={80} variant="icon" theme="auto" background="auto" animate={true} />
           </motion.div>
 
           <h1 className="text-5xl font-bold text-text-primary mb-3 tracking-tight">
             Liquid<span style={{ color: "#0D4B2E" }}>AI</span>
           </h1>
           <p className="text-base text-text-secondary max-w-xs mx-auto leading-relaxed">
-            O Sistema Operacional de Tesouraria que transforma liquidez ociosa em capital produtivo
+            The Treasury Operating System that turns idle liquidity into productive capital
           </p>
         </motion.div>
 
@@ -134,7 +128,7 @@ export function LandingPage() {
               boxShadow: "0 4px 24px rgba(13,75,46,0.35)",
             }}
           >
-            Começar Agora
+            Start Now
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </motion.button>
           <motion.button
@@ -143,7 +137,7 @@ export function LandingPage() {
             className="w-full bg-surface-solid border border-border rounded-full py-4 font-semibold text-text-primary flex items-center justify-center gap-2"
           >
             <Lock className="w-4 h-4 text-text-muted" />
-            Ver Demo
+            View Demo
           </motion.button>
         </motion.div>
 
@@ -154,7 +148,7 @@ export function LandingPage() {
           transition={{ delay: 0.8 }}
           className="flex flex-col items-center gap-1 text-text-muted"
         >
-          <span className="text-xs">Saiba mais</span>
+          <span className="text-xs">Learn more</span>
           <ChevronDown className="w-4 h-4 animate-bounce" />
         </motion.div>
       </div>
@@ -168,10 +162,10 @@ export function LandingPage() {
           className="mb-6 text-center"
         >
           <h2 className="text-xl font-bold text-text-primary mb-2">
-            Tecnologia Invisível. Resultados Reais.
+            Invisible Technology. Real Results.
           </h2>
           <p className="text-sm text-text-muted">
-            Infraestrutura DeFi operando de forma autônoma no background
+            DeFi infrastructure operating autonomously in the background
           </p>
         </motion.div>
 
@@ -220,19 +214,19 @@ export function LandingPage() {
           }}
         >
           <p className="text-xs text-white/50 uppercase tracking-widest mb-3">
-            Oportunidade de Mercado
+            Market Opportunity
           </p>
           <h3 className="text-lg font-bold text-white mb-4 leading-tight">
-            12M usuários MiniPay.<br/>
-            <span style={{ color: "#A3D977" }}>0% protegidos da inflação.</span>
+            12M MiniPay users.<br/>
+            <span style={{ color: "#A3D977" }}>0% protected from inflation.</span>
           </h3>
 
           <div className="grid grid-cols-2 gap-2.5 mb-4">
             {[
-              { label: "TAM estimado", value: "$14.4B", sub: "DeFi LatAm 2026" },
-              { label: "Avg. saldo MiniPay", value: "$1.2K", sub: "por usuário" },
-              { label: "Inflação BRL", value: "4.8%", sub: "jan-mar 2026" },
-              { label: "Custo da inação", value: "-$57", sub: "por usuário/ano" },
+              { label: "Estimated TAM", value: "$14.4B", sub: "DeFi LatAm 2026" },
+              { label: "Avg. MiniPay Balance", value: "$1.2K", sub: "per user" },
+              { label: "BRL Inflation", value: "4.8%", sub: "Jan-Mar 2026" },
+              { label: "Cost of Inaction", value: "-$57", sub: "per user/year" },
             ].map(({ label, value, sub }) => (
               <div
                 key={label}
@@ -249,15 +243,43 @@ export function LandingPage() {
           </div>
 
           <div
-            className="rounded-2xl p-3 flex items-start gap-2.5"
-            style={{ background: "rgba(163,217,119,0.1)", border: "1px solid rgba(163,217,119,0.2)" }}
+            className="rounded-2xl p-4"
+            style={{
+              background: "rgba(163,217,119,0.08)",
+              border: "1px solid rgba(163,217,119,0.2)",
+              boxShadow: "0 0 20px rgba(163,217,119,0.15)",
+            }}
           >
-            <span className="text-lg mt-0.5">🎯</span>
-            <div>
-              <p className="text-sm font-semibold text-white">Roadmap Pós-Hackathon</p>
-              <p className="text-xs text-white/60 mt-0.5 leading-relaxed">
-                Q2: BaaS parceiros (Rain + Daimo) · Q3: Cartão físico Celo · Q4: Credit Engine com RWA colateral
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 rounded-full bg-white/10 flex-shrink-0">
+                <Target className="w-5 h-5 text-[#A3D977]" />
+              </div>
+              <p className="text-sm font-bold text-white">
+                Post-Hackathon Roadmap
               </p>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="border-l-2 border-[#A3D977]/30 pl-3">
+                <p className="text-xs font-bold text-[#A3D977] mb-0.5">Q2 2026: LiquidAI Card (Powered by MiniPay)</p>
+                <p className="text-xs text-white/70 leading-relaxed">
+                  Virtual card instantly in your wallet. Earn cashback in yield every time you use it. Save on FX fees when traveling.
+                </p>
+              </div>
+              
+              <div className="border-l-2 border-[#A3D977]/30 pl-3">
+                <p className="text-xs font-bold text-[#A3D977] mb-0.5">Q3 2026: DeFi Derivatives</p>
+                <p className="text-xs text-white/70 leading-relaxed">
+                  Launch of yield-backed derivatives built directly on top of our financial techno-stack.
+                </p>
+              </div>
+              
+              <div className="border-l-2 border-[#A3D977]/30 pl-3">
+                <p className="text-xs font-bold text-[#A3D977] mb-0.5">Q4 2026: White-label Infrastructure</p>
+                <p className="text-xs text-white/70 leading-relaxed">
+                  Allow users and communities to create their own branded cards utilizing our underlying Treasury OS.
+                </p>
+              </div>
             </div>
           </div>
         </motion.div>
@@ -266,9 +288,7 @@ export function LandingPage() {
       {/* Footer */}
       <div className="px-6 py-6 text-center border-t border-border">
         <div className="flex items-center justify-center gap-2 mb-2">
-          <div className="w-6 h-6 rounded-lg bg-primary flex items-center justify-center">
-            <TrendingUp className="w-3.5 h-3.5 text-white" />
-          </div>
+          <LiquidLogo size={26} variant="icon" theme="auto" background="transparent" />
           <span className="font-semibold text-text-primary text-sm">LiquidAI</span>
         </div>
         <p className="text-xs text-text-muted">

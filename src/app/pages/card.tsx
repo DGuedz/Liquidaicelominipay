@@ -34,10 +34,14 @@ import {
   Activity,
   Route,
   Brain,
+  Tag,
+  Coins,
 } from "lucide-react";
 import { BottomNavigation } from "../components/bottom-navigation";
 import { useTheme } from "../hooks/useTheme";
+import { useCeloWallet } from "../hooks/use-celo-wallet";
 import { useNavigate } from "react-router";
+import { apiGet, DashboardPayload } from "../lib/api";
 import {
   PharmacyIcon,
   YieldCaptureIcon,
@@ -61,34 +65,35 @@ import {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CARD_NUMBER = "4328 7453 6932 3424";
-const MASKED_NUMBER = "•••• •••• •••• 3424";
+const CARD_NUMBER = "PREVIEW •••• •••• 3424";
+const MASKED_NUMBER = "PREVIEW •••• •••• 3424";
 
-const cardTransactions = [
-  { id: 1, name: "Farmácia Popular", amount: -4.5, date: "Hoje, 10:15", type: "expense", Icon: PharmacyIcon, color: "#EF4444", bg: "rgba(239,68,68,0.08)" },
-  { id: 2, name: "Yield Capture", amount: +1.25, date: "Hoje, 08:00", type: "income", Icon: YieldCaptureIcon, color: "#A3D977", bg: "rgba(163,217,119,0.1)" },
-  { id: 3, name: "Recarga Tim", amount: -2.0, date: "13 Mar, 19:45", type: "expense", Icon: PhoneTopupIcon, color: "#F59E0B", bg: "rgba(245,158,11,0.08)" },
-  { id: 4, name: "Mercado Local", amount: -3.5, date: "12 Mar, 14:30", type: "expense", Icon: GroceryIcon, color: "#EF4444", bg: "rgba(239,68,68,0.08)" },
-  { id: 5, name: "Depósito cUSD", amount: +150.0, date: "10 Mar, 09:00", type: "income", Icon: BriefcaseIcon, color: "#10B981", bg: "rgba(16,185,129,0.08)" },
-];
+function truncateAddress(address: string | null | undefined) {
+  if (!address) return "Wallet preview";
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
+function formatUsd(value: number, decimals = 2) {
+  return `$${value.toFixed(decimals)}`;
+}
 
 const ROADMAP_QUARTERS = [
   {
     q: "Q1 2026",
-    label: "Concluído",
+    label: "Completed",
     color: "#A3D977",
     bg: "rgba(163,217,119,0.12)",
     status: "done",
     items: [
       "Vault DeFi · Aave v3 + Mento",
-      "LiquidAI Agent (rebalance autônomo)",
+      "LiquidAI Agent (autonomous rebalance)",
       "Onboarding + Self Protocol",
       "Dashboard · Analytics · Transfer",
     ],
   },
   {
     q: "Q2 2026",
-    label: "Em andamento",
+    label: "In Progress",
     color: "#F59E0B",
     bg: "rgba(245,158,11,0.1)",
     status: "active",
@@ -101,27 +106,27 @@ const ROADMAP_QUARTERS = [
   },
   {
     q: "Q3 2026",
-    label: "Cartão Físico + BaaS",
+    label: "Physical Card + BaaS",
     color: "#06B6D4",
     bg: "rgba(6,182,212,0.1)",
     status: "upcoming",
     items: [
-      "Rain Cards API — Emissão Visa/cUSD",
+      "Rain Cards API — Visa/cUSD Issuance",
       "JIT Funding Engine (webhook Visa)",
-      "Striga KYC — Cartão Físico LatAm",
-      "Cashback 1% em cUSD automático",
+      "Striga KYC — Physical Card LatAm",
+      "Cashback 1% in cUSD automatic",
     ],
   },
   {
     q: "Q4 2026",
-    label: "Escala Global",
+    label: "Global Scale",
     color: "#8B5CF6",
     bg: "rgba(139,92,246,0.1)",
     status: "planned",
     items: [
-      "Pismo (Visa) — integração Brasil",
-      "Cartão Metal para tier Premium",
-      "Crédito colateralizado (70% DeFi)",
+      "Pismo (Visa) — Brazil integration",
+      "Metal Card for Premium tier",
+      "Collateralized Credit (70% DeFi)",
       "Tokenomics LQD — governance",
     ],
   },
@@ -130,29 +135,29 @@ const ROADMAP_QUARTERS = [
 const BAAS_PARTNERS = [
   {
     name: "Rain Cards",
-    role: "Emissão Visa · cUSD/USDC",
+    role: "Visa Issuance · cUSD/USDC",
     color: "#06B6D4",
     bg: "rgba(6,182,212,0.1)",
     q: "Q3",
-    desc: "Liquida despesas do cartão diretamente em stablecoins. Vault → Visa em milissegundos via JIT.",
+    desc: "Settles card expenses directly in stablecoins. Vault → Visa in milliseconds via JIT.",
     LogoIcon: RainIcon,
   },
   {
     name: "Striga",
-    role: "KYC nativo · Cartão crypto",
+    role: "Native KYC · Crypto Card",
     color: "#8B5CF6",
     bg: "rgba(139,92,246,0.1)",
     q: "Q3",
-    desc: "Carteira + cartão vinculado com conformidade embutida. Ideal para LatAm e África.",
+    desc: "Wallet + linked card with built-in compliance. Ideal for LatAm and Africa.",
     LogoIcon: KycIcon,
   },
   {
     name: "Daimo",
-    role: "Cross-chain On-ramp · Qualquer rede",
+    role: "Cross-chain On-ramp · Any chain",
     color: "#A3D977",
     bg: "rgba(163,217,119,0.1)",
     q: "Q2",
-    desc: "🆕 Mar/2026: MiniPay + Daimo permite receber fundos de Base, Solana, Ethereum ou qualquer L2 diretamente no Vault Celo. O usuário não precisa estar na Celo — o bridge é invisível.",
+    desc: "🆕 Mar/2026: MiniPay + Daimo allows receiving funds from Base, Solana, Ethereum or any L2 directly into Celo Vault. User doesn't need to be on Celo — the bridge is invisible.",
     LogoIcon: BridgeIcon,
   },
   {
@@ -161,25 +166,25 @@ const BAAS_PARTNERS = [
     color: "#3B82F6",
     bg: "rgba(59,130,246,0.1)",
     q: "Q4",
-    desc: "Infraestrutura por trás dos maiores neobancos brasileiros. Integração blockchain em curso.",
+    desc: "Infrastructure behind major Brazilian neobanks. Blockchain integration underway.",
     LogoIcon: BankIcon,
   },
   {
     name: "Transfero / Bipa",
-    role: "Crypto → PIX + Off-Ramp Global",
+    role: "Crypto → PIX + Global Off-Ramp",
     color: "#10B981",
     bg: "rgba(16,185,129,0.1)",
     q: "Q2",
-    desc: "Off-ramp via PIX em segundos. Off-ramp global para contas EUA/Europa (SEPA) de 60+ países, incluindo Argentina e México.",
+    desc: "Off-ramp via PIX in seconds. Global off-ramp to US/Europe accounts (SEPA) from 60+ countries, including Argentina and Mexico.",
     LogoIcon: PixIcon,
   },
   {
     name: "Mento V3",
-    role: "FX Layer da Internet · cUSD/cBRL/cEUR",
+    role: "Internet FX Layer · cUSD/cBRL/cEUR",
     color: "#A3D977",
     bg: "rgba(163,217,119,0.1)",
     q: "Q2",
-    desc: "Mento V3 é a camada de câmbio da internet. cUSD↔cBRL↔cEUR com spread 40% menor vs V2. Rota principal de Stable Routing do LiquidAI.",
+    desc: "Mento V3 is the internet's exchange layer. cUSD↔cBRL↔cEUR with 40% lower spread vs V2. Main Stable Routing route for LiquidAI.",
     LogoIcon: SwapIcon,
   },
 ];
@@ -187,11 +192,11 @@ const BAAS_PARTNERS = [
 // ─── JIT Funding animation steps ─────────────────────────────────────────────
 
 const JIT_STEPS = [
-  { id: 0, label: "Você passa o cartão", icon: CreditCard, color: "#A3D977", desc: "Na loja ou e-commerce" },
-  { id: 1, label: "Visa envia webhook", icon: Zap, color: "#06B6D4", desc: "< 200ms para LiquidAI" },
-  { id: 2, label: "Agente verifica Vault", icon: Bot, color: "#F59E0B", desc: "Saldo DeFi confirmado" },
-  { id: 3, label: "Remove liquidez JIT", icon: Layers, color: "#8B5CF6", desc: "remove_liquidity() + swap()" },
-  { id: 4, label: "Transação aprovada", icon: CheckCircle2, color: "#10B981", desc: "T+0 · Merchant pago" },
+  { id: 0, label: "You swipe the card", icon: CreditCard, color: "#A3D977", desc: "In-store or e-commerce" },
+  { id: 1, label: "Visa sends webhook", icon: Zap, color: "#06B6D4", desc: "< 200ms to LiquidAI" },
+  { id: 2, label: "Agent checks Vault", icon: Bot, color: "#F59E0B", desc: "DeFi balance confirmed" },
+  { id: 3, label: "Removes JIT liquidity", icon: Layers, color: "#8B5CF6", desc: "remove_liquidity() + swap()" },
+  { id: 4, label: "Transaction approved", icon: CheckCircle2, color: "#10B981", desc: "T+0 · Merchant paid" },
 ];
 
 // ─── PIX Off-Ramp Simulation ───────────────────────────────────────────────────
@@ -200,17 +205,21 @@ type PixStatus = "idle" | "quoting" | "swapping" | "sending" | "done";
 
 const PIX_STEPS: Record<PixStatus, string> = {
   idle: "",
-  quoting: "Consultando taxa Mento (cUSD → BRL)...",
+  quoting: "Quoting Mento rate (cUSD → BRL)...",
   swapping: "Swap via Mento Protocol: cUSD → Belo (BRL)...",
-  sending: "Disparando PIX via Transfero API...",
-  done: "PIX enviado com sucesso!",
+  sending: "Firing PIX via Transfero API...",
+  done: "PIX sent successfully!",
 };
 
 // ─── Yield-free Withdrawals Widget ────────────────────────────────────────────
 
-function YieldCoveredWidget() {
-  const yieldToday = 0.72;
-  const pixFee = 0.25;
+function YieldCoveredWidget({
+  yieldToday,
+  pixFee = 0.25,
+}: {
+  yieldToday: number;
+  pixFee?: number;
+}) {
   const freePix = Math.floor(yieldToday / pixFee);
   const pct = Math.min((yieldToday / (pixFee * 4)) * 100, 100);
 
@@ -231,7 +240,7 @@ function YieldCoveredWidget() {
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-0.5">
-            <p className="text-sm font-bold text-white">Saques Gratuitos via Yield</p>
+            <p className="text-sm font-bold text-white">Free Withdrawals via Yield</p>
             <span
               className="text-xs px-2 py-0.5 rounded-full font-semibold"
               style={{ background: "rgba(245,158,11,0.2)", color: "#F59E0B" }}
@@ -240,13 +249,21 @@ function YieldCoveredWidget() {
             </span>
           </div>
           <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
-            Hoje o agente gerou{" "}
-            <span className="text-white font-semibold">${yieldToday.toFixed(2)}</span> de yield.
-            Isso cobre{" "}
-            <span style={{ color: "#A3D977" }} className="font-semibold">
-              {freePix} saques PIX gratuitos
-            </span>{" "}
-            (normalmente $0.25/cada).
+            {yieldToday > 0 ? (
+              <>
+                Today the agent accumulated{" "}
+                <span className="text-white font-semibold">{formatUsd(yieldToday)}</span> in yield.
+                This already subsidizes{" "}
+                <span style={{ color: "#A3D977" }} className="font-semibold">
+                  {freePix} free PIX withdrawals
+                </span>{" "}
+                without consuming principal.
+              </>
+            ) : (
+              <>
+                Not enough yield captured yet to subsidize withdrawals. Once the allocation earns, the agent starts covering recurring exits without touching the principal.
+              </>
+            )}
           </p>
         </div>
       </div>
@@ -255,10 +272,10 @@ function YieldCoveredWidget() {
       <div className="mb-3">
         <div className="flex justify-between mb-1.5">
           <span className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>
-            Yield hoje: ${yieldToday.toFixed(2)}
+            Yield today: ${yieldToday.toFixed(2)}
           </span>
           <span className="text-xs font-semibold" style={{ color: "#A3D977" }}>
-            {freePix} PIX grátis ✓
+            {freePix} free PIX ✓
           </span>
         </div>
         <div className="h-2 rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
@@ -278,7 +295,7 @@ function YieldCoveredWidget() {
       >
         <Sparkles className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "#A3D977" }} />
         <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>
-          <span className="text-white font-medium">Loop de Valor:</span> DeFi paga seus custos bancários. Quanto mais yield, mais saques grátis.
+          <span className="text-white font-medium">Value Loop:</span> as yield grows, the agent can cover operational costs without reducing the wallet's principal.
         </p>
       </div>
     </div>
@@ -333,7 +350,7 @@ function JITFundingEngine() {
             </span>
           </div>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-            Just-in-Time: seu DeFi liquida o cartão em tempo real
+            Just-in-Time: your DeFi settles the card in real-time
           </p>
         </div>
       </div>
@@ -414,12 +431,12 @@ function JITFundingEngine() {
               transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
               className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white"
             />
-            Simulando...
+            Simulating...
           </>
         ) : (
           <>
             <Zap className="w-4 h-4" />
-            Simular Transação JIT
+            Simulate JIT Transaction
           </>
         )}
       </motion.button>
@@ -497,7 +514,7 @@ function PixOffRampSimulator() {
       {/* Amount input */}
       <div className="mb-3">
         <p className="text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "var(--text-muted)" }}>
-          Valor em cUSD
+          Amount in cUSD
         </p>
         <div
           className="flex items-center gap-2 rounded-xl px-4 py-3"
@@ -521,7 +538,7 @@ function PixOffRampSimulator() {
       {/* PIX key */}
       <div className="mb-4">
         <p className="text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "var(--text-muted)" }}>
-          Chave PIX
+          PIX Key
         </p>
         <div
           className="flex items-center gap-2 rounded-xl px-4 py-2.5"
@@ -548,10 +565,10 @@ function PixOffRampSimulator() {
           style={{ background: "var(--muted)" }}
         >
           {[
-            { label: "Taxa Mento (cUSD→BRL)", value: `R$ ${brlRate.toFixed(2)}/cUSD`, muted: true },
-            { label: "Spread Mento", value: "-0.2%", muted: true },
-            { label: "Taxa de rede Celo", value: `$${networkFee.toFixed(2)}`, muted: true },
-            { label: "Você recebe", value: `R$ ${brlAmount > 0 ? brlAmount.toFixed(2) : "–"}`, highlight: true },
+            { label: "Mento Rate (cUSD→BRL)", value: `R$ ${brlRate.toFixed(2)}/cUSD`, muted: true },
+            { label: "Mento Spread", value: "-0.2%", muted: true },
+            { label: "Celo Network Fee", value: `$${networkFee.toFixed(2)}`, muted: true },
+            { label: "You Receive", value: `R$ ${brlAmount > 0 ? brlAmount.toFixed(2) : "–"}`, highlight: true },
           ].map((row) => (
             <div key={row.label} className="flex items-center justify-between">
               <span className="text-xs" style={{ color: "var(--text-muted)" }}>{row.label}</span>
@@ -612,10 +629,10 @@ function PixOffRampSimulator() {
           >
             <p className="text-2xl mb-1">✅</p>
             <p className="text-sm font-bold" style={{ color: "#10B981" }}>
-              R$ {brlAmount > 0 ? brlAmount.toFixed(2) : "0.00"} enviados!
+              R$ {brlAmount > 0 ? brlAmount.toFixed(2) : "0.00"} sent!
             </p>
             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-              PIX para {pixKey} · via Transfero · Celo Network
+              PIX to {pixKey} · via Transfero · Celo Network
             </p>
           </motion.div>
         )}
@@ -636,17 +653,17 @@ function PixOffRampSimulator() {
         }}
       >
         {isRunning ? (
-          "Processando..."
+          "Processing..."
         ) : (
           <>
             <Banknote className="w-4 h-4" />
-            Simular Saque PIX
+            Simulate PIX Withdrawal
           </>
         )}
       </motion.button>
 
       <p className="text-center text-xs mt-2" style={{ color: "var(--text-muted)" }}>
-        Demo · Integração real via Transfero + Mento em Q2
+        Demo · Real integration via Transfero + Mento in Q2
       </p>
     </div>
   );
@@ -847,10 +864,10 @@ function RoadmapTimeline() {
 
 function RevenueModel() {
   const items = [
-    { label: "Interchange (Visa)", value: "0.8–1.5%", share: "por transação cartão", color: "#06B6D4" },
-    { label: "Spread de Liquidez", value: "0.2–0.5%", share: "conversão cripto → fiat", color: "#8B5CF6" },
-    { label: "Yield Share", value: "1% do pool", share: "protocolo retém, user ganha 5%", color: "#A3D977" },
-    { label: "Premium Tier", value: "Metal/Plus", share: "cashback, saques ilimitados", color: "#F59E0B" },
+    { label: "Interchange (Visa)", value: "0.8–1.5%", share: "per card transaction", color: "#06B6D4" },
+    { label: "Liquidity Spread", value: "0.2–0.5%", share: "crypto → fiat conversion", color: "#8B5CF6" },
+    { label: "Yield Share", value: "1% of pool", share: "protocol retains, user gets 5%", color: "#A3D977" },
+    { label: "Premium Tier", value: "Metal/Plus", share: "cashback, unlimited withdrawals", color: "#F59E0B" },
   ];
 
   return (
@@ -865,11 +882,11 @@ function RevenueModel() {
         <div className="flex items-center gap-2">
           <TrendingUp className="w-4 h-4" style={{ color: "#A3D977" }} />
           <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-            Modelo de Receita Transparente
+            Transparent Revenue Model
           </span>
         </div>
         <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-          Como o protocolo é sustentável sem cobrar o usuário diretamente
+          How the protocol is sustainable without charging the user directly
         </p>
       </div>
       {items.map((item, i) => (
@@ -906,43 +923,43 @@ const RISK_METRICS = [
   {
     id: "il",
     label: "Impermanent Loss",
-    value: "-$2.10",
+    value: "0.0%",
     pct: 18,
-    statusLabel: "Baixo risco",
+    statusLabel: "Low Risk",
     color: "#10B981",
     bg: "rgba(16,185,129,0.1)",
     icon: AlertTriangle,
-    desc: "Agente saiu de 1 pool com IL acima de 2%",
+    desc: "No unmanaged exposure detected in current route",
   },
   {
     id: "liquidity",
-    label: "Profundidade do Pool",
-    value: "$4.2M",
+    label: "Pool Depth",
+    value: "Live",
     pct: 85,
-    statusLabel: "Saudável",
+    statusLabel: "Healthy",
     color: "#A3D977",
     bg: "rgba(163,217,119,0.1)",
     icon: Activity,
-    desc: "Liquidez suficiente para exit instantâneo",
+    desc: "Protocol depth read before each exit",
   },
   {
     id: "withdrawal",
-    label: "Tempo de Saída",
+    label: "Exit Time",
     value: "2–5s",
     pct: 95,
-    statusLabel: "Ultrarrápido",
+    statusLabel: "Ultra Fast",
     color: "#06B6D4",
     bg: "rgba(6,182,212,0.1)",
     icon: Clock,
-    desc: "Celo finalidade em 5s · Buffer cobre gap",
+    desc: "Celo finality in 5s · Buffer covers gap",
   },
 ];
 
 const INTENT_SIGNALS = [
-  { signal: "Usuário abre tela do cartão", action: "Pré-carrega $50 no buffer", icon: "👁️", lag: "0ms" },
-  { signal: "Toca em 'Pagar'", action: "Inicia remove_liquidity() antecipado", icon: "👆", lag: "~50ms" },
-  { signal: "Digita valor no PDV", action: "Swap cUSD pronto na mempool", icon: "⌨️", lag: "~200ms" },
-  { signal: "Webhook Visa chega", action: "Aprovação instantânea · T+0", icon: "⚡", lag: "<200ms" },
+  { signal: "User opens card screen", action: "Preloads available buffer", icon: "👁️", lag: "0ms" },
+  { signal: "Taps 'Pay'", action: "Initiates early remove_liquidity()", icon: "👆", lag: "~50ms" },
+  { signal: "Types amount at POS", action: "Swap cUSD ready in mempool", icon: "⌨️", lag: "~200ms" },
+  { signal: "Visa webhook arrives", action: "Instant approval · T+0", icon: "⚡", lag: "<200ms" },
 ];
 
 // ─── Liquidity Risk Engine Component ─────────────────────────────────────────
@@ -969,7 +986,7 @@ function LiquidityRiskEngine() {
           className="ml-auto text-xs px-2 py-0.5 rounded-full font-semibold"
           style={{ background: "rgba(16,185,129,0.12)", color: "#10B981" }}
         >
-          3 métricas ativas
+          3 active metrics
         </span>
       </div>
 
@@ -1237,7 +1254,7 @@ const CELO_NEWS = [
     tagBg: "rgba(163,217,119,0.1)",
     headline: "Receba de qualquer chain",
     desc: "MiniPay + Daimo permite receber fundos de Base, Solana, Ethereum ou qualquer L2 diretamente no Vault Celo. O bridge é invisível — o usuário não precisa ter CELO para começar.",
-    impact: "On-ramp universal para os $1.200 iniciais.",
+    impact: "On-ramp universal para o capital real que chega à wallet.",
     color: "#A3D977",
   },
   {
@@ -1272,7 +1289,7 @@ const CELO_NEWS = [
     tagColor: "#8B5CF6",
     tagBg: "rgba(139,92,246,0.1)",
     headline: "Categoria: Agentes Financeiros",
-    desc: "LiquidAI é o fit perfeito: usuário real ($1.200), problema real (inflação), solução autônoma (agente). Foco em utilidade para mercados emergentes — exatamente o que os juízes do Marek (Celo Foundation) buscam.",
+    desc: "LiquidAI é o fit perfeito: capital real na wallet, problema real de idle cash e uma solução autônoma que responde ao rendimento on-chain. Foco em utilidade para mercados emergentes e execução verificável.",
     impact: "Submissão demonstrável: agente + yield + cartão + PIX.",
     color: "#8B5CF6",
   },
@@ -1377,19 +1394,67 @@ const TABS = [
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function CardPage() {
-  const { isDark } = useTheme();
+  useTheme();
   const navigate = useNavigate();
+  const { address, shortAddress } = useCeloWallet();
   const [cardVisible, setCardVisible] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"card" | "pix" | "infra">("card");
   const [showInfoBanner, setShowInfoBanner] = useState(true);
+  const [dashboard, setDashboard] = useState<DashboardPayload | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+
+    if (!address) {
+      setDashboard(null);
+      return () => {
+        alive = false;
+      };
+    }
+
+    apiGet<DashboardPayload>("/api/dashboard", { address, riskMode: "balanced" })
+      .then((payload) => {
+        if (!alive) return;
+        setDashboard(payload);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setDashboard(null);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [address]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(CARD_NUMBER.replace(/\s/g, "")).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const cardholderLabel = shortAddress ? `Wallet ${shortAddress}` : "Wallet preview";
+  const walletCapitalUsd = dashboard?.summary.balanceUsd ?? 0;
+  const managedCapitalUsd = dashboard?.summary.managedCapitalUsd ?? 0;
+  const liquidityBufferUsd = dashboard?.summary.liquidityBufferUsd ?? 0;
+  const monthlyYieldUsd = dashboard?.summary.monthlyYieldUsd ?? 0;
+  const utilizationPct = 0;
+  const availableSpendUsd = liquidityBufferUsd;
+  const creditPreviewUsd = walletCapitalUsd * 0.7;
+  const currentPixTransactions = (dashboard?.transactions || [])
+    .filter((tx) => tx.kind === "pix")
+    .map((tx) => ({
+      id: tx.id,
+      name: tx.name,
+      amount: tx.amount,
+      date: tx.subtitle,
+      type: tx.type,
+      Icon: tx.type === "income" ? YieldCaptureIcon : PixIcon,
+      color: tx.type === "income" ? "#10B981" : "#0D4B2E",
+      bg: tx.type === "income" ? "rgba(16,185,129,0.08)" : "rgba(13,75,46,0.08)",
+    }));
 
   return (
     <div className="min-h-dvh bg-background pb-28 overflow-x-hidden">
@@ -1478,46 +1543,58 @@ export function CardPage() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="relative rounded-3xl overflow-hidden"
+                className="relative rounded-3xl overflow-hidden border border-white/10"
                 style={{
                   background: isLocked
-                    ? "linear-gradient(135deg, #374151 0%, #1F2937 100%)"
-                    : "linear-gradient(135deg, #0D4B2E 0%, #1a6b45 60%, #0f5535 100%)",
+                    ? "linear-gradient(135deg, #111827 0%, #000000 100%)"
+                    : "linear-gradient(135deg, #0a0a0a 0%, #111 100%)",
                   boxShadow: isLocked
-                    ? "0 8px 32px rgba(0,0,0,0.2)"
-                    : "0 8px 32px rgba(13,75,46,0.28)",
+                    ? "0 8px 32px rgba(0,0,0,0.5)"
+                    : "0 12px 40px rgba(13,75,46,0.4)",
                   aspectRatio: "1.586",
                   transition: "background 0.4s ease",
                 }}
               >
-                <div
-                  className="absolute top-0 right-0 w-48 h-48 rounded-full pointer-events-none"
-                  style={{ background: "rgba(255,255,255,0.05)", transform: "translate(35%,-35%)" }}
+                {/* Glow map effect */}
+                <div 
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: "radial-gradient(ellipse at center, rgba(163,217,119,0.2) 0%, transparent 70%)",
+                    transform: "translateY(20%) scale(1.5)"
+                  }}
                 />
-                <div
-                  className="absolute bottom-0 left-0 w-32 h-32 rounded-full pointer-events-none"
-                  style={{ background: "rgba(163,217,119,0.08)", transform: "translate(-25%,35%)" }}
+                {/* Dotted map SVG placeholder or abstract dots */}
+                <div 
+                  className="absolute inset-0 pointer-events-none opacity-40"
+                  style={{
+                    backgroundImage: "radial-gradient(rgba(163,217,119,0.5) 1px, transparent 1px)",
+                    backgroundSize: "8px 8px",
+                    maskImage: "radial-gradient(ellipse at center, black 20%, transparent 70%)",
+                    WebkitMaskImage: "radial-gradient(ellipse at center, black 20%, transparent 70%)",
+                    transform: "translateY(30%) scaleY(0.5) scaleX(1.2)"
+                  }}
                 />
+
                 {/* Q3 badge on card */}
                 <div
-                  className="absolute top-4 right-4 px-2 py-0.5 rounded-full"
-                  style={{ background: "rgba(6,182,212,0.2)", backdropFilter: "blur(4px)" }}
+                  className="absolute top-4 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full"
+                  style={{ background: "rgba(6,182,212,0.15)", border: "1px solid rgba(6,182,212,0.3)", backdropFilter: "blur(4px)" }}
                 >
-                  <span style={{ color: "#06B6D4", fontSize: "10px", fontWeight: 700 }}>
-                    🚀 Q3 · Físico
+                  <span style={{ color: "#06B6D4", fontSize: "9px", fontWeight: 700, letterSpacing: "0.05em" }}>
+                    PREVIEW · Q3
                   </span>
                 </div>
 
                 {isLocked && (
-                  <div className="absolute inset-0 flex items-center justify-center z-20">
+                  <div className="absolute inset-0 flex items-center justify-center z-20" style={{ backdropFilter: "blur(2px)" }}>
                     <div className="flex flex-col items-center gap-2">
                       <div
                         className="w-14 h-14 rounded-full flex items-center justify-center"
-                        style={{ background: "rgba(255,255,255,0.1)" }}
+                        style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)" }}
                       >
                         <Lock className="w-7 h-7 text-white" />
                       </div>
-                      <span className="text-white/70 text-sm font-medium">Cartão Bloqueado</span>
+                      <span className="text-white/90 text-sm font-medium tracking-wide">Cartão Bloqueado</span>
                     </div>
                   </div>
                 )}
@@ -1526,204 +1603,110 @@ export function CardPage() {
                   className="relative z-10 p-6 h-full flex flex-col justify-between"
                   style={{ opacity: isLocked ? 0.3 : 1 }}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-white/20" />
-                      <div className="w-7 h-7 rounded-full bg-white/10 -ml-3" />
+                  <div className="flex items-start justify-between">
+                    {/* Premium Metallic Chip */}
+                    <div className="w-11 h-8 rounded-md flex flex-col justify-evenly p-1 border border-black/20 shadow-inner" style={{ background: "linear-gradient(135deg, #e0e0e0 0%, #9e9e9e 50%, #f5f5f5 100%)" }}>
+                      <div className="w-full h-[1px] bg-black/20"></div>
+                      <div className="w-full h-[1px] bg-black/20"></div>
+                      <div className="w-full h-[1px] bg-black/20"></div>
                     </div>
-                    <span className="text-white/80 text-sm font-semibold tracking-wider">LIQUIDAI</span>
+                    
+                    {/* MiniPay / LiquidAI Logo */}
+                    <div className="flex items-center gap-2">
+                      <div className="text-white">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-white font-bold leading-none text-[15px] tracking-tight">MiniPay</span>
+                        <span className="text-[#A3D977] font-bold leading-none text-[8px] tracking-[0.2em] mt-1">LIQUIDAI</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-3">
-                    <div className="w-10 h-7 rounded-lg" style={{ background: "linear-gradient(135deg, #D4AF37, #F5D46E)" }} />
+
+                  <div className="flex flex-col gap-4 mt-auto">
                     <AnimatePresence mode="wait">
                       <motion.div
                         key={cardVisible ? "show" : "hide"}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="font-mono text-lg text-white tracking-widest"
+                        className="font-mono text-[1.1rem] text-white tracking-[0.2em] drop-shadow-md"
                       >
                         {cardVisible ? CARD_NUMBER : MASKED_NUMBER}
                       </motion.div>
                     </AnimatePresence>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-white/50 text-xs uppercase tracking-wider mb-0.5">Titular</p>
-                        <p className="text-white font-medium text-sm">Alex Johnson</p>
+                    
+                    <div className="flex items-end justify-between">
+                      <div className="flex gap-6">
+                        <div>
+                          <p className="text-white/40 text-[9px] uppercase tracking-widest mb-1">Titular</p>
+                          <p className="text-white font-medium text-xs tracking-wider drop-shadow-sm">{cardholderLabel}</p>
+                        </div>
+                        <div>
+                          <p className="text-white/40 text-[9px] uppercase tracking-widest mb-1">Expira</p>
+                          <p className="text-white font-mono text-xs tracking-wider drop-shadow-sm">25/29</p>
+                        </div>
+                        <AnimatePresence>
+                          {cardVisible && (
+                            <motion.div initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: "auto" }} exit={{ opacity: 0, width: 0 }}>
+                              <p className="text-white/40 text-[9px] uppercase tracking-widest mb-1">CVV</p>
+                              <p className="text-white font-mono text-xs tracking-wider drop-shadow-sm">847</p>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
-                      <div>
-                        <p className="text-white/50 text-xs uppercase tracking-wider mb-0.5">Expira</p>
-                        <p className="text-white font-mono text-sm">25/29</p>
-                      </div>
-                      <div>
-                        <p className="text-white/50 text-xs uppercase tracking-wider mb-0.5">CVV</p>
-                        <p className="text-white font-mono text-sm">{cardVisible ? "847" : "***"}</p>
+                      
+                      {/* VISA Logo */}
+                      <div className="text-white text-3xl font-bold italic tracking-tighter opacity-90 drop-shadow-md" style={{ fontFamily: "Arial, sans-serif" }}>
+                        VISA
                       </div>
                     </div>
                   </div>
                 </div>
               </motion.div>
 
-              {/* Card actions */}
-              <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setCardVisible(!cardVisible)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full"
-                  style={{ background: "var(--surface-solid)", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
-                >
-                  {cardVisible ? <EyeOff className="w-4 h-4 text-text-secondary" /> : <Eye className="w-4 h-4 text-text-secondary" />}
-                  <span className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
-                    {cardVisible ? "Ocultar" : "Mostrar"}
-                  </span>
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={handleCopy}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full"
-                  style={{ background: "var(--surface-solid)", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
-                >
-                  <Copy className="w-4 h-4 text-text-secondary" />
-                  <span className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
-                    {copied ? "Copiado!" : "Copiar"}
-                  </span>
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setIsLocked(!isLocked)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full"
-                  style={{
-                    background: isLocked ? "#EF4444" : "var(--muted)",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-                  }}
-                >
-                  {isLocked ? <Unlock className="w-4 h-4 text-white" /> : <Lock className="w-4 h-4 text-text-secondary" />}
-                  <span className="text-xs font-medium" style={{ color: isLocked ? "#fff" : "#4A5568" }}>
-                    {isLocked ? "Desbloquear" : "Bloquear"}
-                  </span>
-                </motion.button>
-              </div>
-            </div>
-
-            {/* Card controls */}
-            <div className="px-5 mb-5">
-              <div className="grid grid-cols-4 gap-3">
-                {[
-                  { icon: Lock, label: "Bloquear" },
-                  { icon: RefreshCw, label: "Novo CVV" },
-                  { icon: Settings, label: "Limites" },
-                  { icon: CreditCard, label: "Física Q3", badge: true },
-                ].map(({ icon: Icon, label, badge }, i) => (
-                  <motion.button
-                    key={label}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.06 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="flex flex-col items-center gap-2 relative"
-                  >
-                    <div
-                      className="w-14 h-14 rounded-2xl flex items-center justify-center relative"
-                      style={{
-                        background: badge ? "rgba(6,182,212,0.1)" : "var(--surface-solid)",
-                        border: badge ? "1.5px solid rgba(6,182,212,0.25)" : "none",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-                      }}
-                    >
-                      <Icon className="w-5 h-5" style={{ color: badge ? "#06B6D4" : "var(--text-secondary)" }} />
-                      {badge && (
-                        <span
-                          className="absolute -top-1.5 -right-1.5 px-1 py-0.5 rounded-full text-white"
-                          style={{ background: "#06B6D4", fontSize: "7px", fontWeight: 700 }}
-                        >
-                          Q3
-                        </span>
-                      )}
+              {/* Coming soon section */}
+              <div className="px-5 mt-8 mb-6">
+                <h2 className="text-[22px] font-bold mb-6 tracking-tight" style={{ color: "var(--text-primary)" }}>
+                  Coming soon!
+                </h2>
+                <div className="space-y-5 mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(59,130,246,0.15)" }}>
+                      <Tag className="w-5 h-5" style={{ color: "#60A5FA" }} />
                     </div>
-                    <span className="text-xs" style={{ color: badge ? "#06B6D4" : "var(--text-muted)" }}>
-                      {label}
-                    </span>
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-
-            {/* Spending limit */}
-            <div className="px-5 mb-5">
-              <div
-                className="rounded-2xl p-4"
-                style={{ background: "var(--surface-solid)", boxShadow: "0 2px 10px rgba(0,0,0,0.04)" }}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>Limite Mensal</span>
-                  <span className="text-sm font-mono" style={{ color: "var(--text-muted)" }}>$62 / $500</span>
+                    <p className="text-sm font-medium leading-snug" style={{ color: "var(--text-primary)" }}>
+                      Earn cashback in yield everytime you use the card
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(59,130,246,0.15)" }}>
+                      <CreditCard className="w-5 h-5" style={{ color: "#60A5FA" }} />
+                    </div>
+                    <p className="text-sm font-medium leading-snug" style={{ color: "var(--text-primary)" }}>
+                      Get the virtual card instantly in your wallet
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(59,130,246,0.15)" }}>
+                      <Coins className="w-5 h-5" style={{ color: "#60A5FA" }} />
+                    </div>
+                    <p className="text-sm font-medium leading-snug" style={{ color: "var(--text-primary)" }}>
+                      Save on FX fees when traveling
+                    </p>
+                  </div>
                 </div>
-                <div className="h-2.5 w-full rounded-full" style={{ background: "var(--muted)" }}>
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: "12.4%" }}
-                    transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-                    className="h-full rounded-full"
-                    style={{ background: "linear-gradient(90deg, #0D4B2E, #A3D977)" }}
-                  />
-                </div>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-xs text-success font-medium">12% utilizado</span>
-                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>$438 disponível</span>
-                </div>
+                
+                <button
+                  disabled
+                  className="w-full py-4 rounded-2xl font-bold text-sm transition-all tracking-wide"
+                  style={{ background: "var(--surface-solid)", color: "var(--text-muted)", opacity: 0.6 }}
+                >
+                  You're in
+                </button>
               </div>
             </div>
 
-            {/* Yield-covered widget */}
-            <div className="px-5 mb-5">
-              <YieldCoveredWidget />
-            </div>
-
-            {/* Transactions */}
-            <div className="px-5">
-              <div className="flex items-center justify-between mb-3">
-                <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
-                  Transações do Cartão
-                </span>
-                <button className="text-xs font-medium" style={{ color: "#0D4B2E" }}>Ver tudo</button>
-              </div>
-              <div className="space-y-2">
-                {cardTransactions.map((tx, i) => (
-                  <motion.div
-                    key={tx.id}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 + i * 0.06 }}
-                    className="rounded-2xl p-4 flex items-center gap-3"
-                    style={{ background: "var(--surface-solid)", boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}
-                  >
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: (tx as any).bg || "var(--muted)" }}
-                    >
-                      {(() => { const TxIcon = (tx as any).Icon; return <TxIcon className="w-4.5 h-4.5" style={{ color: (tx as any).color || "var(--text-secondary)" }} />; })()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate" style={{ color: "var(--text-primary)" }}>
-                        {tx.name}
-                      </div>
-                      <div className="text-xs" style={{ color: "var(--text-muted)" }}>{tx.date}</div>
-                    </div>
-                    <div
-                      className="font-mono font-semibold text-sm flex-shrink-0 flex items-center gap-1"
-                      style={{ color: tx.type === "income" ? "#10B981" : "var(--text-primary)" }}
-                    >
-                      {tx.type === "income" ? (
-                        <ArrowDownLeft className="w-3.5 h-3.5" />
-                      ) : (
-                        <ArrowUpRight className="w-3.5 h-3.5" />
-                      )}
-                      ${Math.abs(tx.amount).toFixed(2)}
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
           </motion.div>
         )}
 
@@ -1889,13 +1872,12 @@ export function CardPage() {
                 </span>
               </div>
               <p className="text-xs leading-relaxed mb-3" style={{ color: "rgba(255,255,255,0.6)" }}>
-                Modelo Ether.fi: usuário mantém <span className="text-white font-semibold">$1.200 em DeFi</span> e recebe limite de crédito de{" "}
-                <span style={{ color: "#A3D977" }} className="font-semibold">$840 (70% colateral)</span>. O yield paga os juros — usuário gasta sem tirar dinheiro dos pools.
+                Modelo planejado: o usuário mantém o capital real da própria wallet em DeFi e recebe uma linha de crédito proporcional ao colateral disponível. O yield ajuda a compensar o custo de uso sem desmontar a posição principal.
               </p>
               <div className="grid grid-cols-3 rounded-xl overflow-hidden" style={{ background: "rgba(0,0,0,0.2)" }}>
                 {[
-                  { label: "Depósito", value: "$1.200" },
-                  { label: "Limite (70%)", value: "$840" },
+                  { label: "Capital atual", value: formatUsd(walletCapitalUsd) },
+                  { label: "Preview 70%", value: formatUsd(creditPreviewUsd) },
                   { label: "Juros pagos por", value: "Yield" },
                 ].map((s, i) => (
                   <div
@@ -1934,9 +1916,13 @@ export function CardPage() {
                 <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
                   o custo de oportunidade de deixar o dinheiro parado
                 </span>
-                . Com $1.200 em cUSD, o LiquidAI gera +$8/mês — suficiente para cobrir tarifas bancárias, saques PIX e cashback, criando um{" "}
+                . Com o capital real da wallet, o LiquidAI projeta{" "}
+                <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
+                  {formatUsd(monthlyYieldUsd)}/mês
+                </span>{" "}
+                em rendimento e mantém um{" "}
                 <span style={{ color: "#A3D977" }} className="font-semibold">
-                  loop de valor autossustentável
+                  loop de valor progressivamente sustentável
                 </span>
                 .
               </p>

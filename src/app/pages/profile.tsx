@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import {
   ChevronRight,
@@ -16,127 +16,178 @@ import {
   FileText,
   Info,
   Zap,
+  Sparkles,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { BottomNavigation } from "../components/bottom-navigation";
 import { useTheme } from "../hooks/useTheme";
 import { SelfVerification, SelfVerifiedBadge } from "../components/self-verification";
+import { useCeloWallet } from "../hooks/use-celo-wallet";
+import { apiGet, DashboardPayload, SelfStatusPayload } from "../lib/api";
 
-const stats = [
-  { label: "Dias Ativo", value: "127" },
-  { label: "Transações", value: "348" },
-  { label: "Yield Ganho", value: "$189" },
-];
+function shortAddress(address?: string | null) {
+  if (!address) return "Wallet not connected";
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
 
 export function ProfilePage() {
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useTheme();
+  const { address } = useCeloWallet();
   const [selfVerified, setSelfVerified] = useState(false);
+  const [dashboard, setDashboard] = useState<DashboardPayload | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    if (!address) {
+      setSelfVerified(false);
+      return () => {
+        alive = false;
+      };
+    }
+
+    apiGet<SelfStatusPayload>("/api/self/status", { address })
+      .then((payload) => {
+        if (!alive) return;
+        setSelfVerified(Boolean(payload?.verified));
+      })
+      .catch(() => {
+        if (!alive) return;
+        setSelfVerified(false);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [address]);
+
+  useEffect(() => {
+    let alive = true;
+    if (!address) {
+      setDashboard(null);
+      return () => {
+        alive = false;
+      };
+    }
+
+    apiGet<DashboardPayload>("/api/dashboard", { address, riskMode: "balanced" })
+      .then((payload) => {
+        if (!alive) return;
+        setDashboard(payload);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setDashboard(null);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [address]);
+
+  const activeProtocols = dashboard?.liquidityNetwork.connections.length ?? 0;
+  const stats = [
+    { label: "Active Days", value: dashboard ? "1" : "--" },
+    { label: "Operations", value: String(dashboard?.summary.agentOpsToday ?? 0) },
+    { label: "Current Yield", value: dashboard ? `$${dashboard.summary.monthlyYieldUsd.toFixed(2)}` : "--" },
+  ];
 
   const menuSections = [
     {
-      title: "Conta",
+      title: "Account",
       items: [
         {
           icon: User,
-          label: "Dados Pessoais",
-          sub: "Alex Johnson · alex@liquidai.io",
+          label: "Personal Data",
+          sub: address ? `${shortAddress(address)} · Main Wallet` : "Connect a wallet to continue",
           color: "#0D4B2E",
           bg: isDark ? "rgba(13,75,46,0.25)" : "#E8F5E9",
-          route: "/profile/dados",
+          route: "/profile/personal",
         },
         {
           icon: Wallet,
-          label: "Carteiras Conectadas",
-          sub: "1 carteira · $1,240.50 total",
+          label: "Connected Wallets",
+          sub: dashboard
+            ? `1 wallet · $${dashboard.summary.balanceUsd.toFixed(2)} total`
+            : "No balance synced yet",
           color: "#3B82F6",
           bg: isDark ? "rgba(59,130,246,0.15)" : "#EFF6FF",
-          route: "/profile/carteiras",
+          route: "/profile/wallets",
           status: "Celo",
           statusColor: "#3B82F6",
         },
         {
           icon: Bell,
-          label: "Notificações",
-          sub: "3 não lidas · Push ativo",
+          label: "Notifications",
+          sub: `${dashboard?.summary.agentOpsToday ?? 0} agent events · Push active`,
           color: "#F59E0B",
           bg: isDark ? "rgba(245,158,11,0.15)" : "#FFFBEB",
-          route: "/profile/notificacoes",
-          badge: 3,
+          route: "/profile/notifications",
+          badge: dashboard?.summary.agentOpsToday ? 1 : 0,
         },
       ],
     },
     {
-      title: "Agente IA",
-      items: [
-        {
-          icon: Bot,
-          label: "Configurar Agente",
-          sub: "Balanceado · 4.8% APY · 47 ações",
-          color: "#0D4B2E",
-          bg: isDark ? "rgba(13,75,46,0.25)" : "#E8F5E9",
-          route: "/profile/agente-config",
-          status: "Online",
-          statusColor: "#A3D977",
-        },
-        {
-          icon: Globe,
-          label: "Protocolos DeFi",
-          sub: "Aave v3 · Morpho · Mento V3",
-          color: "#8B5CF6",
-          bg: isDark ? "rgba(139,92,246,0.15)" : "#F5F3FF",
-          route: "/profile/protocolos",
-          status: "3 ativos",
-          statusColor: "#8B5CF6",
-        },
-        {
-          icon: FileText,
-          label: "Relatórios",
-          sub: "Março 2026 disponível",
-          color: "#10B981",
-          bg: isDark ? "rgba(16,185,129,0.15)" : "rgba(16,185,129,0.1)",
-          route: "/profile/relatorios",
-          status: "Novo",
-          statusColor: "#10B981",
-        },
-      ],
-    },
-    {
-      title: "Preferências",
+      title: "AI Agent",
       items: [
         {
           icon: Shield,
-          label: "Segurança & Privacidade",
-          sub: "2FA · Biometria · Seed Phrase",
-          color: "#EF4444",
-          bg: isDark ? "rgba(239,68,68,0.15)" : "#FEF2F2",
-          route: "/profile/seguranca",
+          label: "Security Settings",
+          sub: "Agent limits & permissions",
+          color: "#3B82F6",
+          bg: isDark ? "rgba(59,130,246,0.15)" : "#EFF6FF",
+          route: "/profile/security",
           status: "3/3",
           statusColor: "#A3D977",
         },
         {
+          icon: Globe,
+          label: "Allowed Protocols",
+          sub: "Aave, Mento, Moola, Ubeswap, PWN",
+          color: "#8B5CF6",
+          bg: isDark ? "rgba(139,92,246,0.15)" : "#F5F3FF",
+          route: "/profile/protocols",
+          status: "5 Active",
+          statusColor: "#8B5CF6",
+        },
+        {
+          icon: Sparkles,
+          label: "Yield Strategy",
+          sub: "Inflation Shield · Auto-mode active",
+          color: "#3B82F6",
+          bg: isDark ? "rgba(59,130,246,0.15)" : "#EFF6FF",
+          route: "/profile/yield",
+          status: "Active",
+          statusColor: "#A3D977",
+        },
+      ],
+    },
+    {
+      title: "Preferences",
+      items: [
+        {
           icon: isDark ? Sun : Moon,
-          label: "Aparência",
-          sub: isDark ? "Modo Escuro ativo" : "Modo Claro ativo",
+          label: "Appearance",
+          sub: isDark ? "Dark Mode active" : "Light Mode active",
           color: isDark ? "#A3D977" : "#6B7280",
           bg: isDark ? "rgba(163,217,119,0.12)" : "#F3F4F6",
           onPress: toggleTheme,
         },
         {
           icon: HelpCircle,
-          label: "Suporte",
+          label: "Support",
           sub: "FAQ · Status · Chat",
           color: "#3B82F6",
           bg: isDark ? "rgba(59,130,246,0.15)" : "#EFF6FF",
-          route: "/profile/suporte",
+          route: "/profile/help",
         },
         {
           icon: Info,
-          label: "Sobre o LiquidAI",
+          label: "About LiquidAI",
           sub: "v2.0.0 · Build Agents V2 · 2026",
           color: "#6B7280",
           bg: isDark ? "rgba(107,114,128,0.15)" : "#F3F4F6",
-          route: "/profile/sobre",
+          route: "/profile/about",
         },
       ],
     },
@@ -147,7 +198,7 @@ export function ProfilePage() {
       {/* Header */}
       <header className="px-5 pt-14 pb-4">
         <h1 className="font-bold text-text-primary" style={{ fontSize: "1.5rem" }}>
-          Perfil
+          Profile
         </h1>
       </header>
 
@@ -165,11 +216,9 @@ export function ProfilePage() {
                 className="w-16 h-16 rounded-2xl overflow-hidden"
                 style={{ border: "3px solid #A3D977" }}
               >
-                <img
-                  src="https://images.unsplash.com/photo-1672685667592-0392f458f46f?w=200&h=200&fit=crop&crop=face"
-                  alt="Profile"
-                  className="w-full h-full object-cover"
-                />
+                <div className="w-full h-full flex items-center justify-center bg-black/15 text-white font-mono text-sm">
+                  {address ? shortAddress(address).slice(0, 4) : "LIQ"}
+                </div>
               </div>
               <div
                 className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center"
@@ -179,20 +228,22 @@ export function ProfilePage() {
               </div>
             </div>
             <div className="flex-1">
-              <h2 className="font-bold text-text-primary text-lg">Alex Johnson</h2>
-              <p className="text-sm text-text-muted">alex@liquidai.io</p>
+              <h2 className="font-bold text-text-primary text-lg">{address ? shortAddress(address) : "LiquidAI User"}</h2>
+              <p className="text-sm text-text-muted">
+                {dashboard ? `$${dashboard.summary.balanceUsd.toFixed(2)} monitored on Celo Sepolia` : "Connect a wallet to sync"}
+              </p>
               <div className="flex items-center gap-1.5 mt-1">
                 <div
                   className="px-2 py-0.5 rounded-full text-xs font-semibold"
                   style={{ background: isDark ? "rgba(163,217,119,0.15)" : "#E8F5E9", color: "#A3D977" }}
                 >
-                  ✦ Premium
+                  ✦ Synced
                 </div>
                 <div
                   className="px-2 py-0.5 rounded-full text-xs font-semibold"
                   style={{ background: "rgba(163,217,119,0.15)", color: "#A3D977" }}
                 >
-                  Agente Ativo
+                  Agent Active
                 </div>
                 {selfVerified && <SelfVerifiedBadge size="xs" />}
               </div>
@@ -221,7 +272,7 @@ export function ProfilePage() {
       {/* Self Identity Verification */}
       <div className="px-5 mb-5">
         <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3 px-1">
-          Identidade · Anti-Sybil
+          Identity · Anti-Sybil
         </p>
         <SelfVerification onVerified={() => setSelfVerified(true)} />
       </div>
