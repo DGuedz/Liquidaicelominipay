@@ -7,8 +7,13 @@ const API_URL = "http://localhost:8787/api";
 
 // Chave privada TEMPORÁRIA apenas para este teste (cliente simulado)
 // Em produção, isso viria da MiniPay/Opera wallet do usuário
-const MOCK_USER_PK = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"; // Anvil default account #0 (safe for testing)
+// Use uma chave de teste segura (ex: Anvil #0) via variável de ambiente ou gere uma nova
+const MOCK_USER_PK = process.env.TEST_PRIVATE_KEY || "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"; 
 const userAccount = privateKeyToAccount(MOCK_USER_PK);
+
+if (!process.env.TEST_PRIVATE_KEY) {
+  console.warn("⚠️  Aviso: Usando chave de teste pública (Anvil #0). NÃO use em Mainnet!");
+}
 
 console.log("🌊 LiquidAI E2E Test: Agent Authorization Flow (Testnet)");
 console.log("-------------------------------------------------------");
