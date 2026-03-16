@@ -37,7 +37,6 @@ import {
   NetworkIcon,
   JITIcon,
 } from "../components/icons";
-import { BottomNavigation } from "../components/bottom-navigation";
 import { apiGet, AnalyticsPayload } from "../lib/api";
 import { useCeloWallet } from "../hooks/use-celo-wallet";
 
@@ -811,7 +810,6 @@ export function AnalyticsPage() {
         </div>
       </div>
 
-      <BottomNavigation />
     </div>
   );
 }

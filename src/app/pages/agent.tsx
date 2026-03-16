@@ -36,7 +36,6 @@ import {
   JITIcon,
   TrophyIcon as TrophySvg,
 } from "../components/icons";
-import { BottomNavigation } from "../components/bottom-navigation";
 import { useTheme } from "../hooks/useTheme";
 import { useNavigate } from "react-router";
 import { apiGet, apiPost, AgentStatePayload, getApiAuthToken } from "../lib/api";
@@ -1311,7 +1310,6 @@ export function AgentPage() {
         </div>
       </div>
 
-      <BottomNavigation />
     </div>
   );
 }

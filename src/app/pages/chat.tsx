@@ -970,11 +970,8 @@ export function ChatPage() {
 
       {/* ── INPUT AREA ──────────────────────────────────────── */}
       <div
-        className="fixed bottom-0 left-0 right-0 mx-auto"
+        className="fixed bottom-0 left-0 right-0 z-50"
         style={{
-          maxWidth: 430,
-          left: "50%",
-          transform: "translateX(-50%)",
           background: isDark ? "rgba(6,13,8,0.97)" : "rgba(255,255,255,0.97)",
           backdropFilter: "blur(20px)",
           borderTop: "1px solid var(--border-light)",

@@ -47,7 +47,7 @@ export function ReceiptPage() {
       {/* Header */}
       <header className="px-5 pt-14 pb-4 flex items-center relative">
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/home")}
           className="w-10 h-10 rounded-full bg-surface-solid flex items-center justify-center absolute left-5"
           style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
         >
@@ -227,7 +227,7 @@ export function ReceiptPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.95 }}
             whileTap={{ scale: 0.97 }}
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/home")}
             className="w-full rounded-full py-4 font-semibold text-white"
             style={{
               background: "linear-gradient(135deg, #0D4B2E 0%, #1a6b45 100%)",

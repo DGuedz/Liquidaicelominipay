@@ -1,21 +1,22 @@
-import { Outlet } from "react-router";
+import { useEffect } from "react";
+import { Outlet, useLocation } from "react-router";
 import { ThemeProvider } from "../hooks/useTheme";
 
 export function RootLayout() {
+  const location = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location.pathname]);
+
   return (
     <ThemeProvider>
-      {/* Full-screen shell — fills background outside phone column on desktop */}
+      {/* Full-screen shell */}
       <div
-        className="min-h-dvh"
+        className="min-h-dvh relative"
         style={{ background: "var(--background)", transition: "background 0.3s ease" }}
       >
-        {/* Phone column — mobile: full width · desktop: 430px centered */}
-        <div
-          className="relative mx-auto min-h-dvh"
-          style={{ maxWidth: 430 }}
-        >
-          <Outlet />
-        </div>
+        <Outlet />
       </div>
     </ThemeProvider>
   );

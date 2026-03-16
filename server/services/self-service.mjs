@@ -6,7 +6,7 @@ let initError = null;
 const activeSessions = new Map();
 
 function resolveSelfNetwork() {
-  return env.celoChain === "alfajores" ? "testnet" : "mainnet";
+  return env.celoChain === "mainnet" ? "mainnet" : "testnet";
 }
 
 export async function initSelfAgent() {

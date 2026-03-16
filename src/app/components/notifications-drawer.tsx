@@ -152,11 +152,8 @@ export function NotificationsDrawer({ open, onClose, items }: NotificationsDrawe
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 320, damping: 32 }}
-            className="fixed bottom-0 left-0 right-0 z-50 mx-auto rounded-t-3xl overflow-hidden"
+            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl overflow-hidden"
             style={{
-              maxWidth: 430,
-              left: "50%",
-              transform: "translateX(-50%)",
               background: "var(--background)",
               boxShadow: "0 -8px 40px rgba(0,0,0,0.18)",
               maxHeight: "82dvh",

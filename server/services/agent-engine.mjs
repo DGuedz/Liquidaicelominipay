@@ -124,6 +124,9 @@ export function buildRebalancePlan({
   const monthlyYieldUsd = (totalCapital * blendedApy) / 100 / 12;
 
   const bufferPct = totalCapital === 0 ? 0 : (bufferAmount / totalCapital) * 100;
+  let bestProtocol = allocations
+    .filter((item) => item.id !== "buffer")
+    .sort((a, b) => b.score - a.score || b.apyValue - a.apyValue)[0];
   
   // ─── AUDITOR INTEGRATION ──────────────────────────────────────────────────
   // Validate the "best protocol" allocation before finalizing
@@ -184,7 +187,7 @@ export function buildRebalancePlan({
     source: "agent",
   });
 
-  const bestProtocol = allocations
+  bestProtocol = allocations
     .filter((item) => item.id !== "buffer")
     .sort((a, b) => b.score - a.score || b.apyValue - a.apyValue)[0];
 

@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router";
 import { RootLayout } from "./components/root-layout";
+import { MobileLayout } from "./components/mobile-layout";
 import { ErrorPage } from "./pages/error";
 import { LandingPage } from "./pages/landing";
 import { HomePage } from "./pages/home";
@@ -35,34 +36,42 @@ export const router = createBrowserRouter([
     Component: RootLayout,
     ErrorBoundary: ErrorPage,
     children: [
-      { index: true, Component: HomePage },
-      { path: "dashboard", Component: HomePage },
-      { path: "landing", Component: LandingPage },
-      { path: "onboarding", Component: OnboardingPage },
-      { path: "transfer", Component: TransferPage },
-      { path: "receipt", Component: ReceiptPage },
-      { path: "analytics", Component: AnalyticsPage },
-      { path: "card", Component: CardPage },
-      { path: "profile", Component: ProfilePage },
-      { path: "profile/dados", Component: ProfileDadosPage },
-      { path: "profile/carteiras", Component: ProfileCarteirasPage },
-      { path: "profile/notificacoes", Component: ProfileNotificacoesPage },
-      { path: "profile/seguranca", Component: ProfileSegurancaPage },
-      { path: "profile/agente-config", Component: ProfileAgenteConfigPage },
-      { path: "profile/relatorios", Component: ProfileRelatoriosPage },
-      { path: "profile/protocolos", Component: ProfileProtocolosPage },
-      { path: "profile/suporte", Component: ProfileSuportePage },
-      { path: "profile/sobre", Component: ProfileSobrePage },
-      { path: "profile/security", Component: SecurityPage },
-      { path: "profile/protocols", Component: ProtocolsPage },
-      { path: "profile/yield", Component: YieldStrategyPage },
-      { path: "karma", Component: KarmaDashboardPage },
-      { path: "scan", Component: ScanPage },
-      { path: "agent", Component: AgentPage },
-      { path: "chat", Component: ChatPage },
-      { path: "savings", Component: SavingsPage },
+      { index: true, Component: LandingPage },
+      { path: "minipay", Component: MiniPayPitchPage },
       { path: "minipay-pitch", Component: MiniPayPitchPage },
+      { path: "onboarding", Component: OnboardingPage },
       { path: "brief", Component: ProjectBriefPage },
+      
+      /* Mobile App Pages - Wrapped in Floating Card Layout on Desktop */
+      {
+        Component: MobileLayout,
+        children: [
+          { path: "home", Component: HomePage },
+          { path: "dashboard", Component: HomePage },
+          { path: "transfer", Component: TransferPage },
+          { path: "receipt", Component: ReceiptPage },
+          { path: "analytics", Component: AnalyticsPage },
+          { path: "card", Component: CardPage },
+          { path: "profile", Component: ProfilePage },
+          { path: "profile/dados", Component: ProfileDadosPage },
+          { path: "profile/carteiras", Component: ProfileCarteirasPage },
+          { path: "profile/notificacoes", Component: ProfileNotificacoesPage },
+          { path: "profile/seguranca", Component: ProfileSegurancaPage },
+          { path: "profile/agente-config", Component: ProfileAgenteConfigPage },
+          { path: "profile/relatorios", Component: ProfileRelatoriosPage },
+          { path: "profile/protocolos", Component: ProfileProtocolosPage },
+          { path: "profile/suporte", Component: ProfileSuportePage },
+          { path: "profile/sobre", Component: ProfileSobrePage },
+          { path: "profile/security", Component: SecurityPage },
+          { path: "profile/protocols", Component: ProtocolsPage },
+          { path: "profile/yield", Component: YieldStrategyPage },
+          { path: "karma", Component: KarmaDashboardPage },
+          { path: "scan", Component: ScanPage },
+          { path: "agent", Component: AgentPage },
+          { path: "chat", Component: ChatPage },
+          { path: "savings", Component: SavingsPage },
+        ]
+      }
     ],
   },
 ]);

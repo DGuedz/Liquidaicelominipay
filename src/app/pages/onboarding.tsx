@@ -1512,58 +1512,61 @@ export function OnboardingPage() {
   const TOTAL_STEPS = 2; // step 1 = connect, step 2 = risk
 
   const handleNext = () => setStep((s) => s + 1);
-  const handleSkip = () => navigate("/");
+  const handleSkip = () => navigate("/home");
   const handleFinish = (_risk: RiskId) => setStep(3); // launch
-  const handleDone = () => navigate("/");
+  const handleDone = () => navigate("/home");
 
   return (
-    <div className="min-h-dvh flex flex-col overflow-hidden" style={{ background: "var(--background)" }}>
-      {/* Top bar for steps 1-2 */}
-      {step > 0 && step < 3 && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="px-6 pt-14 pb-2 flex items-center justify-between"
-        >
-          <ProgressDots total={TOTAL_STEPS} current={step - 1} />
-          <button
-            onClick={handleSkip}
-            className="text-xs font-semibold px-3 py-1.5 rounded-full"
-            style={{
-              color: "var(--text-muted)",
-              background: "var(--surface-solid)",
-              boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
-            }}
-          >
-            Skip
-          </button>
-        </motion.div>
-      )}
-
-      {/* Step 0: Welcome */}
-      {step === 0 && (
-        <div className="flex-1 pt-14">
-          <StepWelcome onNext={handleNext} onSkip={handleSkip} />
-        </div>
-      )}
-
-      {/* Steps 1-3 animated */}
-      <AnimatePresence mode="wait">
-        {step > 0 && step < 4 && (
+    <div className="min-h-dvh flex flex-col items-center justify-center bg-[var(--background)] md:bg-black/5 md:backdrop-blur-sm">
+      <div className="w-full max-w-md bg-[var(--background)] min-h-dvh md:min-h-[800px] md:h-[850px] md:max-h-[90vh] md:rounded-[32px] md:shadow-2xl md:border md:border-[var(--border-light)] overflow-hidden relative flex flex-col transition-all duration-300">
+        
+        {/* Top bar for steps 1-2 */}
+        {step > 0 && step < 3 && (
           <motion.div
-            key={step}
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -40 }}
-            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className="flex-1 flex flex-col"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="px-6 pt-14 pb-2 flex items-center justify-between shrink-0"
           >
-            {step === 1 && <StepConnect onNext={handleNext} />}
-            {step === 2 && <StepRisk onFinish={handleFinish} />}
-            {step === 3 && <StepLaunch onDone={handleDone} />}
+            <ProgressDots total={TOTAL_STEPS} current={step - 1} />
+            <button
+              onClick={handleSkip}
+              className="text-xs font-semibold px-3 py-1.5 rounded-full"
+              style={{
+                color: "var(--text-muted)",
+                background: "var(--surface-solid)",
+                boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
+              }}
+            >
+              Skip
+            </button>
           </motion.div>
         )}
-      </AnimatePresence>
+
+        {/* Step 0: Welcome */}
+        {step === 0 && (
+          <div className="flex-1 pt-14 flex flex-col">
+            <StepWelcome onNext={handleNext} onSkip={handleSkip} />
+          </div>
+        )}
+
+        {/* Steps 1-3 animated */}
+        <AnimatePresence mode="wait">
+          {step > 0 && step < 4 && (
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -40 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="flex-1 flex flex-col overflow-y-auto"
+            >
+              {step === 1 && <StepConnect onNext={handleNext} />}
+              {step === 2 && <StepRisk onFinish={handleFinish} />}
+              {step === 3 && <StepLaunch onDone={handleDone} />}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

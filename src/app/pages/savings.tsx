@@ -28,7 +28,6 @@ import {
   SavingsIcon as SavingsSvg,
 } from "../components/icons";
 import { useNavigate } from "react-router";
-import { BottomNavigation } from "../components/bottom-navigation";
 import { useTheme } from "../hooks/useTheme";
 import { apiGet, apiPost, SavingsGoalPayload, SavingsOverviewPayload } from "../lib/api";
 import { useCeloWallet } from "../hooks/use-celo-wallet";
@@ -827,8 +826,6 @@ export function SavingsPage() {
           ))}
         </div>
       </div>
-
-      <BottomNavigation />
 
       {/* Modals */}
       <AnimatePresence>

@@ -19,7 +19,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useNavigate } from "react-router";
-import { BottomNavigation } from "../components/bottom-navigation";
 import { useTheme } from "../hooks/useTheme";
 import { SelfVerification, SelfVerifiedBadge } from "../components/self-verification";
 import { useCeloWallet } from "../hooks/use-celo-wallet";
@@ -102,7 +101,7 @@ export function ProfilePage() {
           sub: address ? `${shortAddress(address)} · Main Wallet` : "Connect a wallet to continue",
           color: "#0D4B2E",
           bg: isDark ? "rgba(13,75,46,0.25)" : "#E8F5E9",
-          route: "/profile/personal",
+          route: "/profile/dados",
         },
         {
           icon: Wallet,
@@ -112,7 +111,7 @@ export function ProfilePage() {
             : "No balance synced yet",
           color: "#3B82F6",
           bg: isDark ? "rgba(59,130,246,0.15)" : "#EFF6FF",
-          route: "/profile/wallets",
+          route: "/profile/carteiras",
           status: "Celo",
           statusColor: "#3B82F6",
         },
@@ -122,7 +121,7 @@ export function ProfilePage() {
           sub: `${dashboard?.summary.agentOpsToday ?? 0} agent events · Push active`,
           color: "#F59E0B",
           bg: isDark ? "rgba(245,158,11,0.15)" : "#FFFBEB",
-          route: "/profile/notifications",
+          route: "/profile/notificacoes",
           badge: dashboard?.summary.agentOpsToday ? 1 : 0,
         },
       ],
@@ -179,7 +178,7 @@ export function ProfilePage() {
           sub: "FAQ · Status · Chat",
           color: "#3B82F6",
           bg: isDark ? "rgba(59,130,246,0.15)" : "#EFF6FF",
-          route: "/profile/help",
+          route: "/profile/suporte",
         },
         {
           icon: Info,
@@ -187,7 +186,7 @@ export function ProfilePage() {
           sub: "v2.0.0 · Build Agents V2 · 2026",
           color: "#6B7280",
           bg: isDark ? "rgba(107,114,128,0.15)" : "#F3F4F6",
-          route: "/profile/about",
+          route: "/profile/sobre",
         },
       ],
     },
@@ -411,7 +410,7 @@ export function ProfilePage() {
       <div className="px-5 mb-5">
         <motion.button
           whileTap={{ scale: 0.98 }}
-          onClick={() => navigate("/landing")}
+          onClick={() => navigate("/")}
           className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-surface-solid text-destructive font-semibold"
           style={{
             boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
@@ -423,7 +422,6 @@ export function ProfilePage() {
         </motion.button>
       </div>
 
-      <BottomNavigation />
     </div>
   );
 }

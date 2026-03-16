@@ -37,7 +37,6 @@ import {
   Tag,
   Coins,
 } from "lucide-react";
-import { BottomNavigation } from "../components/bottom-navigation";
 import { useTheme } from "../hooks/useTheme";
 import { useCeloWallet } from "../hooks/use-celo-wallet";
 import { useNavigate } from "react-router";
@@ -1931,7 +1930,6 @@ export function CardPage() {
         )}
       </AnimatePresence>
 
-      <BottomNavigation />
     </div>
   );
 }

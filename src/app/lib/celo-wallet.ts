@@ -4,7 +4,7 @@ import { defineChain } from "viem";
 import { chainConfig } from "viem/celo";
 import { injected, metaMask } from "wagmi/connectors";
 
-const DEFAULT_CELO_RPC_URL = "https://alfajores-forno.celo-testnet.org";
+const DEFAULT_CELO_RPC_URL = "https://forno.celo-sepolia.celo-testnet.org";
 
 type InjectedProvider = {
   isMiniPay?: boolean;
@@ -13,7 +13,7 @@ type InjectedProvider = {
   request?: (args: { method: string; params?: unknown[] | object }) => Promise<unknown>;
 };
 
-function getEnvVar(key: "VITE_CELO_RPC_URL"): string {
+function getEnvVar(key: "VITE_CELO_RPC_URL" | "VITE_APP_URL"): string {
   const value = import.meta.env[key];
   return typeof value === "string" ? value.trim() : "";
 }
@@ -51,8 +51,8 @@ export async function requestPreferredAccounts() {
 
 export const CELO_CHAIN = defineChain({
   ...chainConfig,
-  id: 44787,
-  name: "Celo Alfajores",
+  id: 11142220,
+  name: "Celo Sepolia",
   nativeCurrency: {
     decimals: 18,
     name: "CELO",
@@ -68,15 +68,16 @@ export const CELO_CHAIN = defineChain({
   },
   blockExplorers: {
     default: {
-      name: "Celo Alfajores Explorer",
-      url: "https://alfajores.celoscan.io",
-      apiUrl: "https://api-alfajores.celoscan.io/api",
+      name: "Celo Sepolia Explorer",
+      url: "https://celo-sepolia.blockscout.com",
+      apiUrl: "https://celo-sepolia.blockscout.com/api",
     },
   },
   testnet: true,
 });
 export const CELO_CHAIN_ID = CELO_CHAIN.id;
 export const CELO_RPC_URL = getEnvVar("VITE_CELO_RPC_URL") || DEFAULT_CELO_RPC_URL;
+export const APP_URL = getEnvVar("VITE_APP_URL") || "http://localhost:5173";
 
 export const wagmiConfig = createConfig({
   chains: [CELO_CHAIN],
@@ -84,7 +85,7 @@ export const wagmiConfig = createConfig({
     metaMask({
       dappMetadata: {
         name: "LiquidAI",
-        url: "http://localhost:5173",
+        url: APP_URL,
       },
     }),
     injected({

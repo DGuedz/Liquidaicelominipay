@@ -1,300 +1,380 @@
 import { useNavigate } from "react-router";
-import { motion } from "motion/react";
-import { Shield, Zap, ArrowRight, Bot, Sparkles, Globe, Lock, ChevronDown, Target } from "lucide-react";
+import { motion, useScroll, useTransform } from "motion/react";
+import { Shield, Zap, ArrowRight, Bot, Sparkles, Globe, Smartphone, CheckCircle2, TrendingUp, Lock, Bell, Search } from "lucide-react";
 import { LiquidLogo } from "../components/LiquidLogo";
+import { useRef } from "react";
+import { PhoneTopupIcon, DepositIcon, PixIcon } from "../components/icons";
+
+// Mockup Component for visual proof (Faithful to dApp Design)
+const AppMockup = () => (
+  <motion.div 
+    initial={{ y: 100, opacity: 0 }}
+    animate={{ y: 0, opacity: 1 }}
+    transition={{ type: "spring", stiffness: 50, delay: 0.4 }}
+    className="relative w-[280px] h-[580px] bg-black rounded-[40px] border-8 border-gray-800 shadow-2xl overflow-hidden mx-auto"
+  >
+    {/* Screen Content - Dark Theme like dApp */}
+    <div className="w-full h-full bg-[#020408] relative flex flex-col font-sans">
+      
+      {/* Status Bar */}
+      <div className="h-12 flex items-center justify-between px-5 pt-3">
+        <span className="text-[10px] font-bold text-white">9:41</span>
+        <div className="flex gap-1.5">
+            <div className="w-3 h-3 bg-white rounded-full opacity-20" />
+            <div className="w-3 h-3 bg-white rounded-full opacity-20" />
+        </div>
+      </div>
+
+      {/* App Header */}
+      <div className="flex items-center justify-between px-5 py-3">
+        <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
+                <div className="w-4 h-4 bg-green-500 rounded-full" />
+            </div>
+            <span className="text-white font-bold text-sm">LiquidAI</span>
+        </div>
+        <div className="flex gap-3 text-white/60">
+            <Search size={18} />
+            <Bell size={18} />
+        </div>
+      </div>
+      
+      {/* Balance Card (Exact Replica) */}
+      <div className="mx-4 mt-2 p-5 rounded-3xl relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0D4B2E 0%, #062C1B 100%)" }}>
+        {/* Noise/Texture */}
+        <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+        
+        <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-1">
+                <span className="text-green-300 text-[10px] font-bold tracking-wider uppercase">Wallet-First Treasury</span>
+                <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+            </div>
+            <div className="text-white text-3xl font-bold tracking-tight mb-4">Live wallet balance</div>
+            
+            <div className="flex gap-2">
+                <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-xl p-2 flex flex-col items-center justify-center gap-1 border border-white/5">
+                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-white"><ArrowRight size={12} className="-rotate-45" /></div>
+                    <span className="text-[9px] text-white/80">Add</span>
+                </div>
+                <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-xl p-2 flex flex-col items-center justify-center gap-1 border border-white/5">
+                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-white"><ArrowRight size={12} className="rotate-45" /></div>
+                    <span className="text-[9px] text-white/80">Send</span>
+                </div>
+                <div className="flex-1 bg-green-500 text-black font-bold rounded-xl p-2 flex flex-col items-center justify-center gap-1 shadow-lg shadow-green-900/50">
+                    <Bot size={14} />
+                    <span className="text-[9px]">Agent</span>
+                </div>
+            </div>
+        </div>
+      </div>
+
+      {/* Recent Activity List */}
+      <div className="flex-1 px-5 pt-6">
+        <h3 className="text-white font-bold text-sm mb-4">Recent Activity</h3>
+        <div className="space-y-3">
+            {[
+                { label: "Yield Route", sub: "Mento Protocol", val: "Ready", icon: TrendingUp, color: "text-green-400", bg: "bg-green-400/10" },
+                { label: "Liquid Buffer", sub: "Daily payments", val: "Tracked", icon: Zap, color: "text-yellow-400", bg: "bg-yellow-400/10" },
+                { label: "Auto-Rebalance", sub: "Only on material delta", val: "Standby", icon: Bot, color: "text-blue-400", bg: "bg-blue-400/10" },
+            ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl ${item.bg} ${item.color} flex items-center justify-center`}>
+                        <item.icon size={18} />
+                    </div>
+                    <div className="flex-1">
+                        <div className="text-white text-xs font-bold">{item.label}</div>
+                        <div className="text-white/40 text-[10px]">{item.sub}</div>
+                    </div>
+                    <div className={`text-xs font-bold ${item.val === "Ready" ? "text-green-400" : "text-white"}`}>
+                        {item.val}
+                    </div>
+                </div>
+            ))}
+        </div>
+      </div>
+
+      {/* Floating Action Toast */}
+      <motion.div 
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 1.5 }}
+        className="absolute bottom-6 left-4 right-4 bg-[#1A1D24] border border-white/10 rounded-xl p-3 flex items-center gap-3 shadow-2xl"
+      >
+         <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400">
+            <CheckCircle2 size={16} />
+         </div>
+         <div>
+            <div className="text-[10px] text-gray-400">Agent Update</div>
+            <div className="text-xs font-bold text-white">Wallet synced, route ready</div>
+         </div>
+      </motion.div>
+
+    </div>
+  </motion.div>
+);
 
 export function LandingPage() {
   const navigate = useNavigate();
+  const targetRef = useRef(null);
+  const { scrollYProgress } = useScroll({ target: targetRef });
+  const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
 
   const stats = [
-    { label: "Optimized Capital", value: "$2.4B+" },
-    { label: "Avg APY", value: "4.2%" },
-    { label: "Active Users", value: "12K+" },
-  ];
-
-  const features = [
-    {
-      icon: Bot,
-      color: "#0D4B2E",
-      bg: "#E8F5E9",
-      title: "Autonomous Financial Agent",
-      description: "AI that monitors and optimizes your capital automatically, 24/7, without manual intervention.",
-    },
-    {
-      icon: Shield,
-      color: "#3B82F6",
-      bg: "#EFF6FF",
-      title: "Bank-Grade Security",
-      description: "Institutional-grade infrastructure with total transparency and user control.",
-    },
-    {
-      icon: Zap,
-      color: "#F59E0B",
-      bg: "#FFFBEB",
-      title: "3-Tap Rule",
-      description: "Any financial operation completed in up to 3 interactions. Simple as that.",
-    },
-    {
-      icon: Globe,
-      color: "#8B5CF6",
-      bg: "#F5F3FF",
-      title: "Invisible DeFi",
-      description: "Advanced infrastructure operating in the background. You only see results.",
-    },
+    { label: "Productive Capital", value: "Auto", icon: Bot },
+    { label: "Target APY", value: "~4.8%", icon: TrendingUp },
+    { label: "Network", value: "Celo", icon: Globe },
   ];
 
   return (
-    <div className="min-h-dvh bg-background flex flex-col overflow-hidden">
-      {/* Hero Section */}
-      <div className="relative flex-1 flex flex-col items-center px-6 pt-16 pb-8 overflow-hidden">
-        {/* Background decorations */}
-        <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full opacity-10 blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(circle, #A3D977, #0D4B2E)" }}
-        />
-
-        {/* Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="flex items-center gap-2 bg-surface-solid border border-border rounded-full px-4 py-2 mb-8"
-          style={{ boxShadow: "0 2px 12px rgba(13,75,46,0.1)" }}
-        >
-          <div className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
-          <span className="text-xs font-medium text-text-secondary">
-            Build Agents for the Real World V2
-          </span>
-          <Sparkles className="w-3.5 h-3.5 text-secondary" />
-        </motion.div>
-
-        {/* Logo + Title */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="text-center mb-8"
-        >
-          <motion.div
-            initial={{ scale: 0, rotate: -10 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
-            className="mb-6 flex justify-center"
-          >
-            <LiquidLogo size={80} variant="icon" theme="auto" background="auto" animate={true} />
-          </motion.div>
-
-          <h1 className="text-5xl font-bold text-text-primary mb-3 tracking-tight">
-            Liquid<span style={{ color: "#0D4B2E" }}>AI</span>
-          </h1>
-          <p className="text-base text-text-secondary max-w-xs mx-auto leading-relaxed">
-            The Treasury Operating System that turns idle liquidity into productive capital
-          </p>
-        </motion.div>
-
-        {/* Stats Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="w-full max-w-sm bg-surface-solid rounded-2xl p-4 mb-8 grid grid-cols-3 divide-x divide-border"
-          style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.06)" }}
-        >
-          {stats.map((stat) => (
-            <div key={stat.label} className="flex flex-col items-center px-2">
-              <span className="font-mono font-bold text-xl text-primary">
-                {stat.value}
-              </span>
-              <span className="text-xs text-text-muted text-center leading-tight mt-0.5">
-                {stat.label}
-              </span>
+    <div className="min-h-dvh bg-[#020408] text-white overflow-x-hidden font-sans selection:bg-green-500/30">
+      
+      {/* Navigation */}
+      <nav className="fixed top-0 w-full z-50 backdrop-blur-lg border-b border-white/5 bg-black/50">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+                <LiquidLogo size={32} variant="icon" theme="dark" />
+                <span className="font-bold text-lg tracking-tight">LiquidAI</span>
             </div>
-          ))}
-        </motion.div>
+            <button 
+                onClick={() => navigate("/minipay")}
+                className="bg-white/10 hover:bg-white/20 text-white text-sm font-medium px-4 py-2 rounded-full transition-all border border-white/10"
+            >
+                Launch App
+            </button>
+        </div>
+      </nav>
 
-        {/* CTA Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="w-full max-w-sm space-y-3 mb-10"
-        >
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={() => navigate("/onboarding")}
-            className="w-full text-white rounded-full py-4 font-semibold flex items-center justify-center gap-2 group"
-            style={{
-              background: "linear-gradient(135deg, #0D4B2E 0%, #1a6b45 100%)",
-              boxShadow: "0 4px 24px rgba(13,75,46,0.35)",
-            }}
-          >
-            Start Now
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </motion.button>
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={() => navigate("/")}
-            className="w-full bg-surface-solid border border-border rounded-full py-4 font-semibold text-text-primary flex items-center justify-center gap-2"
-          >
-            <Lock className="w-4 h-4 text-text-muted" />
-            View Demo
-          </motion.button>
-        </motion.div>
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-20 px-6 overflow-hidden min-h-screen flex items-center">
+        {/* Ambient Background */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-green-500/20 rounded-full blur-[120px] pointer-events-none opacity-50" />
+        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[100px] pointer-events-none opacity-30" />
 
-        {/* Scroll hint */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="flex flex-col items-center gap-1 text-text-muted"
-        >
-          <span className="text-xs">Learn more</span>
-          <ChevronDown className="w-4 h-4 animate-bounce" />
-        </motion.div>
-      </div>
-
-      {/* Features Section */}
-      <div className="px-6 pb-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="mb-6 text-center"
-        >
-          <h2 className="text-xl font-bold text-text-primary mb-2">
-            Invisible Technology. Real Results.
-          </h2>
-          <p className="text-sm text-text-muted">
-            DeFi infrastructure operating autonomously in the background
-          </p>
-        </motion.div>
-
-        <div className="space-y-3">
-          {features.map((feature, i) => {
-            const Icon = feature.icon;
-            return (
-              <motion.div
-                key={feature.title}
+        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 lg:gap-16 items-center relative z-10 w-full">
+            {/* Text Content */}
+            <motion.div 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.65 + i * 0.08 }}
-                className="bg-surface-solid rounded-2xl p-4 flex items-start gap-4"
-                style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}
-              >
-                <div
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: feature.bg }}
-                >
-                  <Icon className="w-6 h-6" style={{ color: feature.color }} />
+                transition={{ duration: 0.6 }}
+                className="text-center md:text-left flex flex-col items-center md:items-start"
+            >
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-medium mb-6">
+                    <Sparkles size={12} />
+                    Build Agents for the Real World V2
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-text-primary text-sm mb-1">
-                    {feature.title}
-                  </h3>
-                  <p className="text-xs text-text-muted leading-relaxed">
-                    {feature.description}
-                  </p>
+                
+                <h1 className="text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-[1.1] mb-6 tracking-tight">
+                    Your balance, <br/>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600">
+                        working for you.
+                    </span>
+                </h1>
+                
+                <p className="text-lg lg:text-xl text-gray-400 mb-8 leading-relaxed max-w-xl lg:max-w-2xl">
+                    LiquidAI turns your MiniPay wallet into an autonomous treasury. 
+                    It keeps a liquid buffer for daily payments and routes idle capital to yield strategies automatically.
+                </p>
+
+                <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+                    <button 
+                        onClick={() => navigate("/minipay")}
+                        className="w-full sm:w-auto h-14 px-8 rounded-full bg-green-500 hover:bg-green-400 text-black font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_30px_rgba(34,197,94,0.5)]"
+                    >
+                        Activate Auto-Yield <ArrowRight size={20} />
+                    </button>
+                    <button 
+                        onClick={() => window.open('https://github.com/DGuedz/Liquidaicelominipay', '_blank')}
+                        className="w-full sm:w-auto h-14 px-8 rounded-full bg-white/5 hover:bg-white/10 text-white font-medium border border-white/10 transition-all"
+                    >
+                        View Documentation
+                    </button>
                 </div>
-              </motion.div>
-            );
-          })}
+
+                {/* Trust Badges */}
+                <div className="mt-12 pt-8 border-t border-white/5 flex flex-wrap items-center justify-center md:justify-start gap-8 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+                    <div className="flex items-center gap-2 text-sm lg:text-base"><Globe size={18}/> Celo Network</div>
+                    <div className="flex items-center gap-2 text-sm lg:text-base"><Shield size={18}/> Self Protocol</div>
+                    <div className="flex items-center gap-2 text-sm lg:text-base"><Bot size={18}/> Karma Reputation</div>
+                </div>
+            </motion.div>
+
+            {/* Visual Proof / Mockup */}
+            <div className="relative flex justify-center md:justify-end h-full items-center">
+                {/* Wrapper to anchor floating elements to the phone */}
+                <div className="relative w-[280px]">
+                    <AppMockup />
+                    
+                    {/* Floating Elements anchored to the phone container */}
+                    <motion.div 
+                        animate={{ y: [0, -20, 0] }}
+                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute top-20 -left-12 md:-left-24 bg-black/80 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl flex items-center gap-3 z-20 w-max max-w-[200px]"
+                    >
+                        <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 flex-shrink-0">
+                            <Shield size={20} />
+                        </div>
+                        <div>
+                            <div className="text-xs text-gray-400">Security Check</div>
+                            <div className="text-sm font-bold text-white">Self Verified</div>
+                        </div>
+                    </motion.div>
+
+                    <motion.div 
+                        animate={{ y: [0, 20, 0] }}
+                        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                        className="absolute bottom-40 -right-8 md:-right-16 bg-black/80 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl flex items-center gap-3 z-20 w-max"
+                    >
+                        <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 flex-shrink-0">
+                            <TrendingUp size={20} />
+                        </div>
+                        <div>
+                            <div className="text-xs text-gray-400">Current Yield</div>
+                            <div className="text-sm font-bold text-white">4.8% APY</div>
+                        </div>
+                    </motion.div>
+                </div>
+            </div>
         </div>
-      </div>
+      </section>
 
-      {/* ── BEYOND HACKATHON: Mercado & Tração ────────────────────────── */}
-      <div className="px-6 pb-8">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9 }}
-          className="rounded-3xl p-5"
-          style={{
-            background: "linear-gradient(135deg, #0D4B2E, #1a6b45)",
-            boxShadow: "0 8px 32px rgba(13,75,46,0.3)",
-          }}
-        >
-          <p className="text-xs text-white/50 uppercase tracking-widest mb-3">
-            Market Opportunity
-          </p>
-          <h3 className="text-lg font-bold text-white mb-4 leading-tight">
-            12M MiniPay users.<br/>
-            <span style={{ color: "#A3D977" }}>0% protected from inflation.</span>
-          </h3>
-
-          <div className="grid grid-cols-2 gap-2.5 mb-4">
-            {[
-              { label: "Estimated TAM", value: "$14.4B", sub: "DeFi LatAm 2026" },
-              { label: "Avg. MiniPay Balance", value: "$1.2K", sub: "per user" },
-              { label: "BRL Inflation", value: "4.8%", sub: "Jan-Mar 2026" },
-              { label: "Cost of Inaction", value: "-$57", sub: "per user/year" },
-            ].map(({ label, value, sub }) => (
-              <div
-                key={label}
-                className="rounded-2xl p-3"
-                style={{ background: "rgba(0,0,0,0.2)" }}
-              >
-                <p className="font-mono font-bold text-lg" style={{ color: "#A3D977", lineHeight: 1 }}>
-                  {value}
-                </p>
-                <p className="text-xs text-white/70 mt-0.5">{label}</p>
-                <p className="text-xs text-white/35 mt-0.5">{sub}</p>
-              </div>
+      {/* Stats Section */}
+      <section className="border-y border-white/5 bg-white/[0.02]">
+        <div className="max-w-6xl mx-auto grid grid-cols-3 divide-x divide-white/5">
+            {stats.map((stat, i) => (
+                <div key={i} className="py-8 text-center group cursor-default hover:bg-white/[0.02] transition-colors">
+                    <div className="flex items-center justify-center gap-2 text-gray-400 mb-2 group-hover:text-green-400 transition-colors">
+                        <stat.icon size={16} />
+                        <span className="text-sm font-medium uppercase tracking-wider">{stat.label}</span>
+                    </div>
+                    <div className="text-3xl font-bold text-white">{stat.value}</div>
+                </div>
             ))}
-          </div>
+        </div>
+      </section>
 
-          <div
-            className="rounded-2xl p-4"
-            style={{
-              background: "rgba(163,217,119,0.08)",
-              border: "1px solid rgba(163,217,119,0.2)",
-              boxShadow: "0 0 20px rgba(163,217,119,0.15)",
-            }}
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-full bg-white/10 flex-shrink-0">
-                <Target className="w-5 h-5 text-[#A3D977]" />
-              </div>
-              <p className="text-sm font-bold text-white">
-                Post-Hackathon Roadmap
-              </p>
+      {/* Value Props */}
+      <section className="py-24 px-6 relative">
+        <div className="max-w-4xl mx-auto text-center mb-16">
+            <h2 className="text-3xl lg:text-4xl font-bold mb-4">Invisible DeFi Infrastructure</h2>
+            <p className="text-gray-400 text-lg">We hide the complexity of Web3 behind a simple 3-Tap Rule UX.</p>
+        </div>
+
+        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8">
+            {[
+                {
+                    title: "Active Auto-Savings",
+                    desc: "Your balance works for you. Idle capital is automatically routed to yield protocols.",
+                    icon: Bot,
+                    color: "text-green-400",
+                    bg: "bg-green-400/10"
+                },
+                {
+                    title: "Liquid Buffer",
+                    desc: "Immediate liquidity for payments. The agent keeps enough ready for your daily needs.",
+                    icon: Zap,
+                    color: "text-yellow-400",
+                    bg: "bg-yellow-400/10"
+                },
+                {
+                    title: "Self Identity",
+                    desc: "Anti-Sybil protection ensuring one human, one efficient treasury.",
+                    icon: Shield,
+                    color: "text-blue-400",
+                    bg: "bg-blue-400/10"
+                }
+            ].map((feature, i) => (
+                <motion.div 
+                    key={i}
+                    whileHover={{ y: -5 }}
+                    className="p-8 rounded-3xl bg-white/5 border border-white/5 hover:border-green-500/30 hover:bg-white/10 transition-all group"
+                >
+                    <div className={`w-14 h-14 rounded-2xl ${feature.bg} ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                        <feature.icon size={28} />
+                    </div>
+                    <h3 className="text-xl font-bold mb-3 text-white">{feature.title}</h3>
+                    <p className="text-gray-400 leading-relaxed">{feature.desc}</p>
+                </motion.div>
+            ))}
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="py-24 bg-gradient-to-b from-transparent to-green-900/10 px-6">
+        <div className="max-w-6xl mx-auto">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-12">
+                <div className="md:w-1/2">
+                    <h2 className="text-3xl lg:text-4xl font-bold mb-8">How it works</h2>
+                    <div className="space-y-8">
+                        {[
+                            { step: "01", title: "Connect Wallet", desc: "The app reads your real balance and understands your liquidity needs." },
+                            { step: "02", title: "Agent Organizes", desc: "Part of the capital stays liquid. The rest is routed to yield opportunities." },
+                            { step: "03", title: "Instant Access", desc: "Need to pay? The agent liquidates yield positions instantly." }
+                        ].map((item, i) => (
+                            <div key={i} className="flex gap-6">
+                                <div className="text-green-500 font-mono text-xl font-bold pt-1">{item.step}</div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white mb-2">{item.title}</h3>
+                                    <p className="text-gray-400">{item.desc}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <div className="md:w-1/2 relative">
+                    <div className="absolute inset-0 bg-green-500/20 blur-[80px] rounded-full" />
+                    <div className="relative bg-black/40 backdrop-blur-md border border-white/10 rounded-3xl p-8">
+                        <div className="space-y-4 font-mono text-sm text-gray-300">
+                            <div className="flex justify-between border-b border-white/10 pb-2">
+                                <span>Status</span>
+                                <span className="text-green-400">Active ●</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Target Protocol</span>
+                                <span className="text-white">Mento + Aave</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Daily Rebalance</span>
+                                <span className="text-white">08:00 UTC</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Gas Strategy</span>
+                                <span className="text-white">cUSD Fee Abstraction</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <div className="space-y-3">
-              <div className="border-l-2 border-[#A3D977]/30 pl-3">
-                <p className="text-xs font-bold text-[#A3D977] mb-0.5">Q2 2026: LiquidAI Card (Powered by MiniPay)</p>
-                <p className="text-xs text-white/70 leading-relaxed">
-                  Virtual card instantly in your wallet. Earn cashback in yield every time you use it. Save on FX fees when traveling.
-                </p>
-              </div>
-              
-              <div className="border-l-2 border-[#A3D977]/30 pl-3">
-                <p className="text-xs font-bold text-[#A3D977] mb-0.5">Q3 2026: DeFi Derivatives</p>
-                <p className="text-xs text-white/70 leading-relaxed">
-                  Launch of yield-backed derivatives built directly on top of our financial techno-stack.
-                </p>
-              </div>
-              
-              <div className="border-l-2 border-[#A3D977]/30 pl-3">
-                <p className="text-xs font-bold text-[#A3D977] mb-0.5">Q4 2026: White-label Infrastructure</p>
-                <p className="text-xs text-white/70 leading-relaxed">
-                  Allow users and communities to create their own branded cards utilizing our underlying Treasury OS.
-                </p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-32 px-6 text-center">
+        <div className="max-w-3xl mx-auto">
+            <h2 className="text-4xl lg:text-5xl font-bold mb-8">Ready to upgrade your wallet?</h2>
+            <p className="text-xl text-gray-400 mb-10">
+                Join the future of automated treasury management on Celo.
+            </p>
+            <button 
+                onClick={() => navigate("/minipay")}
+                className="h-14 px-10 rounded-full bg-white text-black font-bold text-lg hover:bg-gray-200 transition-colors shadow-xl hover:shadow-2xl hover:-translate-y-1 transform duration-200"
+            >
+                Launch App Now
+            </button>
+        </div>
+      </section>
 
       {/* Footer */}
-      <div className="px-6 py-6 text-center border-t border-border">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <LiquidLogo size={26} variant="icon" theme="auto" background="transparent" />
-          <span className="font-semibold text-text-primary text-sm">LiquidAI</span>
+      <footer className="border-t border-white/5 py-12 px-6 bg-black">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center gap-2 opacity-50">
+                <LiquidLogo size={24} variant="icon" theme="dark" />
+                <span className="font-bold">LiquidAI</span>
+            </div>
+            <div className="text-gray-500 text-sm">
+                © 2026 LiquidAI. Built for Celo "Build Agents for the Real World".
+            </div>
         </div>
-        <p className="text-xs text-text-muted">
-          Treasury Operating System · Build Agents for the Real World V2 · 2026
-        </p>
-      </div>
+      </footer>
     </div>
   );
 }

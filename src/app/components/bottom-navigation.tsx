@@ -16,7 +16,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { icon: HomeIcon, label: "Home", path: "/" },
+  { icon: HomeIcon, label: "Home", path: "/home" },
   { icon: AnalyticsIcon, label: "Analytics", path: "/analytics" },
   { icon: AgentIcon, label: "Agent", path: "/agent" },
   { icon: SavingsIcon, label: "Savings", path: "/savings" },
@@ -38,7 +38,7 @@ export function BottomNavigation() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50"
+      className="w-full z-50 shrink-0"
       style={{
         background: navBg,
         backdropFilter: "blur(20px)",

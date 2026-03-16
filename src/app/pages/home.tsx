@@ -37,7 +37,6 @@ import {
   PixIcon,
 } from "../components/icons";
 import { motion, AnimatePresence } from "motion/react";
-import { BottomNavigation } from "../components/bottom-navigation";
 import { CeloLiquidityMap } from "../components/celo-liquidity-map";
 import { useTheme } from "../hooks/useTheme";
 import { NotificationsDrawer } from "../components/notifications-drawer";
@@ -442,7 +441,7 @@ export function HomePage() {
   ];
 
   return (
-    <div className="min-h-dvh pb-28 overflow-x-hidden bg-background">
+    <div className="min-h-dvh pb-6 overflow-x-hidden bg-background">
 
       {/* Top Header */}
       <header className="flex items-center justify-between px-5 py-4">
@@ -980,7 +979,6 @@ export function HomePage() {
         </motion.div>
       </div>
 
-      <BottomNavigation />
       <NotificationsDrawer open={notifOpen} onClose={() => setNotifOpen(false)} items={notificationItems} />
     </div>
   );

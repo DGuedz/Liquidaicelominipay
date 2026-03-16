@@ -1,7 +1,11 @@
 import { randomUUID, createHash } from "node:crypto";
-import { erc20Abi, formatUnits, getAddress, isAddress, stringToHex } from "viem";
+import { erc20Abi, formatUnits, parseUnits, getAddress, isAddress, stringToHex } from "viem";
 import { env } from "../config/env.mjs";
 import { celoClient, celoWalletClient, backendAddress } from "../lib/celo-client.mjs";
+
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const { Mento, ChainId } = require("@mento-protocol/mento-sdk");
 
 // In-memory store for settlement intents (Locks)
 // In a real app, this would be backed by a DB or directly queried from on-chain smart contracts.
@@ -136,6 +140,57 @@ export function createConditionalLock({ address, amount, protocol, actionType })
   };
 }
 
+async function attemptRealMentoSwap(lock) {
+  try {
+    const chainId = env.celoChain === "mainnet" ? ChainId.CELO : ChainId.CELO_ALFAJORES;
+    const mento = await Mento.create(chainId, celoWalletClient);
+    
+    // Swap 0.01 cUSD for CELO (Buy CELO)
+    // In a real scenario, amounts would match lock.amount
+    const fromToken = env.usdStableAddress; // cUSD
+    const toToken = "CELO"; 
+    const amountIn = parseUnits("0.01", 18); // 0.01 cUSD
+
+    console.log(`[Settlement] Attempting Real Mento Swap: ${formatUnits(amountIn, 18)} cUSD -> CELO`);
+    
+    // Check allowance first
+    const allowance = await celoClient.readContract({
+      address: fromToken,
+      abi: erc20Abi,
+      functionName: "allowance",
+      args: [backendAddress, mento.broker.address],
+    });
+
+    if (allowance < amountIn) {
+      console.log("[Settlement] Approving Mento Broker...");
+      const approveTx = await celoWalletClient.writeContract({
+        address: fromToken,
+        abi: erc20Abi,
+        functionName: "approve",
+        args: [mento.broker.address, amountIn * 10n],
+        feeCurrency: env.usdStableAddress
+      });
+      await celoClient.waitForTransactionReceipt({ hash: approveTx });
+      console.log(`[Settlement] Approved: ${approveTx}`);
+    }
+
+    const txObj = await mento.swapIn(fromToken, toToken, amountIn, 0);
+    // Execute via viem wallet
+    const hash = await celoWalletClient.sendTransaction({
+      to: txObj.to,
+      data: txObj.data,
+      value: BigInt(txObj.value || 0),
+      feeCurrency: env.usdStableAddress
+    });
+    
+    console.log(`[Settlement] Real Swap Submitted: ${hash}`);
+    return hash;
+  } catch (error) {
+    console.warn(`[Settlement] Real Swap Failed (Simulating instead): ${error.message}`);
+    return null;
+  }
+}
+
 async function submitOnChainProof(lock, manualTxHash = null) {
   if (!celoWalletClient || !backendAddress) {
     console.log("[Settlement] Skipping on-chain proof (no wallet configured)");
@@ -162,12 +217,20 @@ async function submitOnChainProof(lock, manualTxHash = null) {
     let hash = manualTxHash;
 
     if (!hash) {
-      hash = await celoWalletClient.sendTransaction({
-        to: lock.address, // Send 0 value tx to user as proof of interaction
-        value: 0n,
-        data: stringToHex(`Settlement:${lock.id}:${lock.hash}`),
-        feeCurrency: env.usdStableAddress,
-      });
+      // Attempt Real Action if Mento
+      if (lock.protocol === "mento" && lock.actionType === "swap") {
+         hash = await attemptRealMentoSwap(lock);
+      }
+
+      // Fallback to Proof-of-Intent if real action failed or skipped
+      if (!hash) {
+        hash = await celoWalletClient.sendTransaction({
+          to: lock.address, // Send 0 value tx to user as proof of interaction
+          value: 0n,
+          data: stringToHex(`Settlement:${lock.id}:${lock.hash}`),
+          feeCurrency: env.usdStableAddress,
+        });
+      }
     } else {
       console.log(`[Settlement] Using manual txHash: ${hash}`);
     }

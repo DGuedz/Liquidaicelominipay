@@ -23,13 +23,8 @@ function App() {
         {loading ? (
           <SplashScreen />
         ) : (
-          <div className="min-h-dvh bg-gray-100 flex justify-center">
-            <div
-              className="w-full relative bg-background"
-              style={{ maxWidth: "430px", minHeight: "100dvh" }}
-            >
-              <RouterProvider router={router} />
-            </div>
+          <div className="min-h-dvh bg-background">
+            <RouterProvider router={router} />
           </div>
         )}
         <ToastProvider />

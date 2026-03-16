@@ -549,6 +549,7 @@ export function CeloLiquidityMap({ network, onOptimize }: CeloLiquidityMapProps 
                       preserveAspectRatio="xMidYMid slice"
                       clipPath={`url(#clip-${p.id})`}
                       opacity={isSelected ? 1 : 0.72}
+                      crossOrigin="anonymous"
                       onError={(e) => {
                         e.currentTarget.style.display = "none";
                       }}

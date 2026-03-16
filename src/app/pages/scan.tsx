@@ -2,7 +2,6 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Scan, X, QrCode, Copy, Share2, Zap, Download, Check } from "lucide-react";
 import { useNavigate } from "react-router";
-import { BottomNavigation } from "../components/bottom-navigation";
 
 // ─── QR Code SVG Generator ────────────────────────────────────────────────────
 // Deterministic "fake" QR pattern for demo purposes
@@ -558,7 +557,6 @@ export function ScanPage() {
         </AnimatePresence>
       </div>
 
-      <BottomNavigation />
     </div>
   );
 }
