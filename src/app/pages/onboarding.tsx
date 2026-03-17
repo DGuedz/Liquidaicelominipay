@@ -783,20 +783,20 @@ function StepConnect({ onNext }: { onNext: () => void }) {
           <div
             className="w-full rounded-2xl p-4"
             style={{
-              background: "rgba(245,158,11,0.08)",
-              border: "1px solid rgba(245,158,11,0.25)",
+              background: "rgba(252,255,82,0.08)",
+              border: "1px solid rgba(252,255,82,0.25)",
             }}
           >
-            <p className="text-sm font-semibold" style={{ color: "#F59E0B" }}>
+            <p className="text-sm font-semibold" style={{ color: "#FCFF52" }}>
               Different network detected
             </p>
             <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-              Switch to Celo Sepolia to activate the demo flow.
+              Switch to Celo Alfajores to activate the demo flow.
             </p>
             <button
               onClick={handleSwitchNetwork}
-              className="mt-3 px-3 py-1.5 rounded-full text-xs font-semibold"
-              style={{ background: "#F59E0B", color: "#1A1A1A" }}
+              className="mt-3 px-3 py-1.5 rounded-full text-xs font-bold"
+              style={{ background: "#FCFF52", color: "#1A1A1A" }}
             >
               {isSwitchingChain ? "Switching..." : "Switch to Celo"}
             </button>
@@ -824,11 +824,11 @@ function StepConnect({ onNext }: { onNext: () => void }) {
           <div
             className="w-full rounded-2xl p-4"
             style={{
-              background: "rgba(245,158,11,0.06)",
-              border: "1px solid rgba(245,158,11,0.18)",
+              background: "rgba(252,255,82,0.06)",
+              border: "1px solid rgba(252,255,82,0.18)",
             }}
           >
-            <p className="text-sm font-semibold" style={{ color: "#F59E0B" }}>
+            <p className="text-sm font-semibold" style={{ color: "#FCFF52" }}>
               Próximo passo
             </p>
             <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
