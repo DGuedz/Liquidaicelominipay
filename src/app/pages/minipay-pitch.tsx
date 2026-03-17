@@ -360,9 +360,12 @@ export function MiniPayPitchPage() {
         {/* ── COMPARISON TABLE ────────────────────────────────── */}
         <div className="px-5 mb-8">
           <SectionLabel text="Comparison" />
-          <h2 className="mb-4" style={{ color: "var(--text-primary)", fontSize: "1.25rem", fontWeight: 700 }}>
-            MiniPay vs LiquidAI
+          <h2 className="mb-2" style={{ color: "var(--text-primary)", fontSize: "1.25rem", fontWeight: 700 }}>
+            MiniPay + LiquidAI
           </h2>
+          <p className="text-sm mb-5" style={{ color: "var(--text-secondary)" }}>
+            We boost MiniPay's power, we supercharge it. See how LiquidAI turns your existing wallet into an autonomous yield engine.
+          </p>
           <div
             className="rounded-2xl overflow-hidden"
             style={{ background: "var(--surface-solid)", boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}
@@ -373,8 +376,8 @@ export function MiniPayPitchPage() {
               style={{ background: "var(--card-bg)", borderBottom: "1px solid var(--border-light)" }}
             >
               <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Feature</span>
-              <span className="text-xs font-semibold text-center" style={{ color: "var(--text-muted)" }}>MiniPay</span>
-              <span className="text-xs font-semibold text-center" style={{ color: "#A3D977" }}>LiquidAI</span>
+              <span className="text-xs font-semibold text-center" style={{ color: "var(--text-muted)" }}>MiniPay Only</span>
+              <span className="text-xs font-semibold text-center" style={{ color: "#A3D977" }}>With LiquidAI</span>
             </div>
             {/* Rows */}
             {COMPARISON.map((row, i) => (
