@@ -451,8 +451,20 @@ export function LandingPage() {
                 <LiquidLogo size={24} variant="icon" theme="dark" />
                 <span className="font-bold">LiquidAI</span>
             </div>
-            <div className="text-gray-500 text-sm">
-                © 2026 LiquidAI. Built for Celo "Build Agents for the Real World".
+            <div className="text-gray-500 text-sm text-center md:text-left">
+                <p>
+                  LiquidAI - Agentic Treasury OS © 2026 by doublegreen is licensed under{' '}
+                  <a
+                    href="https://creativecommons.org/licenses/by/4.0/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-green-400 hover:underline inline-flex items-center gap-1"
+                  >
+                    CC BY 4.0
+                    <img src="https://mirrors.creativecommons.org/presskit/icons/cc.svg" alt="CC" className="h-4 w-4 opacity-70" />
+                    <img src="https://mirrors.creativecommons.org/presskit/icons/by.svg" alt="BY" className="h-4 w-4 opacity-70" />
+                  </a>
+                </p>
             </div>
         </div>
       </footer>
