@@ -45,9 +45,27 @@ import { getKarmaReputation } from "./services/karma-service.mjs";
 
 const app = express();
 
+function isAllowedOrigin(origin) {
+  if (!origin) return true;
+  if (env.frontendOrigins.includes("*")) return true;
+
+  return env.frontendOrigins.some((allowedOrigin) => {
+    if (allowedOrigin === origin) return true;
+    if (allowedOrigin.startsWith("*.") && origin.endsWith(allowedOrigin.slice(1))) return true;
+    if (allowedOrigin.includes("://*.")) {
+      const [, suffix = ""] = allowedOrigin.split("*.");
+      return origin.endsWith(suffix);
+    }
+    return false;
+  });
+}
+
 app.use(
   cors({
-    origin: env.frontendOrigin === "*" ? true : env.frontendOrigin,
+    origin(origin, callback) {
+      const allowed = isAllowedOrigin(origin);
+      callback(allowed ? null : new Error("CORS origin not allowed."), allowed);
+    },
     credentials: true,
   }),
 );
@@ -584,7 +602,7 @@ app.get(
 
 app.listen(env.port, async () => {
   // eslint-disable-next-line no-console
-  console.log(`[LiquidAI API] running on http://localhost:${env.port} (${env.celoChain}, chainId ${env.celoChainId})`);
+  console.log(`[LiquidAI API] running on port ${env.port} (${env.celoChain}, chainId ${env.celoChainId})`);
   
   // Phase 2: Initialize Self Agent if enabled
   await initSelfAgent();

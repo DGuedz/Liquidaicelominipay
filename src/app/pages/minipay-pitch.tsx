@@ -31,9 +31,9 @@ const PILLARS = [
     icon: Bot,
     color: "#A3D977",
     bg: "rgba(163,217,119,0.12)",
-    title: "Your Reserve Works 24/7",
+    title: "Hold & Earn",
     description:
-      "With idle cUSD in MiniPay, inflation eats your value. LiquidAI Agent automatically allocates to Celo protocols to generate yield — without you needing to understand DeFi.",
+      "Earn daily rewards on your balance—just for keeping it cozy. The LiquidAI Agent automatically allocates to safe Celo protocols. No strings, no locks.",
     badge: "Auto-Savings",
     badgeColor: "#A3D977",
   },
@@ -41,9 +41,9 @@ const PILLARS = [
     icon: Zap,
     color: "#10B981",
     bg: "rgba(16,185,129,0.1)",
-    title: "Ready for Daily Life",
+    title: "Cash to Crypto & Back",
     description:
-      "Payments, top-ups, P2P — everything works as before. The agent keeps a liquid buffer ready while the rest earns yield. 1-second settlement on Celo.",
+      "Payments, top-ups, P2P — everything works as before. The agent keeps a liquid buffer ready while the rest earns yield. Send funds globally in 5 seconds.",
     badge: "Liquid Buffer",
     badgeColor: "#10B981",
   },
@@ -51,9 +51,9 @@ const PILLARS = [
     icon: Globe,
     color: "#06B6D4",
     bg: "rgba(6,182,212,0.1)",
-    title: "Global Infrastructure",
+    title: "No Fees, Just Stables",
     description:
-      "No complex crypto jargon. If you can use MiniPay, you can use LiquidAI. Localized interface, familiar design, real results.",
+      "No complex crypto jargon or confusing fees. If you can use MiniPay, you can use LiquidAI. Enjoy effortless onboarding and seamless fund transfers.",
     badge: "Invisible DeFi",
     badgeColor: "#06B6D4",
   },
@@ -61,9 +61,9 @@ const PILLARS = [
     icon: Fingerprint,
     color: "#8B5CF6",
     bg: "rgba(139,92,246,0.1)",
-    title: "Identity Layer",
+    title: "Full Control, Complete Security",
     description:
-      "Self Protocol integration ensures verified usage without exposing your data. One human, one efficient treasury.",
+      "You hold the keys, and you make the moves. Self Protocol integration ensures verified usage, backed up and easily restorable.",
     badge: "Anti-Sybil",
     badgeColor: "#8B5CF6",
   },
@@ -235,7 +235,7 @@ export function MiniPayPitchPage() {
                 letterSpacing: "-0.02em",
               }}
             >
-              Your cUSD protected{" "}
+              Send it, Swap it,{" "}
               <span
                 style={{
                   background: "linear-gradient(135deg, #A3D977, #10B981)",
@@ -244,9 +244,9 @@ export function MiniPayPitchPage() {
                   backgroundClip: "text",
                 }}
               >
-                from inflation.
+                Earn it.
               </span>{" "}
-              Earning.
+              <br/>Anywhere, Anytime.
             </motion.h1>
 
             <motion.p
@@ -256,8 +256,7 @@ export function MiniPayPitchPage() {
               className="mb-8 text-sm md:text-base leading-relaxed"
               style={{ color: "var(--text-secondary)", maxWidth: "480px" }}
             >
-              LiquidAI turns idle balance in MiniPay into productive capital while preserving a liquid buffer for daily use.
-              The app reads the real wallet state first and only then decides whether yield routing makes sense.
+              LiquidAI extends MiniPay's mission. You hold the stablecoins, we stack the rewards. No strings, no locks, no confusing DeFi fees. Just the easiest stablecoin treasury you'll ever use.
             </motion.p>
           </div>
 
@@ -312,8 +311,8 @@ export function MiniPayPitchPage() {
                 <span className="text-sm font-semibold text-white">Live model: wallet-first treasury</span>
               </div>
               {[
-                { label: "Without LiquidAI", value: "Idle wallet balance", sub: "No routing, no yield capture", color: "#EF4444" },
-                { label: "With LiquidAI", value: "Live wallet + liquid buffer", sub: "Yield routes activated only when worthwhile", color: "#A3D977" },
+                { label: "Without LiquidAI (idle)", value: "$1,200.00", sub: "Local inflation: -8%/yr", color: "#EF4444" },
+                { label: "With LiquidAI (4.8% APY)", value: "$1,257.60", sub: "+$57.60 in 12 months", color: "#A3D977" },
               ].map((row, i) => (
                 <div
                   key={row.label}
@@ -338,7 +337,7 @@ export function MiniPayPitchPage() {
               >
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: "#A3D977" }} />
                 <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>
-                  <span className="font-semibold text-white">Wallet state drives the strategy</span> so the agent only reallocates when the yield delta is materially better.
+                  <span className="font-semibold text-white">$57.60 extra per year</span> — Hold stables, stack rewards. No extra steps.
                 </p>
               </div>
             </motion.div>
@@ -404,7 +403,7 @@ export function MiniPayPitchPage() {
         <div className="px-5 mb-8">
           <SectionLabel text="How it works" />
           <h2 className="mb-5" style={{ color: "var(--text-primary)", fontSize: "1.25rem", fontWeight: 700 }}>
-            3 taps, zero complexity
+            No extra setup. Just connect.
           </h2>
           <div className="flex flex-col gap-3 md:grid md:grid-cols-3">
             {[
@@ -422,7 +421,7 @@ export function MiniPayPitchPage() {
               },
               {
                 step: "03",
-                title: "Agent takes over",
+                title: "Hold & Earn",
                 desc: "LiquidAI Agent optimizes your cUSD 24/7, keeping liquidity for your daily spending.",
                 color: "#06B6D4",
               },

@@ -583,6 +583,13 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     Boolean(faucetStatus?.backendAddress) &&
     address?.toLowerCase() === faucetStatus?.backendAddress?.toLowerCase();
 
+  // MiniPay test flow logic: If inside MiniPay, auto-connect when reaching this step
+  useEffect(() => {
+    if (isMiniPay && phase === "idle" && hasConnector && !isConnected && !isConnecting) {
+      handleConnect();
+    }
+  }, [isMiniPay, phase, hasConnector, isConnected, isConnecting]);
+
   return (
     <div className="flex flex-col h-full px-6 pt-10 pb-8">
       <div className="mb-5">

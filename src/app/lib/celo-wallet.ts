@@ -51,8 +51,8 @@ export async function requestPreferredAccounts() {
 
 export const CELO_CHAIN = defineChain({
   ...chainConfig,
-  id: 11142220,
-  name: "Celo Sepolia",
+  id: 44787,
+  name: "Celo Alfajores",
   nativeCurrency: {
     decimals: 18,
     name: "CELO",
@@ -60,17 +60,17 @@ export const CELO_CHAIN = defineChain({
   },
   rpcUrls: {
     default: {
-      http: [DEFAULT_CELO_RPC_URL],
+      http: ["https://alfajores-forno.celo-testnet.org"],
     },
     public: {
-      http: [DEFAULT_CELO_RPC_URL],
+      http: ["https://alfajores-forno.celo-testnet.org"],
     },
   },
   blockExplorers: {
     default: {
-      name: "Celo Sepolia Explorer",
-      url: "https://celo-sepolia.blockscout.com",
-      apiUrl: "https://celo-sepolia.blockscout.com/api",
+      name: "Celo Alfajores Explorer",
+      url: "https://alfajores.celoscan.io",
+      apiUrl: "https://alfajores.celoscan.io/api",
     },
   },
   testnet: true,

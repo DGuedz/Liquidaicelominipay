@@ -10,6 +10,8 @@ pnpm api:dev
 
 Default URL: `http://localhost:8787`
 
+In public hosting, the server now binds `PORT` first and falls back to `API_PORT`.
+
 ## Endpoints
 
 - `GET /api/health`
@@ -43,3 +45,5 @@ Default URL: `http://localhost:8787`
 - Backend usa `process.env` (sem prefixo `VITE_`).
 - Frontend usa `VITE_API_BASE_URL` para apontar para o backend.
 - Para autenticação de carteira, configure `AUTH_SECRET` no backend.
+- `FRONTEND_ORIGIN` accepts comma-separated origins, for example:
+  `http://localhost:5173,https://app.liquidai.ai,https://liquidai.ai,https://*.vercel.app`

@@ -1,34 +1,26 @@
 import { createBrowserRouter } from "react-router";
+import type { ComponentType } from "react";
 import { RootLayout } from "./components/root-layout";
 import { MobileLayout } from "./components/mobile-layout";
 import { ErrorPage } from "./pages/error";
-import { LandingPage } from "./pages/landing";
-import { HomePage } from "./pages/home";
-import { TransferPage } from "./pages/transfer";
-import { ReceiptPage } from "./pages/receipt";
-import { AnalyticsPage } from "./pages/analytics";
-import { CardPage } from "./pages/card";
-import { ProfilePage } from "./pages/profile";
-import { ScanPage } from "./pages/scan";
-import { MiniPayPitchPage } from "./pages/minipay-pitch";
-import { AgentPage } from "./pages/agent";
-import { OnboardingPage } from "./pages/onboarding";
-import { ChatPage } from "./pages/chat";
-import { SavingsPage } from "./pages/savings";
-import { ProfileDadosPage } from "./pages/profile-dados";
-import { ProfileCarteirasPage } from "./pages/profile-carteiras";
-import { ProfileNotificacoesPage } from "./pages/profile-notificacoes";
-import { ProfileSegurancaPage } from "./pages/profile-seguranca";
-import { ProfileAgenteConfigPage } from "./pages/profile-agente-config";
-import { ProfileRelatoriosPage } from "./pages/profile-relatorios";
-import { ProfileProtocolosPage } from "./pages/profile-protocolos";
-import { ProfileSuportePage } from "./pages/profile-suporte";
-import { ProfileSobrePage } from "./pages/profile-sobre";
-import { SecurityPage } from "./pages/profile/security";
-import { ProtocolsPage } from "./pages/profile/protocols";
-import { YieldStrategyPage } from "./pages/profile/yield";
-import { KarmaDashboardPage } from "./pages/karma-dashboard";
-import { ProjectBriefPage } from "./pages/project-brief";
+
+type LazyRouteModule = Record<string, unknown>;
+
+function lazyComponent<TModule extends LazyRouteModule>(
+  load: () => Promise<TModule>,
+  exportName: keyof TModule,
+) {
+  return async () => {
+    const mod = await load();
+    const Component = mod[exportName];
+
+    if (typeof Component !== "function") {
+      throw new Error(`Route export "${String(exportName)}" is not a valid component.`);
+    }
+
+    return { Component: Component as ComponentType };
+  };
+}
 
 export const router = createBrowserRouter([
   {
@@ -36,41 +28,134 @@ export const router = createBrowserRouter([
     Component: RootLayout,
     ErrorBoundary: ErrorPage,
     children: [
-      { index: true, Component: LandingPage },
-      { path: "minipay", Component: MiniPayPitchPage },
-      { path: "minipay-pitch", Component: MiniPayPitchPage },
-      { path: "onboarding", Component: OnboardingPage },
-      { path: "brief", Component: ProjectBriefPage },
-      
-      /* Mobile App Pages - Wrapped in Floating Card Layout on Desktop */
       {
-        Component: MobileLayout,
+        index: true,
+        lazy: lazyComponent(() => import("./pages/landing"), "LandingPage"),
+      },
+      {
+        path: "minipay",
+        lazy: lazyComponent(() => import("./pages/minipay-pitch"), "MiniPayPitchPage"),
+      },
+      {
+        path: "minipay-pitch",
+        lazy: lazyComponent(() => import("./pages/minipay-pitch"), "MiniPayPitchPage"),
+      },
+      {
+        path: "brief",
+        lazy: lazyComponent(() => import("./pages/project-brief"), "ProjectBriefPage"),
+      },
+
+      {
+        lazy: lazyComponent(() => import("./components/web3-layout"), "Web3Layout"),
         children: [
-          { path: "home", Component: HomePage },
-          { path: "dashboard", Component: HomePage },
-          { path: "transfer", Component: TransferPage },
-          { path: "receipt", Component: ReceiptPage },
-          { path: "analytics", Component: AnalyticsPage },
-          { path: "card", Component: CardPage },
-          { path: "profile", Component: ProfilePage },
-          { path: "profile/dados", Component: ProfileDadosPage },
-          { path: "profile/carteiras", Component: ProfileCarteirasPage },
-          { path: "profile/notificacoes", Component: ProfileNotificacoesPage },
-          { path: "profile/seguranca", Component: ProfileSegurancaPage },
-          { path: "profile/agente-config", Component: ProfileAgenteConfigPage },
-          { path: "profile/relatorios", Component: ProfileRelatoriosPage },
-          { path: "profile/protocolos", Component: ProfileProtocolosPage },
-          { path: "profile/suporte", Component: ProfileSuportePage },
-          { path: "profile/sobre", Component: ProfileSobrePage },
-          { path: "profile/security", Component: SecurityPage },
-          { path: "profile/protocols", Component: ProtocolsPage },
-          { path: "profile/yield", Component: YieldStrategyPage },
-          { path: "karma", Component: KarmaDashboardPage },
-          { path: "scan", Component: ScanPage },
-          { path: "agent", Component: AgentPage },
-          { path: "chat", Component: ChatPage },
-          { path: "savings", Component: SavingsPage },
-        ]
+          {
+            path: "onboarding",
+            lazy: lazyComponent(() => import("./pages/onboarding"), "OnboardingPage"),
+          },
+      
+          /* Mobile App Pages - Wrapped in Floating Card Layout on Desktop */
+          {
+            Component: MobileLayout,
+            children: [
+              {
+                path: "home",
+                lazy: lazyComponent(() => import("./pages/home"), "HomePage"),
+              },
+              {
+                path: "dashboard",
+                lazy: lazyComponent(() => import("./pages/home"), "HomePage"),
+              },
+              {
+                path: "transfer",
+                lazy: lazyComponent(() => import("./pages/transfer"), "TransferPage"),
+              },
+              {
+                path: "receipt",
+                lazy: lazyComponent(() => import("./pages/receipt"), "ReceiptPage"),
+              },
+              {
+                path: "analytics",
+                lazy: lazyComponent(() => import("./pages/analytics"), "AnalyticsPage"),
+              },
+              {
+                path: "card",
+                lazy: lazyComponent(() => import("./pages/card"), "CardPage"),
+              },
+              {
+                path: "profile",
+                lazy: lazyComponent(() => import("./pages/profile"), "ProfilePage"),
+              },
+              {
+                path: "profile/dados",
+                lazy: lazyComponent(() => import("./pages/profile-dados"), "ProfileDadosPage"),
+              },
+              {
+                path: "profile/carteiras",
+                lazy: lazyComponent(() => import("./pages/profile-carteiras"), "ProfileCarteirasPage"),
+              },
+              {
+                path: "profile/notificacoes",
+                lazy: lazyComponent(() => import("./pages/profile-notificacoes"), "ProfileNotificacoesPage"),
+              },
+              {
+                path: "profile/seguranca",
+                lazy: lazyComponent(() => import("./pages/profile-seguranca"), "ProfileSegurancaPage"),
+              },
+              {
+                path: "profile/agente-config",
+                lazy: lazyComponent(() => import("./pages/profile-agente-config"), "ProfileAgenteConfigPage"),
+              },
+              {
+                path: "profile/relatorios",
+                lazy: lazyComponent(() => import("./pages/profile-relatorios"), "ProfileRelatoriosPage"),
+              },
+              {
+                path: "profile/protocolos",
+                lazy: lazyComponent(() => import("./pages/profile-protocolos"), "ProfileProtocolosPage"),
+              },
+              {
+                path: "profile/suporte",
+                lazy: lazyComponent(() => import("./pages/profile-suporte"), "ProfileSuportePage"),
+              },
+              {
+                path: "profile/sobre",
+                lazy: lazyComponent(() => import("./pages/profile-sobre"), "ProfileSobrePage"),
+              },
+              {
+                path: "profile/security",
+                lazy: lazyComponent(() => import("./pages/profile/security"), "SecurityPage"),
+              },
+              {
+                path: "profile/protocols",
+                lazy: lazyComponent(() => import("./pages/profile/protocols"), "ProtocolsPage"),
+              },
+              {
+                path: "profile/yield",
+                lazy: lazyComponent(() => import("./pages/profile/yield"), "YieldStrategyPage"),
+              },
+              {
+                path: "karma",
+                lazy: lazyComponent(() => import("./pages/karma-dashboard"), "KarmaDashboardPage"),
+              },
+              {
+                path: "scan",
+                lazy: lazyComponent(() => import("./pages/scan"), "ScanPage"),
+              },
+              {
+                path: "agent",
+                lazy: lazyComponent(() => import("./pages/agent"), "AgentPage"),
+              },
+              {
+                path: "chat",
+                lazy: lazyComponent(() => import("./pages/chat"), "ChatPage"),
+              },
+              {
+                path: "savings",
+                lazy: lazyComponent(() => import("./pages/savings"), "SavingsPage"),
+              },
+            ]
+          }
+        ],
       }
     ],
   },

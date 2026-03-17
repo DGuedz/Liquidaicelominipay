@@ -32,6 +32,15 @@ function readBool(name, fallback) {
   return fallback;
 }
 
+function readList(name, fallback = []) {
+  const raw = process.env[name];
+  if (typeof raw !== "string" || !raw.trim()) return fallback;
+  return raw
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
 function normalizeCeloChain(value) {
   const normalized = value.toLowerCase();
   if (normalized === "mainnet" || normalized === "celo") return "mainnet";
@@ -74,14 +83,15 @@ const feeCurrencyAddress =
 
 export const env = {
   nodeEnv: readString("NODE_ENV", "development"),
-  port: readInt("API_PORT", 8787),
+  port: readInt("PORT", readInt("API_PORT", 8787)),
   frontendOrigin: readString("FRONTEND_ORIGIN", "*"),
+  frontendOrigins: readList("FRONTEND_ORIGIN", ["*"]),
   authSecret: readString("AUTH_SECRET", "liquidai-dev-secret-change-me"),
   authNonceTtlMs: readInt("AUTH_NONCE_TTL_MS", 5 * 60 * 1000),
   authTokenTtlMs: readInt("AUTH_TOKEN_TTL_MS", 24 * 60 * 60 * 1000),
   settlementLockTtlMs: readInt("SETTLEMENT_LOCK_TTL_MS", 2 * 60 * 1000),
   celoChain: chain,
-  celoChainId: chain === "mainnet" ? 42220 : 11142220,
+  celoChainId: chain === "mainnet" ? 42220 : 44787,
   celoRpcUrl,
   feeCurrencyAddress,
   usdStableAddress: feeCurrencyAddress,

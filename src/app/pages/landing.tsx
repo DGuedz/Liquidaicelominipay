@@ -1,17 +1,40 @@
 import { useNavigate } from "react-router";
-import { motion, useScroll, useTransform } from "motion/react";
-import { Shield, Zap, ArrowRight, Bot, Sparkles, Globe, Smartphone, CheckCircle2, TrendingUp, Lock, Bell, Search } from "lucide-react";
+import { motion, useScroll, useTransform, useMotionValue } from "motion/react";
+import { Shield, Zap, ArrowRight, Bot, Sparkles, Globe, Smartphone, CheckCircle2, TrendingUp, Lock, Bell, Search, Eye } from "lucide-react";
 import { LiquidLogo } from "../components/LiquidLogo";
 import { useRef } from "react";
 import { PhoneTopupIcon, DepositIcon, PixIcon } from "../components/icons";
 
 // Mockup Component for visual proof (Faithful to dApp Design)
-const AppMockup = () => (
+const AppMockup = () => {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const rotateX = useTransform(mouseY, [-300, 300], [15, -15]);
+  const rotateY = useTransform(mouseX, [-300, 300], [-15, 15]);
+
+  function handleMouseMove(event: React.MouseEvent<HTMLDivElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left - rect.width / 2;
+    const y = event.clientY - rect.top - rect.height / 2;
+    mouseX.set(x);
+    mouseY.set(y);
+  }
+
+  function handleMouseLeave() {
+    mouseX.set(0);
+    mouseY.set(0);
+  }
+
+  return (
   <motion.div 
     initial={{ y: 100, opacity: 0 }}
     animate={{ y: 0, opacity: 1 }}
     transition={{ type: "spring", stiffness: 50, delay: 0.4 }}
-    className="relative w-[280px] h-[580px] bg-black rounded-[40px] border-8 border-gray-800 shadow-2xl overflow-hidden mx-auto"
+    onMouseMove={handleMouseMove}
+    onMouseLeave={handleMouseLeave}
+    style={{ rotateX, rotateY, transformPerspective: 1000 }}
+    className="relative w-[280px] h-[580px] bg-black rounded-[40px] border-8 border-gray-800 shadow-2xl overflow-hidden mx-auto cursor-pointer"
   >
     {/* Screen Content - Dark Theme like dApp */}
     <div className="w-full h-full bg-[#020408] relative flex flex-col font-sans">
@@ -40,78 +63,136 @@ const AppMockup = () => (
       </div>
       
       {/* Balance Card (Exact Replica) */}
-      <div className="mx-4 mt-2 p-5 rounded-3xl relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0D4B2E 0%, #062C1B 100%)" }}>
-        {/* Noise/Texture */}
-        <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
-        
-        <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-1">
-                <span className="text-green-300 text-[10px] font-bold tracking-wider uppercase">Wallet-First Treasury</span>
-                <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-            </div>
-            <div className="text-white text-3xl font-bold tracking-tight mb-4">Live wallet balance</div>
-            
-            <div className="flex gap-2">
-                <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-xl p-2 flex flex-col items-center justify-center gap-1 border border-white/5">
-                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-white"><ArrowRight size={12} className="-rotate-45" /></div>
-                    <span className="text-[9px] text-white/80">Add</span>
-                </div>
-                <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-xl p-2 flex flex-col items-center justify-center gap-1 border border-white/5">
-                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-white"><ArrowRight size={12} className="rotate-45" /></div>
-                    <span className="text-[9px] text-white/80">Send</span>
-                </div>
-                <div className="flex-1 bg-green-500 text-black font-bold rounded-xl p-2 flex flex-col items-center justify-center gap-1 shadow-lg shadow-green-900/50">
-                    <Bot size={14} />
-                    <span className="text-[9px]">Agent</span>
-                </div>
-            </div>
-        </div>
-      </div>
-
-      {/* Recent Activity List */}
-      <div className="flex-1 px-5 pt-6">
-        <h3 className="text-white font-bold text-sm mb-4">Recent Activity</h3>
-        <div className="space-y-3">
-            {[
-                { label: "Yield Route", sub: "Mento Protocol", val: "Ready", icon: TrendingUp, color: "text-green-400", bg: "bg-green-400/10" },
-                { label: "Liquid Buffer", sub: "Daily payments", val: "Tracked", icon: Zap, color: "text-yellow-400", bg: "bg-yellow-400/10" },
-                { label: "Auto-Rebalance", sub: "Only on material delta", val: "Standby", icon: Bot, color: "text-blue-400", bg: "bg-blue-400/10" },
-            ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl ${item.bg} ${item.color} flex items-center justify-center`}>
-                        <item.icon size={18} />
-                    </div>
-                    <div className="flex-1">
-                        <div className="text-white text-xs font-bold">{item.label}</div>
-                        <div className="text-white/40 text-[10px]">{item.sub}</div>
-                    </div>
-                    <div className={`text-xs font-bold ${item.val === "Ready" ? "text-green-400" : "text-white"}`}>
-                        {item.val}
-                    </div>
-                </div>
-            ))}
-        </div>
-      </div>
-
-      {/* Floating Action Toast */}
       <motion.div 
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 1.5 }}
-        className="absolute bottom-6 left-4 right-4 bg-[#1A1D24] border border-white/10 rounded-xl p-3 flex items-center gap-3 shadow-2xl"
+        whileHover={{ scale: 1.02 }}
+        className="mx-4 mt-2 p-6 rounded-3xl relative overflow-hidden transition-transform duration-300 border border-white/10" 
+        style={{ 
+          background: "linear-gradient(135deg, #0a0a0a 0%, #111 100%)", 
+          boxShadow: "0 12px 40px rgba(13,75,46,0.4)" 
+        }}
       >
-         <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400">
-            <CheckCircle2 size={16} />
-         </div>
-         <div>
-            <div className="text-[10px] text-gray-400">Agent Update</div>
-            <div className="text-xs font-bold text-white">Wallet synced, route ready</div>
-         </div>
+        {/* Glow map effect */}
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "radial-gradient(ellipse at center, rgba(163,217,119,0.2) 0%, transparent 70%)",
+            transform: "translateY(20%) scale(1.5)"
+          }}
+        />
+        {/* Dotted map SVG placeholder */}
+        <div 
+          className="absolute inset-0 pointer-events-none opacity-40"
+          style={{
+            backgroundImage: "radial-gradient(rgba(163,217,119,0.5) 1px, transparent 1px)",
+            backgroundSize: "8px 8px",
+            maskImage: "radial-gradient(ellipse at center, black 20%, transparent 70%)",
+            WebkitMaskImage: "radial-gradient(ellipse at center, black 20%, transparent 70%)",
+            transform: "translateY(30%) scaleY(0.5) scaleX(1.2)"
+          }}
+        />
+
+        <div className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                  <span className="text-[10px] tracking-wider uppercase font-medium" style={{ color: "rgba(255,255,255,0.55)" }}>Total Balance</span>
+                  <div className="w-3.5 h-3.5 text-white opacity-60"><Eye size={14}/></div>
+              </div>
+              <div
+                className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
+                style={{ background: "rgba(163,217,119,0.18)", border: "1px solid rgba(163,217,119,0.3)", backdropFilter: "blur(4px)" }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#A3D977", boxShadow: "0 0 8px #A3D977" }} />
+                <span className="text-[10px]" style={{ color: "#A3D977", fontWeight: 600 }}>
+                  Agent Active
+                </span>
+              </div>
+            </div>
+
+            <div className="font-mono text-white mb-1 drop-shadow-md" style={{ fontSize: "2.2rem", fontWeight: 700, letterSpacing: "-0.02em" }}>
+              $5.57
+            </div>
+            
+            <div className="flex items-center gap-2 mb-6">
+              <Sparkles className="w-3.5 h-3.5" style={{ color: "#A3D977" }} />
+              <span className="text-xs font-medium" style={{ color: "#A3D977" }}>+2.4% APY · +$0.01 this month</span>
+            </div>
+            
+            <div className="flex items-center justify-between pt-2 border-t border-white/10">
+              <span className="font-mono text-xs tracking-[0.15em] drop-shadow-sm" style={{ color: "rgba(255,255,255,0.7)" }}>
+                •••• •••• •••• 3424
+              </span>
+              <div className="flex items-center gap-1.5 opacity-80">
+                <div className="text-white">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
+                </div>
+                <span className="text-white font-bold leading-none text-[9px] tracking-tight">MiniPay</span>
+              </div>
+            </div>
+        </div>
       </motion.div>
+
+      {/* Quick Actions (Replaced old buttons with grid) */}
+      <div className="px-5 pt-4">
+        <div className="grid grid-cols-4 gap-2.5">
+          {[
+            { label: "Send", icon: <ArrowRight size={16} className="-rotate-45" /> },
+            { label: "Receive", icon: <ArrowRight size={16} className="rotate-45" /> },
+            { label: "Optimize", icon: <Zap size={16} /> },
+            { label: "Card", icon: <div className="grid grid-cols-2 gap-0.5 w-4 h-4"><div className="border border-current rounded-[2px]" /><div className="border border-current rounded-[2px]" /><div className="border border-current rounded-[2px]" /><div className="border border-current rounded-[2px]" /></div> },
+          ].map((action, i) => (
+            <div key={i} className="flex flex-col items-center gap-2">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10 text-green-400">
+                {action.icon}
+              </div>
+              <span className="text-[9px] text-white/60 font-medium">{action.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Agent Status Card (Mini version of the real one) */}
+      <div className="px-5 pt-5">
+        <div className="rounded-xl overflow-hidden bg-white/5 border border-white/10">
+          <div className="px-3 py-2.5 flex items-center gap-2 border-b border-white/10">
+            <div className="w-6 h-6 rounded-lg bg-green-500/10 flex items-center justify-center relative">
+              <Bot size={12} className="text-green-500" />
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-green-400 animate-pulse border border-[#020408]" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-white">LiquidAI Agent</span>
+                <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-white font-bold">Online</span>
+              </div>
+              <div className="text-[9px] text-white/40 truncate mt-0.5">Best current opportunity: Aave v3 (cUSD)...</div>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 px-2 py-2">
+            {[
+              { l: "Daily Yield", v: "+$0.00" },
+              { l: "Managed Assets", v: "$4" },
+              { l: "Current APY", v: "2.4%" },
+            ].map((s, i) => (
+              <div key={i} className={`text-center ${i > 0 ? 'border-l border-white/10' : ''}`}>
+                <div className="font-mono text-[10px] font-bold text-green-400">{s.v}</div>
+                <div className="text-[8px] text-white/40">{s.l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Nav Placeholder */}
+      <div className="absolute bottom-0 left-0 right-0 h-16 bg-[#020408]/90 backdrop-blur-xl border-t border-white/5 flex items-center justify-around px-4">
+          <div className="flex flex-col items-center gap-1"><div className="w-5 h-5 rounded bg-green-500/20" /><div className="w-6 h-1 rounded bg-green-500" /></div>
+          <div className="flex flex-col items-center gap-1 opacity-40"><div className="w-5 h-5 rounded bg-white" /><div className="w-6 h-1 rounded bg-transparent" /></div>
+          <div className="flex flex-col items-center gap-1 opacity-40"><div className="w-5 h-5 rounded bg-white" /><div className="w-6 h-1 rounded bg-transparent" /></div>
+          <div className="flex flex-col items-center gap-1 opacity-40"><div className="w-5 h-5 rounded bg-white" /><div className="w-6 h-1 rounded bg-transparent" /></div>
+      </div>
 
     </div>
   </motion.div>
-);
+  );
+};
 
 export function LandingPage() {
   const navigate = useNavigate();
@@ -160,19 +241,19 @@ export function LandingPage() {
             >
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-medium mb-6">
                     <Sparkles size={12} />
-                    Build Agents for the Real World V2
+                    Built for the MiniPay Ecosystem
                 </div>
                 
                 <h1 className="text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-[1.1] mb-6 tracking-tight">
-                    Your balance, <br/>
+                    Hold & Earn. <br/>
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600">
-                        working for you.
+                        Zero complexity.
                     </span>
                 </h1>
                 
                 <p className="text-lg lg:text-xl text-gray-400 mb-8 leading-relaxed max-w-xl lg:max-w-2xl">
                     LiquidAI turns your MiniPay wallet into an autonomous treasury. 
-                    It keeps a liquid buffer for daily payments and routes idle capital to yield strategies automatically.
+                    Keep your local cash in stablecoins and earn daily rewards, without learning DeFi.
                 </p>
 
                 <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
@@ -180,7 +261,7 @@ export function LandingPage() {
                         onClick={() => navigate("/minipay")}
                         className="w-full sm:w-auto h-14 px-8 rounded-full bg-green-500 hover:bg-green-400 text-black font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_30px_rgba(34,197,94,0.5)]"
                     >
-                        Activate Auto-Yield <ArrowRight size={20} />
+                        Explore Mini App <ArrowRight size={20} />
                     </button>
                     <button 
                         onClick={() => window.open('https://github.com/DGuedz/Liquidaicelominipay', '_blank')}
@@ -206,30 +287,30 @@ export function LandingPage() {
                     
                     {/* Floating Elements anchored to the phone container */}
                     <motion.div 
-                        animate={{ y: [0, -20, 0] }}
+                        animate={{ y: [0, -10, 0] }}
                         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute top-20 -left-12 md:-left-24 bg-black/80 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl flex items-center gap-3 z-20 w-max max-w-[200px]"
+                        className="absolute bottom-16 -left-4 md:-left-12 bg-black/80 backdrop-blur-xl border border-white/10 p-3 rounded-2xl shadow-2xl flex items-center gap-3 z-20 w-max max-w-[180px] pointer-events-none"
                     >
-                        <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 flex-shrink-0">
-                            <Shield size={20} />
+                        <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 flex-shrink-0">
+                            <Shield size={16} />
                         </div>
                         <div>
-                            <div className="text-xs text-gray-400">Security Check</div>
-                            <div className="text-sm font-bold text-white">Self Verified</div>
+                            <div className="text-[10px] text-gray-400">Security Check</div>
+                            <div className="text-xs font-bold text-white">Self Verified</div>
                         </div>
                     </motion.div>
 
                     <motion.div 
-                        animate={{ y: [0, 20, 0] }}
+                        animate={{ y: [0, 10, 0] }}
                         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                        className="absolute bottom-40 -right-8 md:-right-16 bg-black/80 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl flex items-center gap-3 z-20 w-max"
+                        className="absolute top-24 -right-4 md:-right-8 bg-black/80 backdrop-blur-xl border border-white/10 p-3 rounded-2xl shadow-2xl flex items-center gap-3 z-20 w-max pointer-events-none"
                     >
-                        <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 flex-shrink-0">
-                            <TrendingUp size={20} />
+                        <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 flex-shrink-0">
+                            <TrendingUp size={16} />
                         </div>
                         <div>
-                            <div className="text-xs text-gray-400">Current Yield</div>
-                            <div className="text-sm font-bold text-white">4.8% APY</div>
+                            <div className="text-[10px] text-gray-400">Current Yield</div>
+                            <div className="text-xs font-bold text-white">2.4% APY</div>
                         </div>
                     </motion.div>
                 </div>

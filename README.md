@@ -1,78 +1,92 @@
-# 🌊 LiquidAI | Agentic Treasury OS
-**Transforming idle capital into an autonomous Micro-AMM on Celo.**
+# 🌊 LiquidAI | The Treasury OS for Web3 Wallets
+**Transforming static stablecoin balances into an autonomous, yield-generating economy.**
 
 [![Built for MiniPay](https://img.shields.io/badge/Built_for-MiniPay-10B981?style=for-the-badge)](https://minipay.opera.com/)
 [![Network Celo Alfajores](https://img.shields.io/badge/Network-Celo_Alfajores-06B6D4?style=for-the-badge)](https://celo.org/)
 [![Identity Self ZK](https://img.shields.io/badge/Identity-Self_ZK-EC4899?style=for-the-badge)](https://ai.self.xyz)
 [![Standard ERC-8004 Intents](https://img.shields.io/badge/Standard-ERC--8004_Intents-F59E0B?style=for-the-badge)](https://8004scan.io/)
 
-LiquidAI is an autonomous financial infrastructure designed for the real economy in emerging markets. It acts as an **Invisible DeFi Orchestrator**, automatically routing idle stablecoin balances into yield-bearing strategies (like stCELO and Aave) and executing Just-In-Time (JIT) liquidity swaps via Mento Protocol when payments are due.
+---
 
-**Built for the "Build Agents for the Real World V2" Hackathon.**
+## 🎯 The Strategic Gap (Our Thesis)
+
+In emerging markets (Africa, LatAm), millions are adopting stablecoins to escape hyperinflation. Wallets like **MiniPay** have brilliantly solved the "Access" and "P2P Transfer" problems. 
+
+However, a massive bottleneck remains: **Capital Efficiency.**
+Currently, a user's $50 cUSD sits idle. It doesn't grow. It doesn't fight the ~3% inherent USD inflation. And because it's static, users treat the wallet as a *transit layer* (cash-in -> transfer -> cash-out), draining the ecosystem's Total Value Locked (TVL).
+
+DeFi solves this, but DeFi is fundamentally broken for the next billion users. It requires understanding APYs, Impermanent Loss, bridging, and gas fees. 
+
+## 💡 The Solution: Agentic Treasury OS
+
+**LiquidAI is not just a dApp; it's an infrastructure layer.** We upgrade static wallets into autonomous treasuries. 
+
+Through our **Agentic Intent Abstraction (AIA)**, the user simply toggles "Earn". That's it. 
+Behind the scenes, our AI Agent:
+1. Keeps a "Liquid Buffer" for daily instant payments.
+2. Routes idle capital to institutional-grade DeFi on Celo (Mento, Aave).
+3. Auto-rebalances based on market conditions and user spending habits.
+
+**The result?** Users earn 4-8% APY silently. They keep their money inside the ecosystem longer (increasing TVL and retention), and the wallet evolves from a simple ledger into an autonomous wealth manager.
 
 ---
 
-## 🏆 Hackathon Tracks Targeted
+## 🚀 The "Unmatched Skill" (Our Differentiator)
 
-1. **Build for MiniPay:** 100% Mobile-first UI, bundle size < 2MB, implicit wallet detection (`window.ethereum.isMiniPay`), and zero gas friction (Fee Abstraction via cUSD).
-2. **Best Agent on Celo:** Not just a chatbot, but a determinist financial agent that creates execution plans, respects strict risk policies, and automates Treasury Management.
-3. **Highest Rank on AgentScan:** Fully compliant with **ERC-8004**. Every liquidity optimization generates a unique `intentId` and logs a "Proof-of-Ship" attestation to the **Karma Protocol** to build on-chain agent reputation.
+Most hackathon projects build basic CRUD interfaces for smart contracts. **LiquidAI introduces a paradigm shift in Web3 architecture that no other project possesses:**
 
----
+### 🛡️ ZK-Gated Autonomous Execution (Self Protocol + AI Agent)
+We are the first to combine **Zero-Knowledge Proofs of Humanity** with **Delegated Agentic Execution**. 
+1. The user proves they are a unique human via **Self Protocol**.
+2. This proof mints an *ephemeral, scoped session key* (ERC-4337 style).
+3. The AI Agent uses this key to execute complex, multi-step DeFi routing (e.g., cUSD -> Mento Swap -> Aave Supply) *on behalf of the user*, without prompting them for 15 MetaMask signatures.
 
-## 🧠 The "Invisible DeFi" Architecture
-
-LiquidAI hides the complexity of Web3 behind a "3-Tap Rule" UX, while leveraging an institutional-grade backend:
-
-*   **Fee Abstraction (cUSD Gasless):** Users never need native CELO. Our Viem/Wagmi implementation forces `feeCurrency` to cUSD for all operations.
-*   **Self Protocol Anti-Sybil Gate:** Autonomous session keys (ERC-4337) are strictly gated. The backend only provisions agent control after verifying the user's Zero-Knowledge Proof of humanity via the `@selfxyz/agent-sdk`.
-*   **Mento Broker & SortedOracles:** The agent consults Celo's native `SortedOracles` to prevent price manipulation and uses Mento's `getAmountOut` for atomic, low-slippage swaps.
-*   **Karma Ledger (Proof-of-Ship):** Every successful rebalance or yield harvest triggers our `karma-service.mjs`, permanently logging the agent's economic efficiency and updating its reputation score.
+**We didn't just abstract gas (Fee Abstraction); we abstracted the decision-making process itself.**
 
 ---
 
-## 🚀 How to Run locally (Testnet-First)
+## 💼 Grounded Business Model (The "Real World" Play)
 
-LiquidAI is built to be tested natively inside the MiniPay environment using the Celo Alfajores Testnet.
+We are building a sustainable business, not a token-farm.
+
+*   **B2C (The Hackathon Demo):** Free to use. LiquidAI takes a **10% performance fee on the generated yield** (not the principal). If the agent makes the user $10, we keep $1. Total alignment of incentives.
+*   **B2B2C (The Post-Hackathon Vision):** LiquidAI as an **Infrastructure-as-a-Service (IaaS)**. We provide our SDK/API to massive consumer wallets (like Opera's MiniPay). They integrate our "Earn Module" natively, instantly boosting their user retention and creating a new revenue-share stream for the wallet provider.
+
+---
+
+## 🛠️ Technical Architecture & Hackathon Alignment
+
+1. **Build for MiniPay:** 100% Mobile-first UI, responsive simulator for desktop, implicit wallet detection (`window.ethereum.isMiniPay`), and zero gas friction.
+2. **Best Agent on Celo:** A determinist financial agent that creates execution plans, respects strict risk policies, and automates Treasury Management.
+3. **Highest Rank on AgentScan:** Fully compliant with **ERC-8004**. Every liquidity optimization logs a "Proof-of-Ship" attestation to the **Karma Protocol** to build on-chain agent reputation.
+
+---
+
+## 🏃‍♂️ How to Run Locally (MiniPay Environment)
+
+LiquidAI is built to be tested natively inside the MiniPay ecosystem using the Celo Alfajores Testnet.
 
 ### 1. Installation
 ```bash
-git clone https://github.com/your-org/liquid-ai.git
-cd liquid-ai
 npm install
 ```
 
-### 2. Environment Variables (`.env.local`)
-Copy `.env.example` to `.env.local` and add your Alfajores testnet keys:
-```env
-NEXT_PUBLIC_ALFAJORES_RPC=https://alfajores-forno.celo-testnet.org
-PRIVATE_KEY=0x... # (Used strictly in the backend KMS for Session Keys)
-NEXT_PUBLIC_KARMA_ENDPOINT=https://api.karma.xyz/v1/attestations
-```
+### 2. Environment Variables
+Ensure your `.env.local` is set with your Karma and RPC keys (see `.env.example`).
 
-### 3. Start the Development Server & Tunnel
+### 3. Start the Development Server
 ```bash
 npm run dev
-# In another terminal, expose the server for MiniPay testing:
-ngrok http 3000
+# In another terminal, expose the server via ngrok:
+ngrok http 5173
 ```
 
-### 4. Test in MiniPay (Android Emulator or Physical Device)
-1. Open the **Opera Mini Beta** app.
+### 4. Test in MiniPay (The Intended Way)
+1. Open the **Opera Mini Beta** app on your phone.
 2. Go to MiniPay Settings -> About -> Tap "Version" repeatedly to enable **Developer Mode**.
 3. Toggle **Use Testnet (Alfajores)**.
-4. Tap **Load Test Page** and paste your `ngrok` HTTPS URL.
-5. Experience LiquidAI natively!
+4. Tap **Load Test Page** and paste your `ngrok` HTTPS URL (or our live Vercel link: `https://liquidai-app.vercel.app`).
+5. Experience the autonomous treasury.
 
 ---
-
-## 🗺️ Post-Hackathon Vision: "Yield-Backed Banking"
-
-We didn't just build a hackathon project; we built the liquidity engine for the next generation of Neo-banks on Celo.
-
-*   **Q2 2026:** **BaaS & Real-World Ramps:** Direct PIX/Fiat routing to Celo via Mento and Daimo SDK.
-*   **Q3 2026:** **LiquidAI Physical Card:** Swipe a card in the real world; the agent uses Just-In-Time (JIT) `remove_liquidity` to pay for coffee using your yield.
-*   **Q4 2026:** **Collateralized Credit Engine:** Use idle productive capital (stCELO/Aave) to issue instant, low-interest credit lines using Untangled Finance (RWA).
-
----
-*Built with ⚡️ (and Extreme Programming) by the LiquidAI Team.*
+*Built with ⚡️ by the LiquidAI Team for the Real World.*

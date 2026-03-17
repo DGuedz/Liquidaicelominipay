@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: liquidai-api
+    runtime: node
+    rootDir: .
+    plan: starter
+    autoDeploy: false
+    buildCommand: corepack enable && pnpm install --frozen-lockfile
+    startCommand: pnpm api:start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: FRONTEND_ORIGIN
+        value: https://app.liquidai.ai,https://liquidai.ai,https://*.vercel.app
+      - key: CELO_CHAIN
+        value: sepolia
+      - key: CELO_RPC_URL
+        value: https://forno.celo-sepolia.celo-testnet.org
+      - key: FEE_CURRENCY_ADDRESS
+        value: 0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b
+      - key: SORTED_ORACLES_ADDRESS
+        value: 0xAb077999e5fA13bCda1599926F8927dDEADe533C
+      - key: ORACLE_REFERENCE_STABLE_ADDRESS
+        value: 0xEF4d55D6dE8e8d73232827Cd1e9b2F2dBb45bC80
+      - key: AAVE_RPC_URL
+        value: https://forno.celo.org
+      - key: DEFAULT_USER_CAPITAL_USD
+        value: 0
+      - key: DEFAULT_LIQUIDITY_BUFFER_USD
+        value: 0
+      - key: DEMO_FAUCET_NATIVE_AMOUNT
+        value: 0.05
+      - key: DEMO_FAUCET_STABLE_AMOUNT
+        value: 1
+      - key: DEMO_FAUCET_COOLDOWN_MS
+        value: 43200000
+      - key: DEMO_FAUCET_NATIVE_RESERVE
+        value: 1
+      - key: DEMO_FAUCET_STABLE_RESERVE
+        value: 5
+      - key: SELF_MODE
+        value: mock
+      - key: SELF_REQUIRED_FOR_AGENT
+        value: true
