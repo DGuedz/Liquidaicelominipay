@@ -131,6 +131,7 @@ export const env = {
   selfScope: readString("SELF_SCOPE", "liquidai"),
   selfVerifyEndpoint: readString("SELF_VERIFY_ENDPOINT", ""),
   selfUserIdType: readString("SELF_USER_ID_TYPE", "hex"),
+  selfAgentRegisterMode: readString("SELF_AGENT_REGISTER_MODE", "linked"),
   selfMockPassport: readBool("SELF_MOCK_PASSPORT", chain !== "mainnet"),
   selfMinimumAge: readInt("SELF_MINIMUM_AGE", 18),
   selfExcludedCountries: readList("SELF_EXCLUDED_COUNTRIES", []),

@@ -118,9 +118,11 @@ export async function startSelfRegistration(humanAddress) {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
+                mode: env.selfAgentRegisterMode,
                 minimumAge: env.selfMinimumAge, 
                 ofac: env.selfOfac,
-                network: resolveSelfNetwork()
+                network: resolveSelfNetwork(),
+                walletAddress: humanAddress,
             })
         });
 

@@ -22,6 +22,7 @@ import {
   ActivationRoutePayload,
   apiGet,
   apiPost,
+  clearApiAuthToken,
   DashboardPayload,
   FaucetClaimPayload,
   FaucetStatusPayload,
@@ -255,6 +256,8 @@ function StepConnect({ onNext }: { onNext: () => void }) {
   const [activationRoute, setActivationRoute] = useState<ActivationRoutePayload | null>(null);
   const [isClaimingFaucet, setIsClaimingFaucet] = useState(false);
   const [isVerifyingSelf, setIsVerifyingSelf] = useState(false);
+  const [isEnsuringSession, setIsEnsuringSession] = useState(false);
+  const [selfActionUrl, setSelfActionUrl] = useState("");
   const timersRef = useRef<number[]>([]);
   const {
     address,
@@ -270,6 +273,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     connectWallet,
     switchToCelo,
     signWalletMessage,
+    disconnectWallet,
   } = useCeloWallet();
   const selfIsRequired = selfStatus?.requiredForAgent ?? true;
   const requiresSelfVerification = selfIsRequired || selfEnabled;
@@ -397,6 +401,8 @@ function StepConnect({ onNext }: { onNext: () => void }) {
   }, [isConnected, wrongNetwork, activationRoute?.nextAction, phase]);
 
   const handleConnect = async () => {
+    if (isBusy) return;
+
     setInlineError("");
     setInlineSuccess("");
     clearTimers();
@@ -439,12 +445,17 @@ function StepConnect({ onNext }: { onNext: () => void }) {
 
     setInlineError("");
     setInlineSuccess("");
+    setIsEnsuringSession(true);
     try {
+      clearApiAuthToken();
       await ensureWalletAuthSession(address, signWalletMessage);
       const nextRoute = await refreshActivationRoute(address, !wrongNetwork);
       if (nextRoute) setActivationRoute(nextRoute);
+      setInlineSuccess("Session signed successfully.");
     } catch (error) {
       setInlineError(error instanceof Error ? error.message : "Failed to activate the session.");
+    } finally {
+      setIsEnsuringSession(false);
     }
   };
 
@@ -499,10 +510,12 @@ function StepConnect({ onNext }: { onNext: () => void }) {
 
     setInlineError("");
     setInlineSuccess("");
+    setSelfActionUrl("");
     setIsVerifyingSelf(true);
     setPhase("verifying");
     
     try {
+      const selfWindow = window.open("", "_blank", "noopener,noreferrer");
       await ensureWalletAuthSession(address, signWalletMessage);
       
       // 1. Start Registration Session
@@ -516,11 +529,16 @@ function StepConnect({ onNext }: { onNext: () => void }) {
          setInlineSuccess("Mock verification instant success.");
       } else if (session.deepLink) {
          setInlineSuccess("Aguardando confirmação no app Self...");
-         // Abre o deep link no MiniPay/Mobile
-         window.open(session.deepLink, "_blank");
+         setSelfActionUrl(session.deepLink);
+         if (selfWindow) {
+           selfWindow.location.href = session.deepLink;
+         }
       } else if (session.qrData) {
          setInlineSuccess("Verifique via QR Code ou abra o app Self...");
-         window.open(session.qrData, "_blank");
+         setSelfActionUrl(session.qrData);
+         if (selfWindow) {
+           selfWindow.location.href = session.qrData;
+         }
       } else {
          setInlineSuccess("Verifique no seu app Self...");
          await new Promise(r => setTimeout(r, 3000));
@@ -576,7 +594,8 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     isSwitchingChain ||
     isSigningMessage ||
     isClaimingFaucet ||
-    isVerifyingSelf;
+    isVerifyingSelf ||
+    isEnsuringSession;
   const isDone = Boolean(activationRoute?.nextAction === "activate_agent" || activationRoute?.nextAction === "open_dashboard");
   const isTreasuryWallet =
     Boolean(address) &&
@@ -590,19 +609,53 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     }
   }, [isMiniPay, phase, hasConnector, isConnected, isConnecting]);
 
+  const handleDisconnect = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    clearApiAuthToken();
+    setPhase("idle");
+    setInlineError("");
+    setInlineSuccess("");
+    setSelfActionUrl("");
+    setFaucetStatus(null);
+    setSelfStatus(null);
+    setActivationRoute(null);
+    await disconnectWallet();
+  };
+
   return (
-    <div className="flex flex-col h-full px-6 pt-10 pb-8">
-      <div className="mb-5">
-        <p className="text-xs uppercase tracking-widest font-semibold mb-2" style={{ color: "#A3D977" }}>
-          Step 1 of 2
-        </p>
-        <h2 className="font-bold" style={{ color: "var(--text-primary)", fontSize: "1.5rem", lineHeight: 1.2 }}>
-          Connect Wallet
-          <br />Fund & Verify
-        </h2>
-        <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
-          MiniPay + Self Protocol + Sepolia faucet
-        </p>
+    <div className="flex flex-col h-full px-6 pt-10 pb-8 relative">
+      {isConnected && (
+        <button 
+          onClick={handleDisconnect}
+          className="absolute top-4 right-6 text-xs text-red-400 font-bold px-3 py-2 rounded-lg border border-red-900/30 bg-red-900/10 hover:bg-red-900/20 transition-all z-50 cursor-pointer shadow-sm active:scale-95"
+          style={{ pointerEvents: 'auto' }}
+        >
+          RESET WALLET
+        </button>
+      )}
+      <div className="mb-5 flex justify-between items-start">
+        <div>
+          <p className="text-xs uppercase tracking-widest font-semibold mb-2" style={{ color: "#A3D977" }}>
+            Step 1 of 2
+          </p>
+          <h2 className="font-bold" style={{ color: "var(--text-primary)", fontSize: "1.5rem", lineHeight: 1.2 }}>
+            Connect Wallet
+            <br />Fund & Verify
+          </h2>
+          <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
+            MiniPay + Self Protocol + Sepolia faucet
+          </p>
+        </div>
+        {isConnected && (
+          <button 
+            onClick={handleDisconnect}
+            className="text-xs text-red-400 font-medium px-2 py-1 rounded hover:bg-red-500/10 transition-colors hidden"
+          >
+            Reset Wallet
+          </button>
+        )}
       </div>
 
       {/* Status visual */}
@@ -930,6 +983,22 @@ function StepConnect({ onNext }: { onNext: () => void }) {
           </div>
         )}
 
+        {selfActionUrl && phase === "verifying" && (
+          <a
+            href={selfActionUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-3 rounded-2xl text-center text-sm font-semibold"
+            style={{
+              color: "#3B82F6",
+              background: "rgba(59,130,246,0.08)",
+              border: "1px solid rgba(59,130,246,0.25)",
+            }}
+          >
+            Abrir Self manualmente
+          </a>
+        )}
+
         {/* Self toggle */}
         {phase === "idle" && (
           <motion.div
@@ -1030,7 +1099,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
           ) : activationRoute?.nextAction === "activate_session" ? (
             <>
               <Fingerprint className="w-5 h-5" />
-              {isSigningMessage ? "Signing session..." : "Sign session"}
+              {isSigningMessage || isEnsuringSession ? "Signing session..." : "Sign session"}
             </>
           ) : phase === "connected" && requiresSelfVerification && !selfStatus?.verified ? (
             <>
