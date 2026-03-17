@@ -5,12 +5,16 @@ import { chainConfig } from "viem/celo";
 import { injected, metaMask } from "wagmi/connectors";
 
 const DEFAULT_CELO_RPC_URL = "https://forno.celo-sepolia.celo-testnet.org";
+const APP_WALLET_RESET_KEY = "liquidai.wallet-reset";
 
 type InjectedProvider = {
   isMiniPay?: boolean;
   isMetaMask?: boolean;
   providers?: InjectedProvider[];
   request?: (args: { method: string; params?: unknown[] | object }) => Promise<unknown>;
+  _metamask?: {
+    isUnlocked?: () => Promise<boolean>;
+  };
 };
 
 function getEnvVar(key: "VITE_CELO_RPC_URL" | "VITE_APP_URL"): string {
@@ -22,6 +26,10 @@ function getBrowserEthereum(): InjectedProvider | null {
   if (typeof window === "undefined") return null;
   const ethereum = (window as Window & { ethereum?: InjectedProvider }).ethereum;
   return ethereum ?? null;
+}
+
+function hasWindowStorage() {
+  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 }
 
 export function getPreferredInjectedProvider(): InjectedProvider | null {
@@ -42,6 +50,47 @@ export function isMiniPayEnvironment() {
   return Boolean(getPreferredInjectedProvider()?.isMiniPay);
 }
 
+export function isWalletResetOverride() {
+  if (!hasWindowStorage()) return false;
+  return window.localStorage.getItem(APP_WALLET_RESET_KEY) === "1";
+}
+
+export function setWalletResetOverride(disconnected: boolean) {
+  if (!hasWindowStorage()) return;
+  if (disconnected) {
+    window.localStorage.setItem(APP_WALLET_RESET_KEY, "1");
+    return;
+  }
+  window.localStorage.removeItem(APP_WALLET_RESET_KEY);
+}
+
+export function clearWalletConnectorPersistence() {
+  if (!hasWindowStorage()) return;
+
+  const keysToRemove = new Set([
+    "wagmi.store",
+    "wagmi.wallet",
+    "wagmi.connected",
+    APP_WALLET_RESET_KEY,
+  ]);
+
+  for (const key of Object.keys(window.localStorage)) {
+    if (
+      key.startsWith("wagmi.") ||
+      key.startsWith("injected.") ||
+      key.startsWith("metaMask.") ||
+      key.startsWith("mipd.") ||
+      key.startsWith("walletconnect")
+    ) {
+      keysToRemove.add(key);
+    }
+  }
+
+  for (const key of keysToRemove) {
+    window.localStorage.removeItem(key);
+  }
+}
+
 export async function requestPreferredAccounts() {
   const provider = getPreferredInjectedProvider();
   if (!provider?.request) return [];
@@ -49,10 +98,32 @@ export async function requestPreferredAccounts() {
   return Array.isArray(result) ? result : [];
 }
 
+export async function readPreferredAccounts() {
+  const provider = getPreferredInjectedProvider();
+  if (!provider?.request) return [];
+  const result = await provider.request({ method: "eth_accounts" });
+  return Array.isArray(result) ? result : [];
+}
+
+export async function isPreferredWalletUnlocked() {
+  const provider = getPreferredInjectedProvider();
+  if (!provider) return true;
+
+  if (typeof provider._metamask?.isUnlocked === "function") {
+    try {
+      return await provider._metamask.isUnlocked();
+    } catch {
+      return true;
+    }
+  }
+
+  return true;
+}
+
 export const CELO_CHAIN = defineChain({
   ...chainConfig,
-  id: 44787,
-  name: "Celo Alfajores",
+  id: 11142220,
+  name: "Celo Sepolia",
   nativeCurrency: {
     decimals: 18,
     name: "CELO",
@@ -60,17 +131,17 @@ export const CELO_CHAIN = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ["https://alfajores-forno.celo-testnet.org"],
+      http: ["https://forno.celo-sepolia.celo-testnet.org"],
     },
     public: {
-      http: ["https://alfajores-forno.celo-testnet.org"],
+      http: ["https://forno.celo-sepolia.celo-testnet.org"],
     },
   },
   blockExplorers: {
     default: {
-      name: "Celo Alfajores Explorer",
-      url: "https://alfajores.celoscan.io",
-      apiUrl: "https://alfajores.celoscan.io/api",
+      name: "Celo Sepolia Blockscout",
+      url: "https://celo-sepolia.blockscout.com",
+      apiUrl: "https://celo-sepolia.blockscout.com/api",
     },
   },
   testnet: true,

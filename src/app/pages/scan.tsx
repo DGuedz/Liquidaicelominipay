@@ -1,89 +1,53 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Scan, X, QrCode, Copy, Share2, Zap, Download, Check } from "lucide-react";
 import { useNavigate } from "react-router";
+import QRCode from "qrcode";
+import { getAddress, isAddress } from "viem";
+import { useCeloWallet } from "../hooks/use-celo-wallet";
+import { CELO_CHAIN } from "../lib/celo-wallet";
 
-// ─── QR Code SVG Generator ────────────────────────────────────────────────────
-// Deterministic "fake" QR pattern for demo purposes
+function QRCodeImage({ data, size = 200 }: { data: string; size?: number }) {
+  const [src, setSrc] = useState("");
 
-function QRCodeSVG({ data, size = 200 }: { data: string; size?: number }) {
-  const CELLS = 21;
-  const cell = size / CELLS;
+  useEffect(() => {
+    let active = true;
 
-  // Generate a deterministic pattern from the string
-  const hash = data.split("").reduce((acc, c, i) => acc + c.charCodeAt(0) * (i + 1), 0);
+    QRCode.toDataURL(data, {
+      width: size,
+      margin: 1,
+      color: {
+        dark: "#0D4B2E",
+        light: "#FFFFFF",
+      },
+    })
+      .then((nextSrc) => {
+        if (active) setSrc(nextSrc);
+      })
+      .catch(() => {
+        if (active) setSrc("");
+      });
 
-  const isBlack = (r: number, c: number): boolean => {
-    // Finder patterns (top-left, top-right, bottom-left)
-    if (r < 7 && c < 7) {
-      if (r === 0 || r === 6 || c === 0 || c === 6) return true;
-      if (r >= 2 && r <= 4 && c >= 2 && c <= 4) return true;
-      return false;
-    }
-    if (r < 7 && c >= CELLS - 7) {
-      const cc = c - (CELLS - 7);
-      if (r === 0 || r === 6 || cc === 0 || cc === 6) return true;
-      if (r >= 2 && r <= 4 && cc >= 2 && cc <= 4) return true;
-      return false;
-    }
-    if (r >= CELLS - 7 && c < 7) {
-      const rr = r - (CELLS - 7);
-      if (rr === 0 || rr === 6 || c === 0 || c === 6) return true;
-      if (rr >= 2 && rr <= 4 && c >= 2 && c <= 4) return true;
-      return false;
-    }
-    // Timing patterns
-    if (r === 6) return c % 2 === 0;
-    if (c === 6) return r % 2 === 0;
-    // Data modules (pseudo-random from hash)
-    const seed = (r * CELLS + c + hash) % 37;
-    return seed < 18;
-  };
+    return () => {
+      active = false;
+    };
+  }, [data, size]);
 
-  return (
-    <svg
+  return src ? (
+    <img
+      src={src}
+      alt="Wallet receive QR code"
       width={size}
       height={size}
-      viewBox={`0 0 ${size} ${size}`}
-      style={{ imageRendering: "pixelated" }}
+      className="rounded-2xl"
+    />
+  ) : (
+    <div
+      className="rounded-2xl flex items-center justify-center text-xs font-semibold"
+      style={{ width: size, height: size, background: "#FFFFFF", color: "#0D4B2E" }}
     >
-      <rect width={size} height={size} fill="white" rx={12} />
-      {Array.from({ length: CELLS }).map((_, r) =>
-        Array.from({ length: CELLS }).map((_, c) =>
-          isBlack(r, c) ? (
-            <rect
-              key={`${r}-${c}`}
-              x={c * cell + 1}
-              y={r * cell + 1}
-              width={cell - 2}
-              height={cell - 2}
-              rx={cell * 0.15}
-              fill="#0D4B2E"
-            />
-          ) : null
-        )
-      )}
-      {/* Center logo */}
-      <rect
-        x={size / 2 - 18}
-        y={size / 2 - 18}
-        width={36}
-        height={36}
-        rx={8}
-        fill="#0D4B2E"
-      />
-      <text
-        x={size / 2}
-        y={size / 2 + 5}
-        textAnchor="middle"
-        fill="#A3D977"
-        fontSize={14}
-        fontWeight="800"
-        fontFamily="system-ui"
-      >
-        $
-      </text>
-    </svg>
+      Generating QR...
+    </div>
   );
 }
 
@@ -127,7 +91,7 @@ function ScannerFrame() {
 
         {/* Mock QR preview (blurred) */}
         <div className="opacity-20">
-          <QRCodeSVG data="demo" size={160} />
+          <QRCodeImage data="demo" size={160} />
         </div>
 
         {/* Center crosshair */}
@@ -149,10 +113,19 @@ function ScannerFrame() {
 // ─── My QR Code ───────────────────────────────────────────────────────────────
 function MyQRCode() {
   const [copied, setCopied] = useState(false);
-  const address = "0x3f24A2B...3424";
-  const fullAddress = "0x3f24A2Bc7d9e1f04a5b8c3d2e6f8a1b0c9d7e3424";
+  const { address } = useCeloWallet();
+  const fullAddress = useMemo(() => {
+    if (!address || !isAddress(address)) return "";
+    return getAddress(address);
+  }, [address]);
+  const shortAddress = useMemo(() => {
+    if (!fullAddress) return "Connect wallet to receive";
+    return `${fullAddress.slice(0, 6)}...${fullAddress.slice(-4)}`;
+  }, [fullAddress]);
+  const networkLabel = `${CELO_CHAIN.name} · Wallet address`;
 
   const handleCopy = () => {
+    if (!fullAddress) return;
     navigator.clipboard.writeText(fullAddress).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -179,18 +152,28 @@ function MyQRCode() {
           style={{ background: "rgba(163,217,119,0.15)", color: "#A3D977" }}
         >
           <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-          Receiving · cUSD
+          Receiving on {CELO_CHAIN.name}
         </div>
 
-        <QRCodeSVG data={fullAddress} size={200} />
+        {fullAddress ? (
+          <QRCodeImage data={fullAddress} size={200} />
+        ) : (
+          <div
+            className="w-[200px] h-[200px] rounded-2xl flex flex-col items-center justify-center text-center px-6"
+            style={{ background: "#FFFFFF", color: "#0D4B2E" }}
+          >
+            <p className="text-sm font-semibold">Wallet not connected</p>
+            <p className="text-xs mt-2">Connect your wallet to generate a valid receive QR code.</p>
+          </div>
+        )}
 
         {/* Address */}
         <div className="mt-4 text-center">
           <p className="text-xs font-mono font-semibold" style={{ color: "var(--text-primary)" }}>
-            {address}
+            {shortAddress}
           </p>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            Celo Mainnet · cUSD
+            {networkLabel}
           </p>
         </div>
       </div>
@@ -200,11 +183,13 @@ function MyQRCode() {
         <motion.button
           whileTap={{ scale: 0.92 }}
           onClick={handleCopy}
+          disabled={!fullAddress}
           className="flex items-center gap-2 px-5 py-3 rounded-full font-semibold"
           style={{
             background: copied ? "rgba(163,217,119,0.15)" : "var(--surface-solid)",
-            color: copied ? "#A3D977" : "var(--text-secondary)",
+            color: copied ? "#A3D977" : !fullAddress ? "var(--text-muted)" : "var(--text-secondary)",
             boxShadow: "0 2px 10px rgba(0,0,0,0.07)",
+            opacity: fullAddress ? 1 : 0.6,
           }}
         >
           {copied ? (
@@ -273,7 +258,7 @@ function MyQRCode() {
           </span>
         </div>
         <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
-          Set an amount for the sender to see automatically
+          This QR encodes your full wallet address for wallet-compatible receive flows.
         </p>
       </div>
     </motion.div>
@@ -388,7 +373,7 @@ export function ScanPage() {
                     {[
                       { label: "To", value: "Maria Silva" },
                       { label: "Account", value: "4323 7453 6932" },
-                      { label: "Network", value: "Celo Mainnet" },
+                      { label: "Network", value: CELO_CHAIN.name },
                     ].map((r) => (
                       <div
                         key={r.label}

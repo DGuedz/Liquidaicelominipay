@@ -526,26 +526,16 @@ function WordMark({ size, theme, className }: { size: number; theme: LogoTheme; 
       </defs>
 
       <text
-        x="0"
+        x="150"
         y="56"
-        fill={c.text}
+        textAnchor="middle"
         fontSize="48"
         fontFamily="'SF Pro Display', 'Inter', 'Helvetica Neue', sans-serif"
         fontWeight="700"
         letterSpacing="-1.5"
       >
-        Liquid
-      </text>
-      <text
-        x="148"
-        y="56"
-        fill={`url(#${id}-g)`}
-        fontSize="48"
-        fontFamily="'SF Pro Display', 'Inter', 'Helvetica Neue', sans-serif"
-        fontWeight="700"
-        letterSpacing="-1.5"
-      >
-        AI
+        <tspan fill={c.text}>Liquid</tspan>
+        <tspan fill={`url(#${id}-g)`}>AI</tspan>
       </text>
     </svg>
   );
@@ -623,13 +613,11 @@ function HorizontalMark({
       <ellipse cx="50" cy="48" rx="34" ry="9" fill="none" stroke={c.greenStart} strokeWidth="0.6" opacity="0.2" transform="rotate(-20, 50, 48)" />
       <circle cx="77" cy="37" r="2.5" fill={c.greenStart} opacity="0.5" />
 
-      <text x="108" y="45" fill={c.text} fontSize="32" fontFamily="'Inter', 'Helvetica Neue', sans-serif" fontWeight="700" letterSpacing="-0.5">
-        Liquid
+      <text x="115" y="60" fontSize="48" fontFamily="'Inter', 'Helvetica Neue', sans-serif" fontWeight="700" letterSpacing="-1.5">
+        <tspan fill={c.text}>Liquid</tspan>
+        <tspan fill={`url(#${id}-g)`}>AI</tspan>
       </text>
-      <text x="108" y="45" fill={`url(#${id}-g)`} fontSize="32" fontFamily="'Inter', 'Helvetica Neue', sans-serif" fontWeight="700" letterSpacing="-0.5">
-        {"          AI"}
-      </text>
-      <text x="110" y="65" fill={c.sub} fontSize="9" fontFamily="'SF Mono', 'Fira Mono', 'Courier New', monospace" letterSpacing="2.5" opacity="0.8">
+      <text x="118" y="82" fill={c.sub} fontSize="11" fontFamily="'SF Mono', 'Fira Mono', 'Courier New', monospace" letterSpacing="3.5" opacity="0.8">
         TREASURY OS · CELO
       </text>
     </svg>

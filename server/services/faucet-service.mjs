@@ -2,6 +2,7 @@ import { erc20Abi, formatEther, formatUnits, getAddress, isAddress, parseEther, 
 import { env } from "../config/env.mjs";
 import { backendAddress, celoClient, celoWalletClient } from "../lib/celo-client.mjs";
 import { getFaucetClaimState, recordFaucetClaim } from "../store/faucet-store.mjs";
+import { isSelfVerified } from "../store/self-store.mjs";
 
 function round(value, decimals = 4) {
   return Number.parseFloat(value.toFixed(decimals));
@@ -107,6 +108,14 @@ export async function claimDemoFunds(rawAddress) {
   if (backendAddress && address === backendAddress) {
     throw new Error("Connect a different wallet to claim demo funds from the treasury wallet.");
   }
+  
+  // Relax Self check for demo purposes if needed, but strict mode is safer
+  if (env.selfRequiredForAgent && !isSelfVerified(address)) {
+     // throw new Error("Self verification required before claiming faucet.");
+     // We allow faucet even without Self for now to let user onboard, 
+     // but Agent activation will block later.
+  }
+
   const claimState = getFaucetClaimState(address, env.demoFaucetCooldownMs);
   if (claimState.remainingMs > 0) {
     throw new Error(`Faucet cooldown active. Try again after ${claimState.nextEligibleAt}.`);

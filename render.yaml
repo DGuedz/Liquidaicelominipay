@@ -12,7 +12,7 @@ services:
       - key: NODE_VERSION
         value: 22
       - key: FRONTEND_ORIGIN
-        value: https://app.liquidai.ai,https://liquidai.ai,https://*.vercel.app
+        value: http://localhost:5173,http://127.0.0.1:5173,https://app.liquidai.ai,https://liquidai.ai,https://*.vercel.app
       - key: CELO_CHAIN
         value: sepolia
       - key: CELO_RPC_URL

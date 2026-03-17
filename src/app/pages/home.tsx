@@ -304,17 +304,32 @@ export function HomePage() {
   const [dashboard, setDashboard] = useState<DashboardPayload | null>(null);
   const [savingsOverview, setSavingsOverview] = useState<SavingsOverviewPayload | null>(null);
   const [optimizingNetwork, setOptimizingNetwork] = useState(false);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
+  const [dashboardError, setDashboardError] = useState("");
 
   async function loadDashboard() {
+    if (!address) {
+      setDashboard(null);
+      setDashboardLoading(false);
+      setDashboardError("");
+      return null;
+    }
+    setDashboardLoading(true);
+    setDashboardError("");
     const payload = await apiGet<DashboardPayload>("/api/dashboard", {
       address: address || "",
       riskMode: "balanced",
     });
     setDashboard(payload);
+    setDashboardLoading(false);
     return payload;
   }
 
   async function loadSavingsOverview() {
+    if (!address) {
+      setSavingsOverview(null);
+      return null;
+    }
     const payload = await apiGet<SavingsOverviewPayload>("/api/savings/goals", {
       address: address || "",
     });
@@ -324,18 +339,40 @@ export function HomePage() {
 
   useEffect(() => {
     let alive = true;
-    loadDashboard()
-      .then((payload) => {
-        if (!alive) return;
-        setDashboard(payload);
-      })
-      .catch(() => {});
-    loadSavingsOverview()
-      .then((payload) => {
-        if (!alive) return;
-        setSavingsOverview(payload);
-      })
-      .catch(() => {});
+    if (!address) {
+      setDashboard(null);
+      setSavingsOverview(null);
+      setDashboardLoading(false);
+      setDashboardError("");
+      return () => {
+        alive = false;
+      };
+    }
+    setDashboardLoading(true);
+    setDashboardError("");
+
+    Promise.allSettled([loadDashboard(), loadSavingsOverview()]).then((results) => {
+      if (!alive) return;
+
+      const [dashboardResult, savingsResult] = results;
+
+      if (dashboardResult.status === "fulfilled") {
+        setDashboard(dashboardResult.value);
+        setDashboardError("");
+      } else {
+        setDashboardError(
+          dashboardResult.reason instanceof Error
+            ? dashboardResult.reason.message
+            : "Failed to load wallet snapshot.",
+        );
+      }
+
+      if (savingsResult.status === "fulfilled") {
+        setSavingsOverview(savingsResult.value);
+      }
+
+      setDashboardLoading(false);
+    });
 
     return () => {
       alive = false;
@@ -426,6 +463,25 @@ export function HomePage() {
   const sparklineStart = displaySparkline[0]?.value ?? null;
   const sparklineEnd = displaySparkline[displaySparkline.length - 1]?.value ?? null;
   const sparklineDelta = sparklineStart != null && sparklineEnd != null ? sparklineEnd - sparklineStart : null;
+
+  useEffect(() => {
+    if (!address) return;
+
+    const handleFocusRefresh = () => {
+      void loadDashboard().catch((error) => {
+        setDashboardError(error instanceof Error ? error.message : "Failed to refresh wallet snapshot.");
+        setDashboardLoading(false);
+      });
+    };
+
+    window.addEventListener("focus", handleFocusRefresh);
+    document.addEventListener("visibilitychange", handleFocusRefresh);
+
+    return () => {
+      window.removeEventListener("focus", handleFocusRefresh);
+      document.removeEventListener("visibilitychange", handleFocusRefresh);
+    };
+  }, [address]);
 
   useEffect(() => {
     if (!displayEvents.length) return;
@@ -572,11 +628,28 @@ export function HomePage() {
             <div className="flex items-center gap-2 mb-6">
               <Sparkles className="w-3.5 h-3.5" style={{ color: "#A3D977" }} />
               <span className="text-xs font-medium" style={{ color: "#A3D977" }}>
-                {yieldRate == null || yieldEarned == null
+                {dashboardError
+                  ? "Wallet snapshot failed. Tap to retry."
+                  : dashboardLoading || yieldRate == null || yieldEarned == null
                   ? "Loading wallet snapshot..."
                   : `+${formatPercent(yieldRate)} APY · +$${yieldEarned.toFixed(2)} this month`}
               </span>
             </div>
+
+            {dashboardError && (
+              <button
+                onClick={() => {
+                  void loadDashboard().catch((error) => {
+                    setDashboardError(error instanceof Error ? error.message : "Failed to load wallet snapshot.");
+                    setDashboardLoading(false);
+                  });
+                }}
+                className="mb-4 text-xs font-semibold underline underline-offset-4"
+                style={{ color: "#F59E0B" }}
+              >
+                Retry wallet sync
+              </button>
+            )}
 
             <div className="flex items-center justify-between pt-2 border-t border-white/10">
               <span
@@ -589,7 +662,7 @@ export function HomePage() {
               {/* MiniPay / LiquidAI Logo */}
               <div className="flex items-center gap-1.5 opacity-80">
                 <div className="text-white">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
+                  <LiquidLogo size={14} variant="icon" theme="dark" background="transparent" />
                 </div>
                 <div className="flex flex-col">
                   <span className="text-white font-bold leading-none text-[10px] tracking-tight">MiniPay</span>

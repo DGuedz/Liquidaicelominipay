@@ -184,8 +184,8 @@ export function MiniPayPitchPage() {
         }}
       >
         <div className="max-w-5xl mx-auto w-full flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <LiquidLogo size={120} variant="wordmark" theme="auto" />
+          <div className="flex items-center gap-2">
+            <LiquidLogo size={140} variant="horizontal" theme="auto" />
           </div>
           <div
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
@@ -495,9 +495,23 @@ export function MiniPayPitchPage() {
           <div className="flex justify-center mb-4">
             <LiquidLogo size={48} variant="full" theme="auto" background="auto" />
           </div>
-          <p className="text-xs" style={{ color: "var(--text-muted)", lineHeight: 1.6 }}>
-            Treasury Operating System · Build Agents for the Real World V2 · 2026
-          </p>
+          <div className="text-xs flex flex-col items-center justify-center gap-2" style={{ color: "var(--text-muted)", lineHeight: 1.6 }}>
+            <p>
+              LiquidAI - Agentic Treasury OS © 2026 by doublegreen is licensed under{' '}
+              <a
+                href="https://creativecommons.org/licenses/by/4.0/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline inline-flex items-center gap-1"
+                style={{ color: "#A3D977" }}
+              >
+                CC BY 4.0
+                <img src="https://mirrors.creativecommons.org/presskit/icons/cc.svg" alt="CC" className="h-3.5 w-3.5 opacity-70 dark:invert" />
+                <img src="https://mirrors.creativecommons.org/presskit/icons/by.svg" alt="BY" className="h-3.5 w-3.5 opacity-70 dark:invert" />
+              </a>
+            </p>
+            <p className="opacity-60">Build Agents for the Real World V2</p>
+          </div>
         </div>
       </div>
     </div>
