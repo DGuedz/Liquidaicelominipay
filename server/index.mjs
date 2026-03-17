@@ -33,6 +33,7 @@ import {
   getSelfServiceStatus,
   initSelfAgent,
   startSelfRegistration,
+  verifySelfProofPayload,
 } from "./services/self-service.mjs";
 import {
   createConditionalLock,
@@ -351,7 +352,7 @@ app.get(
       return;
     }
 
-    const { mode, ready, message } = getSelfServiceStatus();
+    const { mode, ready, message, verifier } = getSelfServiceStatus();
     const verified = await isSelfVerified(address);
 
     success(res, {
@@ -360,6 +361,7 @@ app.get(
       verified,
       requiredForAgent: mode === "agent" && !verified,
       message,
+      verifier,
     });
   }),
 );
@@ -391,6 +393,60 @@ app.get(
 
     success(res, status);
   })
+);
+
+app.post(
+  "/api/self/verify",
+  asyncRoute(async (req, res) => {
+    const {
+      address = "",
+      attestationId,
+      proof,
+      publicSignals,
+      pubSignals,
+      userContextData,
+    } = req.body || {};
+
+    if (!isAddress(address)) {
+      res.status(400).json({
+        ok: false,
+        error: "Valid address is required.",
+        timestamp: new Date().toISOString(),
+      });
+      return;
+    }
+
+    const verification = await verifySelfProofPayload({
+      attestationId,
+      proof,
+      publicSignals,
+      pubSignals,
+      userContextData,
+    });
+
+    const isValid = Boolean(verification?.isValidDetails?.isValid);
+    if (!isValid) {
+      success(res, {
+        status: "error",
+        result: false,
+        verification,
+      });
+      return;
+    }
+
+    const proofRef = `self-proof-${attestationId || "unknown"}-${Date.now()}`;
+    await markSelfVerified(address, {
+      mode: "agent",
+      provider: "Self Protocol",
+      proofRef,
+    });
+
+    success(res, {
+      status: "success",
+      result: true,
+      verification,
+    });
+  }),
 );
 
 app.post(
@@ -600,10 +656,13 @@ app.get(
   }),
 );
 
-app.listen(env.port, async () => {
+app.listen(env.port, () => {
   // eslint-disable-next-line no-console
   console.log(`[LiquidAI API] running on port ${env.port} (${env.celoChain}, chainId ${env.celoChainId})`);
-  
-  // Phase 2: Initialize Self Agent if enabled
-  await initSelfAgent();
+
+  // Self init must not take the API down if it fails at boot.
+  initSelfAgent().catch((error) => {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn("[Self Service] boot initialization failed:", message);
+  });
 });

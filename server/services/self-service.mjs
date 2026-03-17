@@ -1,6 +1,8 @@
 import { env } from "../config/env.mjs";
 
 let initError = null;
+let verifier = null;
+let verifierError = null;
 
 // Armazena as sessões ativas em memória
 const activeSessions = new Map();
@@ -9,12 +11,46 @@ function resolveSelfNetwork() {
   return env.celoChain === "mainnet" ? "mainnet" : "testnet";
 }
 
+function resolveSelfVerifyEndpoint() {
+  return env.selfVerifyEndpoint || "https://liquidaicelominipay.onrender.com/api/self/verify";
+}
+
+async function ensureSelfVerifier() {
+  if (verifier) return verifier;
+  if (verifierError) return null;
+
+  try {
+    const core = await import("@selfxyz/core");
+    const { SelfBackendVerifier, DefaultConfigStore, AllIds } = core;
+
+    verifier = new SelfBackendVerifier(
+      env.selfScope,
+      resolveSelfVerifyEndpoint(),
+      env.selfMockPassport,
+      AllIds,
+      new DefaultConfigStore({
+        minimumAge: env.selfMinimumAge,
+        excludedCountries: env.selfExcludedCountries,
+        ofac: env.selfOfac,
+      }),
+      env.selfUserIdType === "uuid" ? "uuid" : "hex",
+    );
+
+    verifierError = null;
+    return verifier;
+  } catch (error) {
+    verifierError = error instanceof Error ? error.message : "Failed to initialize @selfxyz/core verifier.";
+    return null;
+  }
+}
+
 export async function initSelfAgent() {
   initError = null;
 
   if (env.selfMode !== "agent") return;
 
   try {
+    await ensureSelfVerifier();
     console.log(`[Self Service] Agent service ready in '${env.selfMode}' mode on ${resolveSelfNetwork()}.`);
   } catch (error) {
     initError = error instanceof Error ? error.message : "Unknown Self client initialization error.";
@@ -28,14 +64,25 @@ export function getSelfServiceStatus() {
       mode: "mock",
       ready: true,
       message: "Mock verification active for demo flow.",
+      verifier: {
+        ready: false,
+        endpoint: resolveSelfVerifyEndpoint(),
+        message: "SelfBackendVerifier disabled in mock mode.",
+      },
     };
   }
 
   if (env.selfMode === "agent") {
+    const verifierReady = Boolean(verifier) && !verifierError;
     return {
       mode: "agent",
-      ready: !initError,
-      message: initError || "Agent client online.",
+      ready: !initError && verifierReady,
+      message: initError || verifierError || "Agent client online. Ready for start-registration → poll-registration → self/status flow.",
+      verifier: {
+        ready: verifierReady,
+        endpoint: resolveSelfVerifyEndpoint(),
+        message: verifierError || "SelfBackendVerifier online.",
+      },
     };
   }
 
@@ -43,6 +90,11 @@ export function getSelfServiceStatus() {
     mode: env.selfMode,
     ready: false,
     message: "Self verification disabled.",
+    verifier: {
+      ready: false,
+      endpoint: resolveSelfVerifyEndpoint(),
+      message: "SelfBackendVerifier disabled.",
+    },
   };
 }
 
@@ -66,8 +118,8 @@ export async function startSelfRegistration(humanAddress) {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                minimumAge: 18, 
-                ofac: true,
+                minimumAge: env.selfMinimumAge, 
+                ofac: env.selfOfac,
                 network: resolveSelfNetwork()
             })
         });
@@ -142,6 +194,29 @@ export async function checkRegistrationStatus(sessionToken) {
         console.error("[Self Service] Status check failed:", error);
         throw error;
     }
+}
+
+export async function verifySelfProofPayload(payload = {}) {
+  const current = await ensureSelfVerifier();
+  if (!current) {
+    throw new Error(verifierError || "Self backend verifier is not available.");
+  }
+
+  const {
+    attestationId,
+    proof,
+    publicSignals,
+    pubSignals,
+    userContextData,
+  } = payload;
+
+  const signals = Array.isArray(publicSignals) ? publicSignals : pubSignals;
+  if (!proof || !Array.isArray(signals) || !attestationId || !userContextData) {
+    throw new Error("Proof, publicSignals, attestationId and userContextData are required.");
+  }
+
+  const result = await current.verify(attestationId, proof, signals, userContextData);
+  return result;
 }
 
 // Kept for backward compatibility if needed, but primary flow is now start -> poll

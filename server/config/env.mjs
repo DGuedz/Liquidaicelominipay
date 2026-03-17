@@ -58,6 +58,13 @@ const SEPOLIA_SORTED_ORACLES = "0xAb077999e5fA13bCda1599926F8927dDEADe533C";
 const MAINNET_ORACLE_REFERENCE_STABLE = MAINNET_USDM;
 const SEPOLIA_ORACLE_REFERENCE_STABLE = "0xEF4d55D6dE8e8d73232827Cd1e9b2F2dBb45bC80";
 const DEFAULT_AAVE_RPC_URL = "https://forno.celo.org";
+const DEFAULT_FRONTEND_ORIGINS = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "https://app.liquidai.ai",
+  "https://liquidai.ai",
+  "https://*.vercel.app",
+];
 
 const defaultRpcUrl =
   chain === "mainnet"
@@ -81,17 +88,22 @@ const feeCurrencyAddress =
     ? defaultFeeCurrencyAddress
     : rawFeeCurrencyAddress || defaultFeeCurrencyAddress;
 
+const configuredFrontendOrigins = readList("FRONTEND_ORIGIN", []);
+const mergedFrontendOrigins = Array.from(
+  new Set([...configuredFrontendOrigins, ...DEFAULT_FRONTEND_ORIGINS]),
+);
+
 export const env = {
   nodeEnv: readString("NODE_ENV", "development"),
   port: readInt("PORT", readInt("API_PORT", 8787)),
-  frontendOrigin: readString("FRONTEND_ORIGIN", "*"),
-  frontendOrigins: readList("FRONTEND_ORIGIN", ["*"]),
+  frontendOrigin: readString("FRONTEND_ORIGIN", DEFAULT_FRONTEND_ORIGINS.join(",")),
+  frontendOrigins: mergedFrontendOrigins,
   authSecret: readString("AUTH_SECRET", "liquidai-dev-secret-change-me"),
   authNonceTtlMs: readInt("AUTH_NONCE_TTL_MS", 5 * 60 * 1000),
   authTokenTtlMs: readInt("AUTH_TOKEN_TTL_MS", 24 * 60 * 60 * 1000),
   settlementLockTtlMs: readInt("SETTLEMENT_LOCK_TTL_MS", 2 * 60 * 1000),
   celoChain: chain,
-  celoChainId: chain === "mainnet" ? 42220 : 44787,
+  celoChainId: chain === "mainnet" ? 42220 : 11142220,
   celoRpcUrl,
   feeCurrencyAddress,
   usdStableAddress: feeCurrencyAddress,
@@ -116,6 +128,13 @@ export const env = {
   demoFaucetStableReserve: readFloat("DEMO_FAUCET_STABLE_RESERVE", 5),
   selfMode: readString("SELF_MODE", "mock"),
   selfRequiredForAgent: readBool("SELF_REQUIRED_FOR_AGENT", true),
+  selfScope: readString("SELF_SCOPE", "liquidai"),
+  selfVerifyEndpoint: readString("SELF_VERIFY_ENDPOINT", ""),
+  selfUserIdType: readString("SELF_USER_ID_TYPE", "hex"),
+  selfMockPassport: readBool("SELF_MOCK_PASSPORT", chain !== "mainnet"),
+  selfMinimumAge: readInt("SELF_MINIMUM_AGE", 18),
+  selfExcludedCountries: readList("SELF_EXCLUDED_COUNTRIES", []),
+  selfOfac: readBool("SELF_OFAC", true),
   // Security Rule 1: Keys loaded only from environment variables
   privateKey: readString("PRIVATE_KEY", ""), 
 };
