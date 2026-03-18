@@ -385,13 +385,29 @@ app.get(
     const { address, sessionToken } = req.query;
     if (!sessionToken) throw new Error("Missing sessionToken");
 
-    const status = await checkRegistrationStatus(sessionToken);
-    
-    if (status.verified) {
-      await markSelfVerified(address);
+    try {
+      const status = await checkRegistrationStatus(sessionToken);
+      if (status.verified) {
+        await markSelfVerified(address);
+        success(res, status);
+        return;
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const transientProviderIssue =
+        /missing session token|self api error:\s*400/i.test(message);
+      if (!transientProviderIssue) {
+        throw error;
+      }
     }
 
-    success(res, status);
+    // Fallback source of truth: verification callback writes to backend store.
+    const verified = await isSelfVerified(address);
+    success(res, {
+      stage: verified ? "completed" : "pending",
+      verified,
+      source: verified ? "backend_store" : "provider_poll_fallback",
+    });
   })
 );
 
