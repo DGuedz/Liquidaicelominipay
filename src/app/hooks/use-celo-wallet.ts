@@ -53,7 +53,7 @@ export function useCeloWallet() {
 
   const supportedConnectors = useMemo(
     () =>
-      connectors.filter((item) => {
+      connectors.filter((item: any) => {
         const name = item.name.toLowerCase();
         const id = item.id.toLowerCase();
         return (
@@ -72,15 +72,15 @@ export function useCeloWallet() {
 
     if (resolveWalletMode() === "minipay") {
       return (
-        supportedConnectors.find((item) => item.name.toLowerCase().includes("minipay"))
-        ?? supportedConnectors.find((item) => item.type === "injected")
+        supportedConnectors.find((item: any) => item.name.toLowerCase().includes("minipay"))
+        ?? supportedConnectors.find((item: any) => item.type === "injected")
         ?? supportedConnectors[0]
       );
     }
 
     return (
-      supportedConnectors.find((item) => item.id.toLowerCase().includes("meta") || item.name.toLowerCase().includes("metamask"))
-      ?? supportedConnectors.find((item) => item.type === "injected")
+      supportedConnectors.find((item: any) => item.id.toLowerCase().includes("meta") || item.name.toLowerCase().includes("metamask"))
+      ?? supportedConnectors.find((item: any) => item.type === "injected")
       ?? supportedConnectors[0]
     );
   }, [supportedConnectors]);
@@ -120,7 +120,7 @@ export function useCeloWallet() {
 
   const requestConnectorAccounts = useCallback(
     async (connectorId: string, method: "eth_accounts" | "eth_requestAccounts") => {
-      const selectedConnector = supportedConnectors.find((item) => item.id === connectorId) ?? primaryConnector;
+      const selectedConnector = supportedConnectors.find((item: any) => item.id === connectorId) ?? primaryConnector;
       if (!selectedConnector) return [];
 
       const provider = await (selectedConnector as { getProvider?: () => Promise<unknown> | unknown }).getProvider?.();
@@ -230,7 +230,7 @@ export function useCeloWallet() {
 
   const connectWallet = async (connectorId?: string) => {
     if (connectInFlightRef.current) {
-      throw new Error("Há uma solicitação pendente na carteira. Abra a MetaMask ou MiniPay e conclua a aprovação antes de tentar novamente.");
+      throw new Error("Há uma solicitação de conexão em andamento. Aguarde ou verifique sua carteira.");
     }
 
     connectInFlightRef.current = true;
@@ -238,7 +238,7 @@ export function useCeloWallet() {
 
     const selectedConnector =
       (connectorId
-        ? supportedConnectors.find((item) => item.id === connectorId)
+        ? supportedConnectors.find((item: any) => item.id === connectorId)
         : null) ?? primaryConnector;
 
     if (!selectedConnector) {
@@ -246,61 +246,17 @@ export function useCeloWallet() {
       throw new Error("Nenhuma carteira detectada. Abra no MiniPay ou MetaMask.");
     }
 
-    const runConnect = () =>
-      connectAsync({
+    try {
+      pendingWalletApprovalRef.current = true;
+      const session = await connectAsync({
         connector: selectedConnector,
         chainId: CELO_CHAIN_ID,
       });
-
-    try {
-      pendingWalletApprovalRef.current = true;
-      const requestedAccounts = await requestConnectorAccounts(selectedConnector.id, "eth_requestAccounts").catch((error) => {
-        const providerError = error as {
-          message?: string;
-          code?: number;
-          cause?: { message?: string; code?: number };
-        };
-        const errorCode = providerError?.code ?? providerError?.cause?.code;
-        const message = providerError?.message || providerError?.cause?.message || String(error);
-        const pendingRequest =
-          errorCode === -32002
-          || /requested resource not available|already pending|wallet_requestPermissions|request of type .* already pending/i.test(message);
-        const rejected =
-          /user rejected|rejected the request|user denied/i.test(message);
-
-        if (pendingRequest) {
-          throw new Error("Há uma solicitação pendente na carteira. Abra a MetaMask ou MiniPay e conclua ou rejeite a janela pendente.");
-        }
-
-        if (rejected) {
-          pendingWalletApprovalRef.current = false;
-          throw new Error("Conexão cancelada na carteira. Aprove a solicitação para continuar.");
-        }
-
-        throw error;
-      });
-
-      if (!requestedAccounts.length) {
-        const hydratedAccounts = await requestConnectorAccounts(selectedConnector.id, "eth_accounts").catch(() => []);
-        if (!hydratedAccounts.length) {
-          pendingWalletApprovalRef.current = false;
-          throw new Error("Selecione uma conta na carteira e aprove a conexão para continuar.");
-        }
-      }
-
-      const session = await runConnect();
-      if (session.accounts?.length) {
-        pendingWalletApprovalRef.current = false;
-        return session;
-      }
-      const hydratedAccounts = await requestConnectorAccounts(selectedConnector.id, "eth_accounts");
-      if (!hydratedAccounts.length) {
-        pendingWalletApprovalRef.current = false;
-        throw new Error("Nenhuma conta foi selecionada na carteira.");
-      }
       pendingWalletApprovalRef.current = false;
-      return runConnect();
-    } catch (error) {
+      return session;
+    } catch (error: unknown) {
+      pendingWalletApprovalRef.current = false;
+      
       const providerError = error as {
         message?: string;
         code?: number;
@@ -308,34 +264,20 @@ export function useCeloWallet() {
       };
       const errorCode = providerError?.code ?? providerError?.cause?.code;
       const message = providerError?.message || providerError?.cause?.message || String(error);
-      const needsExplicitAccountRequest =
-        /wallet must has at least one account|at least one account|no account|accounts/i.test(message);
-      const rejected =
-        /user rejected|rejected the request|user denied/i.test(message);
+      
+      const rejected = /user rejected|rejected the request|user denied/i.test(message);
       const pendingRequest =
-        errorCode === -32002
-        || /requested resource not available|already pending|wallet_requestPermissions|request of type .* already pending/i.test(message);
-
-      if (needsExplicitAccountRequest) {
-        const requestedAccounts = await requestConnectorAccounts(selectedConnector.id, "eth_requestAccounts").catch(() => []);
-        if (requestedAccounts.length > 0) {
-          pendingWalletApprovalRef.current = false;
-          return runConnect();
-        }
-        pendingWalletApprovalRef.current = false;
-        throw new Error("Selecione uma conta na carteira e aprove a conexão para continuar.");
-      }
+        errorCode === -32002 ||
+        /requested resource not available|already pending|wallet_requestPermissions|request of type .* already pending/i.test(message);
 
       if (rejected) {
-        pendingWalletApprovalRef.current = false;
-        throw new Error("Conexão cancelada na carteira. Aprove a solicitação para continuar.");
+        throw new Error("Conexão cancelada. Aprove a solicitação na carteira para continuar.");
       }
 
       if (pendingRequest) {
-        throw new Error("Há uma solicitação pendente na carteira. Abra a MetaMask ou MiniPay, conclua ou rejeite a janela pendente e tente novamente.");
+        throw new Error("Há uma solicitação pendente. Abra a extensão da carteira (ex: MetaMask), aprove ou rejeite o pedido pendente e tente novamente.");
       }
 
-      pendingWalletApprovalRef.current = false;
       throw error;
     } finally {
       connectInFlightRef.current = false;
