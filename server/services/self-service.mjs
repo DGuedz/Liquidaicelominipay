@@ -15,6 +15,36 @@ function resolveSelfVerifyEndpoint() {
   return env.selfVerifyEndpoint || "https://liquidaicelominipay.onrender.com/api/self/verify";
 }
 
+function extractSessionTokenFromResponse(payload = {}) {
+  const direct =
+    payload?.sessionId ||
+    payload?.sessionToken ||
+    payload?.token ||
+    payload?.registrationToken ||
+    "";
+  if (typeof direct === "string" && direct.length > 0) {
+    return direct;
+  }
+
+  const deepLink = typeof payload?.deepLink === "string" ? payload.deepLink : "";
+  if (!deepLink) return "";
+
+  try {
+    const url = new URL(deepLink);
+    const selfAppEncoded = url.searchParams.get("selfApp");
+    if (!selfAppEncoded) return "";
+    const selfApp = JSON.parse(selfAppEncoded);
+    return (
+      selfApp?.sessionId ||
+      selfApp?.sessionToken ||
+      selfApp?.token ||
+      ""
+    );
+  } catch {
+    return "";
+  }
+}
+
 async function ensureSelfVerifier() {
   if (verifier) return verifier;
   if (verifierError) return null;
@@ -133,14 +163,19 @@ export async function startSelfRegistration(humanAddress) {
 
         const data = await response.json();
         
+        const sessionToken = extractSessionTokenFromResponse(data);
+        if (!sessionToken) {
+          throw new Error("Self API response missing session token.");
+        }
+
         // Guarda a sessão na memória para conseguirmos fazer o poll depois
-        activeSessions.set(data.sessionId, {
+        activeSessions.set(sessionToken, {
             ...data,
             startedAt: Date.now()
         });
         
         return { 
-            sessionToken: data.sessionId,
+            sessionToken,
             deepLink: data.deepLink,
             qrData: data.qrUrl,
             privateKeyHex: data.privateKeyHex,
