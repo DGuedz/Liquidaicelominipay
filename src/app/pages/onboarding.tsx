@@ -260,11 +260,13 @@ function StepConnect({ onNext }: { onNext: () => void }) {
   const [isEnsuringSession, setIsEnsuringSession] = useState(false);
   const [selfActionUrl, setSelfActionUrl] = useState("");
   const [selfQrDataUrl, setSelfQrDataUrl] = useState("");
+  const [selectedConnectorId, setSelectedConnectorId] = useState("");
   const timersRef = useRef<number[]>([]);
   const {
     address,
     isConnected,
     isMiniPay,
+    walletMode,
     connectorName,
     shortAddress,
     hasConnector,
@@ -272,6 +274,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     isConnecting,
     isSwitchingChain,
     isSigningMessage,
+    connectorOptions,
     connectWallet,
     switchToCelo,
     signWalletMessage,
@@ -279,6 +282,16 @@ function StepConnect({ onNext }: { onNext: () => void }) {
   } = useCeloWallet();
   const selfIsRequired = selfStatus?.requiredForAgent ?? true;
   const requiresSelfVerification = selfIsRequired || selfEnabled;
+
+  useEffect(() => {
+    if (!connectorOptions.length) {
+      setSelectedConnectorId("");
+      return;
+    }
+    if (!selectedConnectorId || !connectorOptions.some((item) => item.id === selectedConnectorId)) {
+      setSelectedConnectorId(connectorOptions[0].id);
+    }
+  }, [connectorOptions, selectedConnectorId]);
 
   const refreshActivationRoute = async (targetAddress = address, networkOkay = !wrongNetwork) => {
     if (!targetAddress) {
@@ -402,7 +415,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     }
   }, [isConnected, wrongNetwork, activationRoute?.nextAction, phase]);
 
-  const handleConnect = async () => {
+  const handleConnect = async (connectorId?: string) => {
     if (isBusy) return;
 
     setInlineError("");
@@ -416,7 +429,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
 
     try {
       setPhase("connecting");
-      const session = await connectWallet();
+      const session = await connectWallet(connectorId || selectedConnectorId || undefined);
       if (session.chainId !== CELO_CHAIN_ID) {
         await switchToCelo();
       }
@@ -517,8 +530,15 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     setIsVerifyingSelf(true);
     setPhase("verifying");
     
+    const formatSelfError = (error: unknown) => {
+      const message = error instanceof Error ? error.message : "Failed to verify with Self.";
+      if (/invalididentitycommitmentroot/i.test(message)) {
+        return "Self proof failed (Identity root desatualizado). No app Self: Manage ID -> refresh/reconnect o passport, depois tente novamente.";
+      }
+      return message;
+    };
+
     try {
-      const selfWindow = window.open("", "_blank", "noopener,noreferrer");
       await ensureWalletAuthSession(address, signWalletMessage);
       
       // 1. Start Registration Session
@@ -528,6 +548,18 @@ function StepConnect({ onNext }: { onNext: () => void }) {
 
       console.log("Self Session Started:", session);
       
+      const openSelfAction = (url: string) => {
+        if (!url) return false;
+        // In MiniPay webview, opening a blank popup first can replace current view with a white page.
+        // Open only with a concrete URL and fallback to manual CTA if popup is blocked.
+        if (isMiniPay) {
+          window.location.href = url;
+          return true;
+        }
+        const popup = window.open(url, "_blank", "noopener,noreferrer");
+        return Boolean(popup);
+      };
+
       if (session.mode === "mock") {
          setInlineSuccess("Mock verification instant success.");
       } else if (session.deepLink) {
@@ -536,16 +568,18 @@ function StepConnect({ onNext }: { onNext: () => void }) {
          const qrContent = session.qrData || session.deepLink;
          const generatedQr = await QRCode.toDataURL(qrContent, { width: 220, margin: 1 });
          setSelfQrDataUrl(generatedQr);
-         if (selfWindow) {
-           selfWindow.location.href = session.deepLink;
+         const opened = openSelfAction(session.deepLink);
+         if (!opened) {
+           setInlineSuccess("Abra o Self manualmente pelo botão abaixo para continuar.");
          }
       } else if (session.qrData) {
          setInlineSuccess("Verifique via QR Code ou abra o app Self...");
          setSelfActionUrl(session.qrData);
          const generatedQr = await QRCode.toDataURL(session.qrData, { width: 220, margin: 1 });
          setSelfQrDataUrl(generatedQr);
-         if (selfWindow) {
-           selfWindow.location.href = session.qrData;
+         const opened = openSelfAction(session.qrData);
+         if (!opened) {
+           setInlineSuccess("Abra o Self manualmente pelo botão abaixo para continuar.");
          }
       } else {
          setInlineSuccess("Verifique no seu app Self...");
@@ -555,6 +589,12 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       // 3. Poll for completion
       let verified = false;
       let attempts = 0;
+      const isTerminalSelfError = (error: unknown) => {
+        const message = error instanceof Error ? error.message : String(error ?? "");
+        return /invalididentitycommitmentroot|session not found|expired|registration failed|self api error:\s*400/i.test(
+          message,
+        );
+      };
       
       while (!verified && attempts < 12) { // 12 tentativas de 5s = 1 minuto
         attempts++;
@@ -570,6 +610,9 @@ function StepConnect({ onNext }: { onNext: () => void }) {
             break;
           }
         } catch (e) {
+          if (isTerminalSelfError(e)) {
+            throw e instanceof Error ? e : new Error(String(e));
+          }
           console.warn("Poll falhou, tentando novamente...", e);
         }
       }
@@ -589,7 +632,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
 
     } catch (error) {
       setPhase("connected");
-      setInlineError(error instanceof Error ? error.message : "Failed to verify with Self.");
+      setInlineError(formatSelfError(error));
     } finally {
       setIsVerifyingSelf(false);
     }
@@ -1075,6 +1118,34 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       </div>
 
       {/* Action button */}
+      {phase === "idle" && !wrongNetwork && walletMode === "browser" && connectorOptions.length > 1 && (
+        <div className="w-full rounded-2xl p-3 flex flex-col gap-2" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <p className="text-[11px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+            Escolha a carteira
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {connectorOptions.map((item) => {
+              const isSelected = selectedConnectorId === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setSelectedConnectorId(item.id)}
+                  className="rounded-xl px-3 py-2 text-xs font-medium text-left"
+                  style={{
+                    color: isSelected ? "#fff" : "var(--text-muted)",
+                    background: isSelected ? "rgba(13,75,46,0.4)" : "rgba(255,255,255,0.03)",
+                    border: `1px solid ${isSelected ? "rgba(13,75,46,0.75)" : "rgba(255,255,255,0.09)"}`,
+                  }}
+                >
+                  {item.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {isDone ? (
         <motion.button
           initial={{ opacity: 0, y: 10 }}
@@ -1102,7 +1173,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
                 ? handleVerifySelf
               : activationRoute?.nextAction === "claim_faucet"
                 ? handleClaimFaucet
-                : handleConnect
+                : () => handleConnect(selectedConnectorId || undefined)
           }
           disabled={isBusy}
           className="w-full py-4 rounded-full font-semibold flex items-center justify-center gap-2"
@@ -1118,7 +1189,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
           {phase === "idle" && !wrongNetwork ? (
             <>
               <Wallet className="w-5 h-5" />
-              {isMiniPay ? "Conectar MiniPay" : "Conectar carteira"}
+              {isMiniPay ? "Conectando MiniPay..." : "Conectar carteira"}
             </>
           ) : activationRoute?.nextAction === "activate_session" ? (
             <>

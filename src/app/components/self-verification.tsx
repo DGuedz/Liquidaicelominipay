@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Shield, CheckCircle2, ExternalLink, Fingerprint, X, Zap, RotateCcw } from "lucide-react";
 import { CELO_CHAIN_ID } from "../lib/celo-wallet";
-import { apiGet, apiPost, SelfStatusPayload } from "../lib/api";
+import { apiGet, apiPost, SelfPollPayload, SelfRegistrationPayload, SelfStatusPayload } from "../lib/api";
 import { ensureWalletAuthSession } from "../lib/wallet-auth";
 import { useCeloWallet } from "../hooks/use-celo-wallet";
 import { useTheme } from "../hooks/useTheme";
+import QRCode from "qrcode";
 
 type VerifyState = "idle" | "scanning" | "proving" | "done";
 
@@ -74,6 +75,7 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
   const {
     address,
     isConnected,
+    isMiniPay,
     hasConnector,
     wrongNetwork,
     isConnecting,
@@ -87,6 +89,9 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
   const [stepIdx, setStepIdx] = useState(0);
   const [showQr, setShowQr] = useState(false);
   const [inlineError, setInlineError] = useState("");
+  const [inlineSuccess, setInlineSuccess] = useState("");
+  const [selfActionUrl, setSelfActionUrl] = useState("");
+  const [selfQrDataUrl, setSelfQrDataUrl] = useState("");
   const [status, setStatus] = useState<SelfStatusPayload | null>(null);
   const timeoutsRef = useRef<number[]>([]);
 
@@ -123,12 +128,23 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
 
   const handleStartScan = async () => {
     setInlineError("");
+    setInlineSuccess("");
+    setSelfActionUrl("");
+    setSelfQrDataUrl("");
     clearTimers();
 
     if (!hasConnector) {
       setInlineError("No wallet detected. Open in MiniPay or MetaMask and try again.");
       return;
     }
+
+    const formatSelfError = (error: unknown) => {
+      const message = error instanceof Error ? error.message : "Failed to verify with Self.";
+      if (/invalididentitycommitmentroot/i.test(message)) {
+        return "Self proof failed (Identity root desatualizado). No app Self: Manage ID -> refresh/reconnect o passport e tente novamente.";
+      }
+      return message;
+    };
 
     try {
       let connectedAddress = address;
@@ -150,6 +166,39 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
 
       await ensureWalletAuthSession(walletAddress, signWalletMessage);
 
+      const session = await apiPost<SelfRegistrationPayload>("/api/self/start-registration", {
+        address: walletAddress,
+      });
+
+      if (!session.sessionToken) {
+        throw new Error("Self registration session missing token.");
+      }
+
+      const deepLink = session.deepLink || session.qrData || "";
+      if (!deepLink) {
+        throw new Error("Self registration did not return a deep link or QR payload.");
+      }
+
+      const openSelfAction = (url: string) => {
+        if (!url) return false;
+        if (isMiniPay) {
+          window.location.href = url;
+          return true;
+        }
+        const popup = window.open(url, "_blank", "noopener,noreferrer");
+        return Boolean(popup);
+      };
+
+      setInlineSuccess("Aguardando confirmação no app Self...");
+      setSelfActionUrl(deepLink);
+      const qrImage = await QRCode.toDataURL(session.qrData || session.deepLink, { width: 220, margin: 1 });
+      setSelfQrDataUrl(qrImage);
+
+      const opened = openSelfAction(deepLink);
+      if (!opened) {
+        setInlineSuccess("Abra o Self manualmente no botao abaixo para continuar.");
+      }
+
       setState("scanning");
       setShowQr(true);
       await sleep(1200);
@@ -162,15 +211,47 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
         await sleep(800);
       }
 
-      const verification = await apiPost<SelfStatusPayload>("/api/self/verify", {
-        address: walletAddress,
-      });
-      setStatus(verification);
+      let verified = false;
+      let attempts = 0;
+      const isTerminalSelfError = (error: unknown) => {
+        const message = error instanceof Error ? error.message : String(error ?? "");
+        return /invalididentitycommitmentroot|session not found|expired|registration failed|self api error:\s*400/i.test(
+          message,
+        );
+      };
+      while (!verified && attempts < 12) {
+        attempts += 1;
+        await sleep(5000);
+        try {
+          const pollResult = await apiGet<SelfPollPayload>("/api/self/poll-registration", {
+            address: walletAddress,
+            sessionToken: session.sessionToken,
+          });
+          if (pollResult.verified) {
+            verified = true;
+            break;
+          }
+        } catch (pollError) {
+          if (isTerminalSelfError(pollError)) {
+            throw pollError instanceof Error ? pollError : new Error(String(pollError));
+          }
+          console.warn("Self poll failed, retrying:", pollError);
+        }
+      }
+
+      if (!verified) {
+        throw new Error("Tempo limite da verificacao Self. Tente novamente.");
+      }
+
+      const nextStatus = await refreshStatus(walletAddress);
+      if (nextStatus) {
+        setStatus(nextStatus);
+      }
       setState("done");
     } catch (error) {
       setState("idle");
       setShowQr(false);
-      setInlineError(error instanceof Error ? error.message : "Failed to verify with Self.");
+      setInlineError(formatSelfError(error));
     }
   };
 
@@ -278,24 +359,11 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
             Open the Self flow
           </p>
           <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>
-            Mock QR shown now. Replace with the official Self proof handoff before enabling `SELF_MODE=agent`.
+            Scan this real verification QR in the Self app to continue.
           </p>
-          <div
-            className="relative w-44 h-44 rounded-2xl p-3 mb-4"
-            style={{
-              background: isDark ? "#EDF7E5" : "#fff",
-              color: "#0D4B2E",
-              boxShadow: "0 4px 20px rgba(13,75,46,0.18)",
-            }}
-          >
-            <QRDecoration />
-            <motion.div
-              animate={{ y: [-62, 62, -62] }}
-              transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute left-4 right-4 h-0.5 rounded-full"
-              style={{ background: "rgba(163,217,119,0.9)" }}
-            />
-          </div>
+          {selfQrDataUrl ? (
+            <img src={selfQrDataUrl} alt="Self verification QR" className="w-44 h-44 rounded-2xl bg-white p-2 mb-4" />
+          ) : null}
           <div className="flex items-center gap-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
             <motion.div
               animate={{ rotate: 360 }}
@@ -415,7 +483,7 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
         {[
           { icon: "🔒", text: "Verification state lives on the backend, not only in the browser." },
           { icon: "🛡️", text: "Agent authorization can be blocked until Self verification exists." },
-          { icon: "🌐", text: "Current mode: mock now, real Self callback later." },
+          { icon: "🌐", text: `Current mode: ${status?.mode || "agent"}.` },
         ].map((item) => (
           <div key={item.text} className="flex items-start gap-2.5 mb-2.5">
             <span className="text-sm flex-shrink-0">{item.icon}</span>
@@ -449,6 +517,35 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
           >
             <p className="text-xs">{inlineError}</p>
           </div>
+        )}
+
+        {inlineSuccess && (
+          <div
+            className="rounded-xl px-3 py-2.5 mt-3"
+            style={{
+              background: "rgba(16,185,129,0.08)",
+              border: "1px solid rgba(16,185,129,0.22)",
+              color: "#10B981",
+            }}
+          >
+            <p className="text-xs">{inlineSuccess}</p>
+          </div>
+        )}
+
+        {selfActionUrl && (
+          <a
+            href={selfActionUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full mt-3 py-2 rounded-xl text-center text-xs font-semibold"
+            style={{
+              color: "#3B82F6",
+              background: "rgba(59,130,246,0.08)",
+              border: "1px solid rgba(59,130,246,0.24)",
+            }}
+          >
+            Open Self manually
+          </a>
         )}
 
         <motion.button

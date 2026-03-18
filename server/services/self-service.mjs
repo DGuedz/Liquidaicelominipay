@@ -12,10 +12,24 @@ function resolveSelfNetwork() {
 }
 
 function resolveSelfVerifyEndpoint() {
-  return env.selfVerifyEndpoint || "https://liquidaicelominipay.onrender.com/api/self/verify";
+  const fallback = "https://liquidaicelominipay.onrender.com/api/self/verify";
+  const raw = env.selfVerifyEndpoint || fallback;
+  const trimmed = String(raw).trim();
+  const matched = trimmed.match(/https?:\/\/[^\s]+/i);
+  return matched?.[0] || trimmed || fallback;
 }
 
 function extractSessionTokenFromResponse(payload = {}) {
+  const direct =
+    payload?.sessionToken ||
+    payload?.token ||
+    payload?.registrationToken ||
+    payload?.sessionId ||
+    "";
+  if (typeof direct === "string" && direct.length > 0) {
+    return direct;
+  }
+
   const deepLink = typeof payload?.deepLink === "string" ? payload.deepLink : "";
   if (deepLink) {
     try {
@@ -33,16 +47,6 @@ function extractSessionTokenFromResponse(payload = {}) {
         }
       }
     } catch {}
-  }
-
-  const direct =
-    payload?.sessionId ||
-    payload?.sessionToken ||
-    payload?.token ||
-    payload?.registrationToken ||
-    "";
-  if (typeof direct === "string" && direct.length > 0) {
-    return direct;
   }
   return "";
 }
@@ -208,7 +212,8 @@ export async function checkRegistrationStatus(sessionToken) {
         });
 
         if (!response.ok) {
-            throw new Error(`Self API Error: ${response.status}`);
+            const errorBody = await response.text().catch(() => "");
+            throw new Error(`Self API Error: ${response.status}${errorBody ? ` - ${errorBody}` : ""}`);
         }
 
         const data = await response.json();

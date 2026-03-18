@@ -12,10 +12,14 @@ type InjectedProvider = {
   isMetaMask?: boolean;
   providers?: InjectedProvider[];
   request?: (args: { method: string; params?: unknown[] | object }) => Promise<unknown>;
+  on?: (event: string, listener: (...args: unknown[]) => void) => void;
+  removeListener?: (event: string, listener: (...args: unknown[]) => void) => void;
   _metamask?: {
     isUnlocked?: () => Promise<boolean>;
   };
 };
+
+export type WalletMode = "minipay" | "browser";
 
 function getEnvVar(key: "VITE_CELO_RPC_URL" | "VITE_APP_URL"): string {
   const value = import.meta.env[key];
@@ -32,7 +36,7 @@ function hasWindowStorage() {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 }
 
-export function getPreferredInjectedProvider(): InjectedProvider | null {
+function getInjectedProviderForTarget(targetId?: string): InjectedProvider | null {
   const ethereum = getBrowserEthereum();
   if (!ethereum) return null;
 
@@ -40,14 +44,30 @@ export function getPreferredInjectedProvider(): InjectedProvider | null {
     ? ethereum.providers
     : [ethereum];
 
+  if (targetId?.toLowerCase().includes("minipay")) {
+    return providers.find((provider) => provider?.isMiniPay) ?? null;
+  }
+
+  if (targetId?.toLowerCase().includes("meta")) {
+    return providers.find((provider) => provider?.isMetaMask) ?? null;
+  }
+
   return providers.find((provider) => provider?.isMiniPay)
     ?? providers.find((provider) => provider?.isMetaMask)
     ?? providers[0]
     ?? null;
 }
 
+export function getPreferredInjectedProvider(targetId?: string) {
+  return getInjectedProviderForTarget(targetId);
+}
+
 export function isMiniPayEnvironment() {
   return Boolean(getPreferredInjectedProvider()?.isMiniPay);
+}
+
+export function resolveWalletMode(targetId?: string): WalletMode {
+  return getPreferredInjectedProvider(targetId)?.isMiniPay ? "minipay" : "browser";
 }
 
 export function isWalletResetOverride() {
@@ -91,15 +111,15 @@ export function clearWalletConnectorPersistence() {
   }
 }
 
-export async function requestPreferredAccounts() {
-  const provider = getPreferredInjectedProvider();
+export async function requestPreferredAccounts(targetId?: string) {
+  const provider = getInjectedProviderForTarget(targetId);
   if (!provider?.request) return [];
   const result = await provider.request({ method: "eth_requestAccounts" });
   return Array.isArray(result) ? result : [];
 }
 
-export async function readPreferredAccounts() {
-  const provider = getPreferredInjectedProvider();
+export async function readPreferredAccounts(targetId?: string) {
+  const provider = getInjectedProviderForTarget(targetId);
   if (!provider?.request) return [];
   const result = await provider.request({ method: "eth_accounts" });
   return Array.isArray(result) ? result : [];
@@ -118,6 +138,45 @@ export async function isPreferredWalletUnlocked() {
   }
 
   return true;
+}
+
+type ProviderEventHandlers = {
+  onAccountsChanged?: (accounts: string[]) => void;
+  onConnect?: () => void;
+  onDisconnect?: () => void;
+};
+
+export function subscribePreferredProviderEvents(handlers: ProviderEventHandlers) {
+  const provider = getPreferredInjectedProvider();
+  if (!provider?.on || !provider.removeListener) {
+    return () => {};
+  }
+
+  const handleAccountsChanged = (accounts: unknown) => {
+    if (!handlers.onAccountsChanged) return;
+    const nextAccounts = Array.isArray(accounts)
+      ? accounts.filter((value): value is string => typeof value === "string")
+      : [];
+    handlers.onAccountsChanged(nextAccounts);
+  };
+
+  const handleConnect = () => {
+    handlers.onConnect?.();
+  };
+
+  const handleDisconnect = () => {
+    handlers.onDisconnect?.();
+  };
+
+  provider.on("accountsChanged", handleAccountsChanged);
+  provider.on("connect", handleConnect);
+  provider.on("disconnect", handleDisconnect);
+
+  return () => {
+    provider.removeListener?.("accountsChanged", handleAccountsChanged);
+    provider.removeListener?.("connect", handleConnect);
+    provider.removeListener?.("disconnect", handleDisconnect);
+  };
 }
 
 export const CELO_CHAIN = defineChain({
@@ -151,6 +210,7 @@ export const CELO_RPC_URL = getEnvVar("VITE_CELO_RPC_URL") || DEFAULT_CELO_RPC_U
 export const APP_URL = getEnvVar("VITE_APP_URL") || "http://localhost:5173";
 
 export const wagmiConfig = createConfig({
+  multiInjectedProviderDiscovery: false,
   chains: [CELO_CHAIN],
   connectors: [
     metaMask({
