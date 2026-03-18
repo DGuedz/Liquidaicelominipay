@@ -219,7 +219,7 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
           message,
         );
       };
-      while (!verified && attempts < 12) {
+      while (!verified && attempts < 36) { // 36 * 5s = 180 seconds (3 minutes)
         attempts += 1;
         await sleep(5000);
         try {

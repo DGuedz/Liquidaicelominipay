@@ -596,7 +596,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
         );
       };
       
-      while (!verified && attempts < 12) { // 12 tentativas de 5s = 1 minuto
+      while (!verified && attempts < 36) { // 36 tentativas de 5s = 3 minutos
         attempts++;
         await new Promise(r => setTimeout(r, 5000));
         
