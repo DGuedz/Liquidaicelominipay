@@ -122,7 +122,7 @@ export async function startSelfRegistration(humanAddress) {
                 minimumAge: env.selfMinimumAge, 
                 ofac: env.selfOfac,
                 network: resolveSelfNetwork(),
-                walletAddress: humanAddress,
+                humanAddress,
             })
         });
 
