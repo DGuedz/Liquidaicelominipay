@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
+import QRCode from "qrcode";
 import {
   Bot,
   Zap,
@@ -258,6 +259,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
   const [isVerifyingSelf, setIsVerifyingSelf] = useState(false);
   const [isEnsuringSession, setIsEnsuringSession] = useState(false);
   const [selfActionUrl, setSelfActionUrl] = useState("");
+  const [selfQrDataUrl, setSelfQrDataUrl] = useState("");
   const timersRef = useRef<number[]>([]);
   const {
     address,
@@ -511,6 +513,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     setInlineError("");
     setInlineSuccess("");
     setSelfActionUrl("");
+    setSelfQrDataUrl("");
     setIsVerifyingSelf(true);
     setPhase("verifying");
     
@@ -530,12 +533,17 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       } else if (session.deepLink) {
          setInlineSuccess("Aguardando confirmação no app Self...");
          setSelfActionUrl(session.deepLink);
+         const qrContent = session.qrData || session.deepLink;
+         const generatedQr = await QRCode.toDataURL(qrContent, { width: 220, margin: 1 });
+         setSelfQrDataUrl(generatedQr);
          if (selfWindow) {
            selfWindow.location.href = session.deepLink;
          }
       } else if (session.qrData) {
          setInlineSuccess("Verifique via QR Code ou abra o app Self...");
          setSelfActionUrl(session.qrData);
+         const generatedQr = await QRCode.toDataURL(session.qrData, { width: 220, margin: 1 });
+         setSelfQrDataUrl(generatedQr);
          if (selfWindow) {
            selfWindow.location.href = session.qrData;
          }
@@ -618,6 +626,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     setInlineError("");
     setInlineSuccess("");
     setSelfActionUrl("");
+    setSelfQrDataUrl("");
     setFaucetStatus(null);
     setSelfStatus(null);
     setActivationRoute(null);
@@ -997,6 +1006,21 @@ function StepConnect({ onNext }: { onNext: () => void }) {
           >
             Abrir Self manualmente
           </a>
+        )}
+
+        {selfQrDataUrl && phase === "verifying" && (
+          <div
+            className="w-full rounded-2xl p-4 flex flex-col items-center gap-3"
+            style={{
+              background: "rgba(59,130,246,0.06)",
+              border: "1px solid rgba(59,130,246,0.18)",
+            }}
+          >
+            <img src={selfQrDataUrl} alt="Self verification QR" className="w-[220px] h-[220px] rounded-xl bg-white p-2" />
+            <p className="text-xs text-center" style={{ color: "var(--text-muted)" }}>
+              Escaneie no app Self do celular para continuar a verificação.
+            </p>
+          </div>
         )}
 
         {/* Self toggle */}

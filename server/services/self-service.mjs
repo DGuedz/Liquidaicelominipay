@@ -16,6 +16,25 @@ function resolveSelfVerifyEndpoint() {
 }
 
 function extractSessionTokenFromResponse(payload = {}) {
+  const deepLink = typeof payload?.deepLink === "string" ? payload.deepLink : "";
+  if (deepLink) {
+    try {
+      const url = new URL(deepLink);
+      const selfAppEncoded = url.searchParams.get("selfApp");
+      if (selfAppEncoded) {
+        const selfApp = JSON.parse(selfAppEncoded);
+        const fromDeepLink =
+          selfApp?.sessionId ||
+          selfApp?.sessionToken ||
+          selfApp?.token ||
+          "";
+        if (typeof fromDeepLink === "string" && fromDeepLink.length > 0) {
+          return fromDeepLink;
+        }
+      }
+    } catch {}
+  }
+
   const direct =
     payload?.sessionId ||
     payload?.sessionToken ||
@@ -25,24 +44,7 @@ function extractSessionTokenFromResponse(payload = {}) {
   if (typeof direct === "string" && direct.length > 0) {
     return direct;
   }
-
-  const deepLink = typeof payload?.deepLink === "string" ? payload.deepLink : "";
-  if (!deepLink) return "";
-
-  try {
-    const url = new URL(deepLink);
-    const selfAppEncoded = url.searchParams.get("selfApp");
-    if (!selfAppEncoded) return "";
-    const selfApp = JSON.parse(selfAppEncoded);
-    return (
-      selfApp?.sessionId ||
-      selfApp?.sessionToken ||
-      selfApp?.token ||
-      ""
-    );
-  } catch {
-    return "";
-  }
+  return "";
 }
 
 async function ensureSelfVerifier() {
