@@ -207,8 +207,14 @@ export async function checkRegistrationStatus(sessionToken) {
     }
 
     try {
-        const response = await fetch(`https://self-agent-id.vercel.app/api/agent/register/status?token=${sessionToken}`, {
-            method: "GET"
+        const statusUrl = new URL("https://self-agent-id.vercel.app/api/agent/register/status");
+        // Keep query param for backwards compatibility, but always send bearer token (required by current API).
+        statusUrl.searchParams.set("token", sessionToken);
+        const response = await fetch(statusUrl, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${sessionToken}`,
+            },
         });
 
         if (!response.ok) {
