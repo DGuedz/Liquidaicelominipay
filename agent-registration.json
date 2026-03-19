@@ -1,0 +1,21 @@
+{
+  "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+  "name": "LiquidAI",
+  "description": "Autonomous AI treasury agent that optimizes yield for Celo MiniPay users by reallocating idle stablecoins while preserving instant liquidity for payments.",
+  "endpoints": [
+    {
+      "protocol": "eip155",
+      "endpoint": "eip155:11142220:0xf8024Db04E64298B9BF89A1D4D0cc1D3F13E34a7",
+      "description": "Agent execution wallet on Celo Sepolia for gasless operations via USDm"
+    },
+    {
+      "protocol": "https",
+      "endpoint": "https://app.liquidai.ai",
+      "description": "LiquidAI MiniPay optimized DApp interface"
+    }
+  ],
+  "attestation": {
+    "provider": "Self Protocol",
+    "description": "Agent interactions are strictly gated behind Self Protocol ZK Proof-of-Humanity to prevent Sybil attacks"
+  }
+}

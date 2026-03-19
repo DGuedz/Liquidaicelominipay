@@ -704,10 +704,11 @@ export function AgentPage() {
     }
   };
 
-  const handleAuthorize = async (id: number) => {
-    const submitted = await submitAuthorization(id, true);
+  const handleAuthorize = async (id: number | string) => {
+    const numericId = typeof id === 'string' ? parseInt(id.replace(/\D/g, '')) || 1001 : id;
+    const submitted = await submitAuthorization(numericId, true);
     if (!submitted) return;
-    setAuthorized((prev) => [...prev, id]);
+    setAuthorized((prev) => [...prev, numericId]);
     setOpsCount((c) => c + 1);
   };
 

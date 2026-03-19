@@ -682,7 +682,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       {isConnected && !isMiniPay && (
           <button 
             onClick={handleDisconnect}
-            className="absolute top-4 right-6 text-xs text-red-400 font-bold px-3 py-2 rounded-lg border border-red-900/30 bg-red-900/10 hover:bg-red-900/20 transition-all z-50 cursor-pointer shadow-sm active:scale-95"
+            className="absolute top-4 right-6 text-xs text-red-400 font-bold px-3 py-2 rounded-lg border border-red-900/30 bg-red-900/10 hover:bg-red-900/20 transition-all z-50 cursor-pointer shadow-sm active:scale-95 hidden"
             style={{ pointerEvents: 'auto' }}
           >
             RESET WALLET
@@ -704,7 +704,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
         {isConnected && !isMiniPay && (
           <button 
             onClick={handleDisconnect}
-            className="text-xs text-red-400 font-medium px-2 py-1 rounded hover:bg-red-500/10 transition-colors"
+            className="text-xs text-red-400 font-medium px-2 py-1 rounded hover:bg-red-500/10 transition-colors hidden"
           >
             Reset Wallet
           </button>
