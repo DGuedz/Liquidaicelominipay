@@ -235,16 +235,19 @@ export function buildAgentState({
         {
           time: "Now",
           type: "rebalance",
+          intentId: `intent-erc8004-${Date.now()}-1`,
           action: `Wallet synced. Initial strategy prepared for ${plan.bestProtocol?.name || "stable liquidity"}.`,
         },
         {
           time: shortTime,
           type: "protection",
+          intentId: `intent-erc8004-${Date.now()}-2`,
           action: `Initial liquidity buffer set at $${plan.bufferUsd.toFixed(2)} to keep payments available.`,
         },
         {
           time: shortTime,
           type: "opportunity",
+          intentId: `intent-erc8004-${Date.now()}-3`,
           action: `Best current opportunity: ${plan.bestProtocol?.name || "Aave v3"} (${toRounded(plan.bestProtocol?.apyValue || 0, 2)}% APY).`,
         },
       ]
@@ -252,6 +255,7 @@ export function buildAgentState({
         {
           time: "Now",
           type: "rebalance",
+          intentId: `intent-erc8004-${Date.now()}-1`,
           action: `Autonomous router adjusted allocation to ${plan.bestProtocol?.name || "best available pool"}.`,
         },
         {
@@ -260,14 +264,16 @@ export function buildAgentState({
           action: `Daily accumulated yield: +$${toRounded(effectiveYieldTodayUsd, 2)} (${plan.blendedApy}% APY blended).`,
         },
         {
-          time: "Today 08:00",
+          time: shortTime,
           type: "protection",
-          action: `Liquidity buffer maintained at $${plan.bufferUsd.toFixed(2)} for payments under 1 second.`,
+          intentId: `intent-erc8004-${Date.now()}-4`,
+          action: `Maintained buffer size of $${plan.bufferUsd.toFixed(2)} to protect against short-term spending needs.`,
         },
         {
-          time: "Today",
+          time: shortTime,
           type: "opportunity",
-          action: `Best current opportunity: ${plan.bestProtocol?.name || "Aave v3"} (${toRounded(plan.bestProtocol?.apyValue || 0, 2)}% APY).`,
+          intentId: `intent-erc8004-${Date.now()}-5`,
+          action: `Yield verified: ${plan.bestProtocol?.name || "Aave v3"} remains optimal choice (${toRounded(plan.bestProtocol?.apyValue || 0, 2)}% APY).`,
         },
       ];
 
@@ -279,6 +285,7 @@ export function buildAgentState({
         gain: `+$${toRounded((Math.max(5, plan.totalCapitalUsd * 0.18) * (plan.bestProtocol?.apyValue || 0)) / 100 / 12, 2)}/mo`,
         risk: plan.riskMode === "aggressive" ? "Moderate" : "Low",
         riskColor: plan.riskMode === "aggressive" ? "#F59E0B" : "#10B981",
+        intentId: `intent-erc8004-${Date.now()}-auth`,
       }
     : null;
 

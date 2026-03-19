@@ -655,6 +655,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
 
   // MiniPay test flow logic: If inside MiniPay, auto-connect when reaching this step
   useEffect(() => {
+    // If we are in MiniPay, automatically trigger connect to bypass explicit user action per track rules
     if (isMiniPay && phase === "idle" && hasConnector && !isConnected && !isConnecting) {
       handleConnect();
     }
@@ -678,15 +679,15 @@ function StepConnect({ onNext }: { onNext: () => void }) {
 
   return (
     <div className="flex flex-col h-full px-6 pt-10 pb-8 relative">
-      {isConnected && (
-        <button 
-          onClick={handleDisconnect}
-          className="absolute top-4 right-6 text-xs text-red-400 font-bold px-3 py-2 rounded-lg border border-red-900/30 bg-red-900/10 hover:bg-red-900/20 transition-all z-50 cursor-pointer shadow-sm active:scale-95"
-          style={{ pointerEvents: 'auto' }}
-        >
-          RESET WALLET
-        </button>
-      )}
+      {isConnected && !isMiniPay && (
+          <button 
+            onClick={handleDisconnect}
+            className="absolute top-4 right-6 text-xs text-red-400 font-bold px-3 py-2 rounded-lg border border-red-900/30 bg-red-900/10 hover:bg-red-900/20 transition-all z-50 cursor-pointer shadow-sm active:scale-95"
+            style={{ pointerEvents: 'auto' }}
+          >
+            RESET WALLET
+          </button>
+        )}
       <div className="mb-5 flex justify-between items-start">
         <div>
           <p className="text-xs uppercase tracking-widest font-semibold mb-2" style={{ color: "#A3D977" }}>
@@ -700,10 +701,10 @@ function StepConnect({ onNext }: { onNext: () => void }) {
             MiniPay + Self Protocol + Sepolia faucet
           </p>
         </div>
-        {isConnected && (
+        {isConnected && !isMiniPay && (
           <button 
             onClick={handleDisconnect}
-            className="text-xs text-red-400 font-medium px-2 py-1 rounded hover:bg-red-500/10 transition-colors hidden"
+            className="text-xs text-red-400 font-medium px-2 py-1 rounded hover:bg-red-500/10 transition-colors"
           >
             Reset Wallet
           </button>

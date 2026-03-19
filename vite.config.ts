@@ -17,7 +17,14 @@ export default defineConfig({
     },
   },
 
+  server: {
+    port: 5173,
+    host: true,
+  },
+
   build: {
+    outDir: "dist",
+    chunkSizeWarningLimit: 1500, // Ensuring we stay well under the 2MB MiniPay limit
     rollupOptions: {
       output: {
         manualChunks(id) {

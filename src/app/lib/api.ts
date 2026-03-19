@@ -113,6 +113,7 @@ export type AgentStatePayload = {
     gain: string;
     risk: string;
     riskColor: string;
+    intentId?: string;
   }>;
 };
 

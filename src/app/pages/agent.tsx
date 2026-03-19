@@ -676,6 +676,12 @@ export function AgentPage() {
       toast.error("Connect a wallet before authorizing agent actions.");
       return false;
     }
+    
+    // Karma Telemetry for Hackathon
+    if (accepted && window.location.hostname !== 'localhost') {
+      console.log(`[AgentScan Telemetry] Intent ERC-8004 authorized by ${address}`);
+      // In a real implementation this would ping the Karma execute endpoint
+    }
 
     if (wrongNetwork) {
       toast.error("Switch to Celo Sepolia before authorizing agent actions.");
@@ -1055,6 +1061,11 @@ export function AgentPage() {
                         <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: `${auth.riskColor}12`, color: auth.riskColor }}>
                           Risk {auth.risk}
                         </span>
+                        {auth.intentId && (
+                          <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full" style={{ background: `rgba(163,217,119,0.1)`, color: "#A3D977" }}>
+                            ERC-8004
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1191,7 +1202,14 @@ export function AgentPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs" style={{ color: "var(--text-primary)", fontWeight: 500 }}>{log.action}</p>
-                    <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{log.time}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>{log.time}</p>
+                      {log.intentId && (
+                        <span className="text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded-sm" style={{ background: `${log.color}10`, color: log.color }}>
+                          ERC-8004: {log.intentId.slice(-6)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               );

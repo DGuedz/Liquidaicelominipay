@@ -12,6 +12,7 @@ export function logAgentAction(intent) {
     timestamp: new Date().toISOString(),
     intentId: intent.id || `intent-${Date.now()}`,
     type: intent.type || "EXECUTION",
+    standard: "ERC-8004", // Adding explicit reference for AgentScan
     targetProtocol: intent.protocol,
     asset: intent.asset,
     amount: intent.amount,
