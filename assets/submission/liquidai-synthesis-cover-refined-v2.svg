@@ -1,0 +1,185 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LiquidAI Synthesis cover refined with dApp-faithful mockup">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1920" y2="1080" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#020408"/>
+      <stop offset="0.58" stop-color="#06150F"/>
+      <stop offset="1" stop-color="#070E17"/>
+    </linearGradient>
+
+    <radialGradient id="heroGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(760 430) rotate(88) scale(520 840)">
+      <stop stop-color="#1FE07C" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#1FE07C" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="blueGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1600 190) rotate(118) scale(460 320)">
+      <stop stop-color="#2A8CFF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#2A8CFF" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="titleGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3CFF9B"/>
+      <stop offset="1" stop-color="#16D373"/>
+    </linearGradient>
+
+    <linearGradient id="phoneBorder" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1D2D4E"/>
+      <stop offset="1" stop-color="#1C2A44"/>
+    </linearGradient>
+
+    <linearGradient id="balancePanel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0A1016"/>
+      <stop offset="1" stop-color="#0E1C17"/>
+    </linearGradient>
+
+    <radialGradient id="balanceGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(280 180) rotate(64) scale(260 340)">
+      <stop stop-color="#99E764" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#16C46E" stop-opacity="0"/>
+    </radialGradient>
+
+    <pattern id="dotted" x="0" y="0" width="12" height="12" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.6" fill="#8FCF5E" fill-opacity="0.28"/>
+    </pattern>
+
+    <filter id="shadow" x="0" y="0" width="220%" height="220%">
+      <feDropShadow dx="0" dy="22" stdDeviation="20" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+
+    <filter id="chipShadow" x="0" y="0" width="200%" height="200%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <ellipse cx="760" cy="430" rx="820" ry="520" fill="url(#heroGlow)"/>
+  <ellipse cx="1600" cy="190" rx="420" ry="300" fill="url(#blueGlow)"/>
+
+  <g transform="translate(96 72)">
+    <circle cx="22" cy="22" r="22" fill="#103322"/>
+    <circle cx="22" cy="22" r="8" fill="#1FE07C"/>
+    <text x="58" y="33" fill="#EFFCF5" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="42" font-weight="800">LiquidAI</text>
+
+    <rect x="0" y="78" width="268" height="52" rx="26" fill="#0D2A1E" stroke="#215A3E"/>
+    <circle cx="28" cy="104" r="7" fill="#25E783"/>
+    <text x="48" y="113" fill="#83D4A8" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="28" font-weight="600">SYNTHESIS 2026</text>
+  </g>
+
+  <g transform="translate(96 222)">
+    <text x="0" y="120" fill="#F1FFF6" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="128" font-weight="800">Hold &amp; Earn.</text>
+    <text x="0" y="268" fill="url(#titleGrad)" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="128" font-weight="800">Zero complexity.</text>
+
+    <text x="0" y="358" fill="#B1BDCB" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="48" font-weight="500">Agentic treasury layer for MiniPay users on Celo.</text>
+
+    <g transform="translate(0 422)">
+      <circle cx="11" cy="11" r="11" fill="#35E98C"/>
+      <text x="40" y="20" fill="#E9FFF3" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="42" font-weight="600">Idle cUSD auto-routed to yield</text>
+
+      <circle cx="11" cy="91" r="11" fill="#2DB9FF"/>
+      <text x="40" y="100" fill="#DDF4FF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="42" font-weight="600">Self Protocol verifies real humans</text>
+
+      <circle cx="11" cy="171" r="11" fill="#A8E175"/>
+      <text x="40" y="180" fill="#E9FFF3" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="42" font-weight="600">Instant liquidity for daily payments</text>
+    </g>
+
+    <g transform="translate(0 688)">
+      <rect x="0" y="0" width="540" height="94" rx="47" fill="#111A1D" stroke="#2F3F45"/>
+      <text x="54" y="59" fill="#DEE7ED" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="40" font-weight="600">Track: Celo • Self • Zyfai</text>
+    </g>
+
+    <text x="0" y="852" fill="#6E8092" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="30" font-weight="500">@dg_doublegreen • github.com/DGuedz/Liquidaicelominipay</text>
+  </g>
+
+  <!-- dApp-faithful phone mockup -->
+  <g transform="translate(1260 116)" filter="url(#shadow)">
+    <rect x="0" y="0" width="560" height="888" rx="70" fill="#050A12" stroke="url(#phoneBorder)" stroke-width="10"/>
+    <rect x="24" y="24" width="512" height="840" rx="56" fill="#050B14"/>
+
+    <text x="66" y="92" fill="#F0F6FF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="30" font-weight="700">9:41</text>
+    <circle cx="470" cy="84" r="10" fill="#9AA7B8" opacity="0.3"/>
+    <circle cx="500" cy="84" r="10" fill="#9AA7B8" opacity="0.3"/>
+
+    <!-- header -->
+    <circle cx="80" cy="150" r="20" fill="#1EE57E" opacity="0.9"/>
+    <text x="118" y="161" fill="#F3FAFF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="48" font-weight="800">LiquidAI</text>
+    <text x="430" y="161" fill="#A8B4C4" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="44" font-weight="400">⌕</text>
+    <text x="476" y="161" fill="#A8B4C4" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="44" font-weight="400">◠</text>
+
+    <!-- balance card -->
+    <g transform="translate(52 206)">
+      <rect x="0" y="0" width="456" height="386" rx="44" fill="url(#balancePanel)" stroke="#2C3847"/>
+      <rect x="0" y="0" width="456" height="386" rx="44" fill="url(#balanceGlow)"/>
+
+      <text x="36" y="72" fill="#8F9DAE" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24" font-weight="500">TOTAL</text>
+      <text x="36" y="106" fill="#8F9DAE" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24" font-weight="500">BALANCE</text>
+      <text x="200" y="92" fill="#9EABB8" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="30" font-weight="500">◉</text>
+
+      <rect x="252" y="30" width="178" height="84" rx="42" fill="#1E3A28" stroke="#5D8A49"/>
+      <circle cx="286" cy="72" r="8" fill="#9CE76C"/>
+      <text x="308" y="74" fill="#A0D96B" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="42" font-weight="700">Agent</text>
+      <text x="308" y="112" fill="#A0D96B" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="42" font-weight="700">Active</text>
+
+      <text x="36" y="228" fill="#F5FFF9" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="98" font-weight="800">$5.57</text>
+
+      <text x="36" y="292" fill="#9DE26E" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="52" font-weight="600">✧ +2.4% APY · +$0.01 this</text>
+      <text x="76" y="344" fill="#9DE26E" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="52" font-weight="600">month</text>
+
+      <rect x="36" y="248" width="382" height="126" fill="url(#dotted)" opacity="0.55"/>
+      <path d="M40 324H414" stroke="#5B697A" stroke-width="2" opacity="0.4"/>
+
+      <text x="36" y="356" fill="#C0CCD8" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="46" font-weight="500">••• ••• •••</text>
+      <text x="228" y="356" fill="#C0CCD8" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="46" font-weight="500">3424</text>
+      <text x="316" y="356" fill="#C0CCD8" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="44" font-weight="500">✈</text>
+      <text x="352" y="356" fill="#D8E2EE" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="46" font-weight="700">MiniPay</text>
+    </g>
+
+    <!-- quick actions -->
+    <g transform="translate(62 624)">
+      <g>
+        <rect x="0" y="0" width="96" height="96" rx="30" fill="#111A26" stroke="#344255"/>
+        <text x="34" y="58" fill="#1FE07C" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="40" font-weight="700">↗</text>
+        <text x="20" y="126" fill="#AAB7C7" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="38" font-weight="500">Send</text>
+      </g>
+      <g transform="translate(118 0)">
+        <rect x="0" y="0" width="96" height="96" rx="30" fill="#111A26" stroke="#344255"/>
+        <text x="34" y="58" fill="#1FE07C" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="40" font-weight="700">↘</text>
+        <text x="2" y="126" fill="#AAB7C7" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="38" font-weight="500">Receive</text>
+      </g>
+      <g transform="translate(236 0)">
+        <rect x="0" y="0" width="96" height="96" rx="30" fill="#111A26" stroke="#344255"/>
+        <text x="30" y="58" fill="#1FE07C" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="40" font-weight="700">⚡</text>
+        <text x="2" y="126" fill="#AAB7C7" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="38" font-weight="500">Optimize</text>
+      </g>
+      <g transform="translate(354 0)">
+        <rect x="0" y="0" width="96" height="96" rx="30" fill="#111A26" stroke="#344255"/>
+        <text x="32" y="58" fill="#1FE07C" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="40" font-weight="700">◫</text>
+        <text x="26" y="126" fill="#AAB7C7" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="38" font-weight="500">Card</text>
+      </g>
+    </g>
+
+    <!-- floating chips -->
+    <g transform="translate(370 240)" filter="url(#chipShadow)">
+      <rect x="0" y="0" width="240" height="98" rx="40" fill="#070C12" stroke="#2F3948"/>
+      <circle cx="48" cy="49" r="28" fill="#052D1C"/>
+      <text x="34" y="60" fill="#1FE07C" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="34" font-weight="700">↗</text>
+      <text x="94" y="44" fill="#96A3B5" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="20" font-weight="500">Current Yield</text>
+      <text x="94" y="76" fill="#F3FAFF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="44" font-weight="700">2.4% APY</text>
+    </g>
+
+    <g transform="translate(-62 768)" filter="url(#chipShadow)">
+      <rect x="0" y="0" width="306" height="106" rx="40" fill="#070C12" stroke="#2F3948"/>
+      <circle cx="56" cy="53" r="30" fill="#0C2340"/>
+      <text x="42" y="64" fill="#4AA1FF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="32" font-weight="700">◍</text>
+      <text x="108" y="44" fill="#96A3B5" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="20" font-weight="500">Security Check</text>
+      <text x="108" y="78" fill="#F3FAFF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="44" font-weight="700">Self Verified</text>
+    </g>
+
+    <!-- bottom nav -->
+    <g transform="translate(24 808)">
+      <rect x="0" y="0" width="512" height="56" rx="0" fill="#040A13"/>
+      <rect x="38" y="18" width="40" height="32" rx="10" fill="#0B3A24"/>
+      <rect x="166" y="18" width="32" height="32" rx="8" fill="#9AA6B5"/>
+      <rect x="278" y="18" width="32" height="32" rx="8" fill="#9AA6B5"/>
+      <rect x="390" y="18" width="32" height="32" rx="8" fill="#9AA6B5"/>
+      <rect x="34" y="52" width="48" height="8" rx="4" fill="#1FE07C"/>
+    </g>
+  </g>
+</svg>

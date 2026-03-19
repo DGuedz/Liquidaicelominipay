@@ -148,7 +148,7 @@ export async function startSelfRegistration(humanAddress) {
     }
 
     try {
-        const response = await fetch("https://app.ai.self.xyz/api/agent/register", {
+        const response = await fetch("https://self-agent-id.vercel.app/api/agent/register", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -183,7 +183,7 @@ export async function startSelfRegistration(humanAddress) {
         return { 
             sessionToken,
             deepLink: data.deepLink,
-            qrData: data.qrUrl,
+            qrData: data.qrData ? (typeof data.qrData === 'object' ? JSON.stringify(data.qrData) : data.qrData) : data.qrUrl,
             privateKeyHex: data.privateKeyHex,
             mode: "agent" 
         };
@@ -207,7 +207,7 @@ export async function checkRegistrationStatus(sessionToken) {
     }
 
     try {
-        const statusUrl = new URL("https://app.ai.self.xyz/api/agent/register/status");
+        const statusUrl = new URL("https://self-agent-id.vercel.app/api/agent/register/status");
         // Keep query param for backwards compatibility, but always send bearer token (required by current API).
         statusUrl.searchParams.set("token", sessionToken);
         const response = await fetch(statusUrl, {
@@ -224,18 +224,19 @@ export async function checkRegistrationStatus(sessionToken) {
 
         const data = await response.json();
         
-        if (data.status === "verified") {
+        const isVerified = data.status === "verified" || data.stage === "completed" || data.stage === "verified" || data.stage === "agent-ready";
+        const isFailed = data.status === "failed" || data.stage === "failed" || data.status === "expired" || data.stage === "expired";
+
+        if (isVerified) {
             // Em produção, o privateKey gerado deve ser injetado na session/db do usuário
-            console.log(`[Self Service] Agent ${data.agentId} verified successfully!`);
+            console.log(`[Self Service] Agent ${data.agentId || 'verified'} verified successfully!`);
             return { 
                 stage: "completed",
                 agentId: data.agentId,
                 verified: true
             };
-        } else if (data.status === "expired") {
-            throw new Error("Self registration session expired");
-        } else if (data.status === "failed") {
-            throw new Error(`Self registration failed: ${data.reason}`);
+        } else if (isFailed) {
+            throw new Error(`Self registration failed or expired: ${data.reason || data.stage}`);
         }
         
         // Status pending

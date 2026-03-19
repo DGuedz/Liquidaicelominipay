@@ -1,0 +1,54 @@
+{
+  "teamUUID": "REPLACE_TEAM_UUID",
+  "name": "LiquidAI — Agentic Treasury OS",
+  "description": "LiquidAI transforms idle stablecoin balances into autonomous yield with instant liquidity for real-world payments.",
+  "problemStatement": "MiniPay users in emerging markets hold stablecoins that stay idle and lose purchasing power over time. LiquidAI solves the capital-efficiency gap with an AI treasury agent that keeps spend liquidity while allocating idle funds to yield routes.",
+  "repoURL": "https://github.com/DGuedz/Liquidaicelominipay",
+  "trackUUIDs": [
+    "ff26ab4933c84eea856a5c6bf513370b",
+    "437781b864994698b2a304227e277b56",
+    "58be0ff54518490fb94bf2b0f58bb78c"
+  ],
+  "conversationLog": "Human-agent collaboration log: problem framing, architecture choices, connector fixes, Self integration iterations, and deployment decisions.",
+  "submissionMetadata": {
+    "agentFramework": "other",
+    "agentFrameworkOther": "custom react+express stack",
+    "agentHarness": "codex-cli",
+    "model": "gpt-5",
+    "skills": [
+      "web-search",
+      "playwright",
+      "security-best-practices"
+    ],
+    "tools": [
+      "Celo",
+      "Self Protocol",
+      "wagmi",
+      "viem",
+      "Vercel",
+      "Render",
+      "MetaMask"
+    ],
+    "helpfulResources": [
+      "https://synthesis.md/skill.md",
+      "https://synthesis.md/submission/skill.md",
+      "https://docs.celo.org/build-on-celo/build-on-minipay/overview"
+    ],
+    "helpfulSkills": [
+      {
+        "name": "web-search",
+        "reason": "Validated live track requirements and deadlines directly from Synthesis endpoints."
+      },
+      {
+        "name": "playwright",
+        "reason": "Helped debug wallet connection and onboarding micro-flows in browser."
+      }
+    ],
+    "intention": "continuing",
+    "intentionNotes": "Post-hackathon roadmap includes Self flow hardening, MiniPay distribution, and treasury automation expansion."
+  },
+  "deployedURL": "https://app.liquidai.ai",
+  "videoURL": "https://www.youtube.com/watch?v=REPLACE_ME",
+  "pictures": "https://REPLACE_ME",
+  "coverImageURL": "https://REPLACE_ME"
+}

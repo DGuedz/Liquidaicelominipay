@@ -8,6 +8,8 @@
     "dev": "vite",
     "api:dev": "node --watch server/index.mjs",
     "api:start": "node server/index.mjs",
+    "synth": "node scripts/synthesis-cli.mjs",
+    "synth:prepare": "node scripts/synthesis-prepare-draft.mjs",
     "preview:stack": "sh commands/preview-stack.sh",
     "preview:stack:stop": "sh commands/preview-stack-stop.sh"
   },

@@ -1,0 +1,151 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LiquidAI Synthesis cover inspired by landing hero">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1920" y2="1080" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#020408"/>
+      <stop offset="0.58" stop-color="#03120C"/>
+      <stop offset="1" stop-color="#070E17"/>
+    </linearGradient>
+
+    <radialGradient id="heroGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(920 470) rotate(90) scale(460 760)">
+      <stop stop-color="#0DD36F" stop-opacity="0.24"/>
+      <stop offset="0.55" stop-color="#0DD36F" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#0DD36F" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="rightGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1650 220) rotate(122) scale(540 440)">
+      <stop stop-color="#1D8DFF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#1D8DFF" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="greenText" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3BFF9A"/>
+      <stop offset="1" stop-color="#11D171"/>
+    </linearGradient>
+
+    <linearGradient id="cta" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#26F27F"/>
+      <stop offset="1" stop-color="#11D171"/>
+    </linearGradient>
+
+    <linearGradient id="phoneBorder" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1E2C4B"/>
+      <stop offset="1" stop-color="#202A45"/>
+    </linearGradient>
+
+    <linearGradient id="balanceGlow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9BEA62" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#18B96A" stop-opacity="0.08"/>
+    </linearGradient>
+
+    <filter id="shadowLg" x="0" y="0" width="220%" height="220%">
+      <feDropShadow dx="0" dy="24" stdDeviation="24" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+
+    <filter id="shadowMd" x="0" y="0" width="200%" height="200%">
+      <feDropShadow dx="0" dy="14" stdDeviation="12" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <ellipse cx="920" cy="470" rx="780" ry="480" fill="url(#heroGlow)"/>
+  <ellipse cx="1650" cy="220" rx="500" ry="360" fill="url(#rightGlow)"/>
+
+  <!-- top nav -->
+  <g transform="translate(92 42)">
+    <circle cx="20" cy="20" r="20" fill="#0F3123"/>
+    <circle cx="20" cy="20" r="7" fill="#22E07C"/>
+    <text x="54" y="28" fill="#F1FFF8" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="44" font-weight="800">LiquidAI</text>
+  </g>
+  <g transform="translate(1578 34)">
+    <rect x="0" y="0" width="238" height="74" rx="37" fill="#171C25" stroke="#333B49"/>
+    <text x="58" y="48" fill="#E7EDF8" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="34" font-weight="600">Launch App</text>
+  </g>
+
+  <!-- left hero -->
+  <g transform="translate(96 190)">
+    <rect x="0" y="0" width="370" height="58" rx="29" fill="#0B291E" stroke="#1C6447"/>
+    <circle cx="28" cy="29" r="8" fill="#24EA82"/>
+    <text x="50" y="39" fill="#35E88A" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="34" font-weight="600">Built for the MiniPay Ecosystem</text>
+
+    <text x="0" y="168" fill="#F1FFF6" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="122" font-weight="800">Hold &amp; Earn.</text>
+    <text x="0" y="314" fill="url(#greenText)" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="122" font-weight="800">Zero</text>
+    <text x="0" y="458" fill="url(#greenText)" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="122" font-weight="800">complexity.</text>
+
+    <text x="0" y="548" fill="#A9B6C8" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="52" font-weight="500">LiquidAI turns your MiniPay wallet into an autonomous treasury.</text>
+    <text x="0" y="614" fill="#A9B6C8" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="52" font-weight="500">Keep your local cash in stablecoins and earn daily rewards.</text>
+
+    <g transform="translate(0 678)">
+      <rect x="0" y="0" width="430" height="106" rx="53" fill="url(#cta)" filter="url(#shadowMd)"/>
+      <text x="70" y="68" fill="#03150F" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="44" font-weight="800">Explore Mini App</text>
+      <text x="368" y="68" fill="#03150F" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="44" font-weight="800">→</text>
+
+      <rect x="452" y="0" width="392" height="106" rx="53" fill="#111B1D" stroke="#334044"/>
+      <text x="522" y="68" fill="#D8E2E6" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="44" font-weight="600">View Documentation</text>
+    </g>
+
+    <g transform="translate(0 838)">
+      <text x="0" y="32" fill="#8A98AB" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="40" font-weight="500">◌ Celo Network</text>
+      <text x="344" y="32" fill="#8A98AB" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="40" font-weight="500">◌ Self Protocol</text>
+      <text x="708" y="32" fill="#8A98AB" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="40" font-weight="500">◌ Karma Reputation</text>
+    </g>
+  </g>
+
+  <!-- right phone mockup -->
+  <g transform="translate(1288 170)" filter="url(#shadowLg)">
+    <rect x="0" y="0" width="520" height="860" rx="64" fill="#040912" stroke="url(#phoneBorder)" stroke-width="10"/>
+    <rect x="22" y="22" width="476" height="816" rx="52" fill="#050A13"/>
+
+    <text x="56" y="88" fill="#E9F0FC" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="26" font-weight="700">9:41</text>
+    <circle cx="436" cy="80" r="10" fill="#A5AFBC" opacity="0.24"/>
+    <circle cx="468" cy="80" r="10" fill="#A5AFBC" opacity="0.24"/>
+
+    <circle cx="70" cy="142" r="16" fill="#1EE57E" opacity="0.85"/>
+    <text x="102" y="152" fill="#F2FAFF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="40" font-weight="800">LiquidAI</text>
+
+    <g transform="translate(42 188)">
+      <rect x="0" y="0" width="436" height="354" rx="36" fill="#0A0F14" stroke="#2A313D"/>
+      <rect x="0" y="0" width="436" height="354" rx="36" fill="url(#balanceGlow)"/>
+
+      <text x="36" y="64" fill="#90A0AF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="26" font-weight="500">TOTAL BALANCE</text>
+      <rect x="280" y="34" width="128" height="50" rx="25" fill="#2F5E3E" opacity="0.62"/>
+      <text x="312" y="66" fill="#CBF6D5" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24" font-weight="700">Active</text>
+
+      <text x="36" y="166" fill="#F4FFF9" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="82" font-weight="800">$5.57</text>
+      <text x="36" y="218" fill="#A3E37D" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="34" font-weight="600">+2.4% APY · +$0.01 this month</text>
+
+      <text x="36" y="314" fill="#94A3B8" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="28" font-weight="500">•••• •••• •••• 3424</text>
+      <text x="334" y="314" fill="#CFD8E8" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="30" font-weight="700">MiniPay</text>
+    </g>
+
+    <g transform="translate(42 572)">
+      <rect x="0" y="0" width="98" height="98" rx="26" fill="#0F1721" stroke="#2A3340"/>
+      <rect x="114" y="0" width="98" height="98" rx="26" fill="#0F1721" stroke="#2A3340"/>
+      <rect x="228" y="0" width="98" height="98" rx="26" fill="#0F1721" stroke="#2A3340"/>
+      <rect x="342" y="0" width="98" height="98" rx="26" fill="#0F1721" stroke="#2A3340"/>
+      <text x="30" y="58" fill="#35EA8D" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="32" font-weight="700">↗</text>
+      <text x="144" y="58" fill="#35EA8D" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="32" font-weight="700">↘</text>
+      <text x="258" y="58" fill="#35EA8D" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="32" font-weight="700">⚡</text>
+      <text x="372" y="58" fill="#35EA8D" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="32" font-weight="700">◫</text>
+    </g>
+
+    <g transform="translate(42 698)">
+      <rect x="0" y="0" width="436" height="116" rx="30" fill="#0D1520" stroke="#2A3340"/>
+      <rect x="16" y="24" width="48" height="48" rx="16" fill="#123123"/>
+      <circle cx="40" cy="48" r="8" fill="#3AF08F"/>
+      <text x="78" y="52" fill="#F1FAFF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="30" font-weight="700">LiquidAI Agent</text>
+      <rect x="294" y="24" width="126" height="40" rx="20" fill="#193825"/>
+      <text x="328" y="50" fill="#C8F8D7" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24" font-weight="700">Online</text>
+      <text x="78" y="88" fill="#7F92A4" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="22" font-weight="500">Autonomous treasury active</text>
+    </g>
+
+    <g transform="translate(22 802)">
+      <rect x="0" y="0" width="476" height="36" rx="18" fill="#080F19"/>
+      <rect x="30" y="12" width="56" height="8" rx="4" fill="#1EE57E"/>
+      <rect x="166" y="12" width="36" height="8" rx="4" fill="#8B99AA"/>
+      <rect x="272" y="12" width="36" height="8" rx="4" fill="#8B99AA"/>
+      <rect x="380" y="12" width="36" height="8" rx="4" fill="#8B99AA"/>
+    </g>
+  </g>
+
+  <text x="96" y="1036" fill="#6E7E93" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="28" font-weight="500">SYNTHESIS 2026 • LiquidAI Agentic Treasury OS • @dg_doublegreen</text>
+</svg>

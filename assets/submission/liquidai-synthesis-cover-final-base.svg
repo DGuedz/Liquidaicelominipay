@@ -1,0 +1,69 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LiquidAI Synthesis cover final base">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1920" y2="1080" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#020408"/>
+      <stop offset="0.58" stop-color="#06150F"/>
+      <stop offset="1" stop-color="#070E17"/>
+    </linearGradient>
+    <radialGradient id="heroGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(760 430) rotate(88) scale(520 840)">
+      <stop stop-color="#1FE07C" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#1FE07C" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blueGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1600 190) rotate(118) scale(460 320)">
+      <stop stop-color="#2A8CFF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#2A8CFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="titleGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3CFF9B"/>
+      <stop offset="1" stop-color="#16D373"/>
+    </linearGradient>
+    <linearGradient id="phoneBorder" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1D2D4E"/>
+      <stop offset="1" stop-color="#1C2A44"/>
+    </linearGradient>
+    <filter id="shadow" x="0" y="0" width="220%" height="220%">
+      <feDropShadow dx="0" dy="22" stdDeviation="20" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <ellipse cx="760" cy="430" rx="820" ry="520" fill="url(#heroGlow)"/>
+  <ellipse cx="1600" cy="190" rx="420" ry="300" fill="url(#blueGlow)"/>
+
+  <g transform="translate(96 72)">
+    <circle cx="22" cy="22" r="22" fill="#103322"/>
+    <circle cx="22" cy="22" r="8" fill="#1FE07C"/>
+    <text x="58" y="33" fill="#EFFCF5" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="42" font-weight="800">LiquidAI</text>
+    <rect x="0" y="78" width="268" height="52" rx="26" fill="#0D2A1E" stroke="#215A3E"/>
+    <circle cx="28" cy="104" r="7" fill="#25E783"/>
+    <text x="48" y="113" fill="#83D4A8" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="28" font-weight="600">SYNTHESIS 2026</text>
+  </g>
+
+  <g transform="translate(96 222)">
+    <text x="0" y="120" fill="#F1FFF6" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="128" font-weight="800">Hold &amp; Earn.</text>
+    <text x="0" y="268" fill="url(#titleGrad)" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="128" font-weight="800">Zero complexity.</text>
+    <text x="0" y="358" fill="#B1BDCB" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="48" font-weight="500">Agentic treasury layer for MiniPay users on Celo.</text>
+
+    <g transform="translate(0 422)">
+      <circle cx="11" cy="11" r="11" fill="#35E98C"/>
+      <text x="40" y="20" fill="#E9FFF3" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="42" font-weight="600">Idle cUSD auto-routed to yield</text>
+      <circle cx="11" cy="91" r="11" fill="#2DB9FF"/>
+      <text x="40" y="100" fill="#DDF4FF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="42" font-weight="600">Self Protocol verifies real humans</text>
+      <circle cx="11" cy="171" r="11" fill="#A8E175"/>
+      <text x="40" y="180" fill="#E9FFF3" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="42" font-weight="600">Instant liquidity for daily payments</text>
+    </g>
+
+    <g transform="translate(0 688)">
+      <rect x="0" y="0" width="540" height="94" rx="47" fill="#111A1D" stroke="#2F3F45"/>
+      <text x="54" y="59" fill="#DEE7ED" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="40" font-weight="600">Track: Celo • Self • Zyfai</text>
+    </g>
+
+    <text x="0" y="852" fill="#6E8092" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="30" font-weight="500">@dg_doublegreen • github.com/DGuedz/Liquidaicelominipay</text>
+  </g>
+
+  <!-- phone frame for real screenshot -->
+  <g filter="url(#shadow)">
+    <rect x="1260" y="90" width="560" height="900" rx="72" fill="#050A12" stroke="url(#phoneBorder)" stroke-width="10"/>
+    <rect x="1325" y="114" width="430" height="860" rx="56" fill="#050B14"/>
+  </g>
+</svg>
