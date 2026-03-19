@@ -1,9 +1,12 @@
 # LiquidAI: Agentic Treasury OS for MiniPay
 
-[![Built for Celo](https://img.shields.io/badge/Built_for-Celo-10B981?style=flat-square&logo=celo&logoColor=white)](https://celo.org/)
-[![MiniPay Compatible](https://img.shields.io/badge/MiniPay-Compatible-FFCC00?style=flat-square)](https://minipay.opera.com/)
+[![Built for Celo](https://img.shields.io/badge/Built_for-Celo-FCFF52?style=flat-square&logo=celo&logoColor=black)](https://celo.org/)
+[![MiniPay Compatible](https://img.shields.io/badge/MiniPay-Compatible-10B981?style=flat-square)](https://minipay.opera.com/)
 [![Self Protocol Identity](https://img.shields.io/badge/Identity-Self_Protocol-8B5CF6?style=flat-square)](https://self.xyz/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![AgentScan](https://img.shields.io/badge/AgentScan-ERC--8004-blue?style=flat-square)](https://agentscan.info/)
+[![Stack: Viem](https://img.shields.io/badge/Stack-Viem_&_Wagmi-white?style=flat-square)](https://viem.sh/)
+[![DeFi: Mento V3](https://img.shields.io/badge/DeFi-Mento_V3-000000?style=flat-square)](https://mento.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-gray.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
 **LiquidAI is an AI liquidity agent built for MiniPay users on Celo.** It acts as an autonomous treasury manager that protects value, routes FX on-chain via Mento V3, optimizes liquidity pools (LP), and maintains instant liquidity for everyday spending.
 
