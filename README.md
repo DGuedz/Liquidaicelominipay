@@ -18,7 +18,7 @@ By abstracting the complexity of AMMs, fee structures, and bridge routing, Liqui
 ### 3. Highest Rank on AgentScan (ERC-8004 Standard)
 - **Trustless Execution:** Instead of operating as a black box, every agent decision is packaged as a transparent Intent.
 - **On-Chain Identity:** LiquidAI is officially registered on the Celo Mainnet Identity Registry.
-  - 🔗 **AgentScan Profile:** [LiquidAI (Agent #2729)](https://agentscan.info/agents/celo/2729)
+  - **AgentScan Profile:** [LiquidAI (Agent #2729)](https://agentscan.info/agents/celo/2729)
 - **Karma Telemetry:** Execution intents are logged via Karma API for reputation building.
 
 ---
