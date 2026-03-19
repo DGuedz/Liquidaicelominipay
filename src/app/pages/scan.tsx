@@ -254,7 +254,7 @@ function MyQRCode() {
             style={{ color: "var(--text-primary)" }}
           />
           <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
-            cUSD
+            USDm
           </span>
         </div>
         <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>

@@ -10,7 +10,7 @@ const { Mento, ChainId } = require("@mento-protocol/mento-sdk");
 
 const PROTOCOL_ID = "mento";
 const PROJECT_ALIASES = ["mento"];
-const TOKEN_HINT = /cUSD|cEUR|USDC|BRL|USDm/i;
+const TOKEN_HINT = /USDm|EURm|USDC|BRL|USDm/i;
 
 const cache = createTtlCache(env.cacheTtlMs);
 

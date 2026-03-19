@@ -42,7 +42,7 @@ export function ProfileSegurancaPage() {
 
   const securityScore = [biometric, twoFA, agentLimit].filter(Boolean).length;
   const scoreColor = securityScore === 3 ? "#A3D977" : securityScore === 2 ? "#F59E0B" : "#EF4444";
-  const scoreLabel = securityScore === 3 ? "Excelente" : securityScore === 2 ? "Bom" : "Fraco";
+  const scoreLabel = securityScore === 3 ? "Excellent" : securityScore === 2 ? "Good" : "Weak";
 
   return (
     <div className="min-h-dvh bg-background pb-12">
@@ -55,8 +55,8 @@ export function ProfileSegurancaPage() {
           <ArrowLeft className="w-5 h-5" style={{ color: "var(--text-primary)" }} />
         </button>
         <div>
-          <h1 className="font-bold text-text-primary">Segurança & Privacidade</h1>
-          <p className="text-xs text-text-muted">Proteja seu Treasury OS</p>
+          <h1 className="font-bold text-text-primary">Security & Privacy</h1>
+          <p className="text-xs text-text-muted">Protect your Treasury OS</p>
         </div>
       </header>
 
@@ -79,7 +79,7 @@ export function ProfileSegurancaPage() {
               <Shield className="w-7 h-7" style={{ color: scoreColor }} />
             </div>
             <div className="flex-1">
-              <p className="text-xs text-text-muted mb-1">Nível de Segurança</p>
+              <p className="text-xs text-text-muted mb-1">Security Level</p>
               <div className="flex items-baseline gap-2">
                 <p className="text-2xl font-mono font-bold" style={{ color: scoreColor }}>
                   {securityScore}/3
@@ -108,7 +108,7 @@ export function ProfileSegurancaPage() {
       {/* Auth options */}
       <div className="px-5 mb-5">
         <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3 px-1">
-          Autenticação
+          Authentication
         </p>
         <div
           className="bg-surface-solid rounded-2xl overflow-hidden"
@@ -117,8 +117,8 @@ export function ProfileSegurancaPage() {
           {[
             {
               Icon: Fingerprint,
-              label: "Biometria / Face ID",
-              sub: "Desbloqueio rápido e seguro",
+              label: "Biometrics / Face ID",
+              sub: "Fast and secure unlock",
               color: "#A3D977",
               bg: "rgba(163,217,119,0.1)",
               state: biometric,
@@ -126,8 +126,8 @@ export function ProfileSegurancaPage() {
             },
             {
               Icon: Smartphone,
-              label: "Autenticação 2FA",
-              sub: "App autenticador (TOTP)",
+              label: "2FA Authentication",
+              sub: "Authenticator App (TOTP)",
               color: "#3B82F6",
               bg: "rgba(59,130,246,0.1)",
               state: twoFA,
@@ -158,7 +158,7 @@ export function ProfileSegurancaPage() {
       {/* Agent security */}
       <div className="px-5 mb-5">
         <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3 px-1">
-          Segurança do Agente IA
+          AI Agent Security
         </p>
         <div
           className="bg-surface-solid rounded-2xl overflow-hidden"
@@ -169,9 +169,9 @@ export function ProfileSegurancaPage() {
               <Lock className="w-4.5 h-4.5" style={{ color: "#F59E0B" }} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-text-primary">Limite por transação</p>
-              <p className="text-xs text-text-muted mt-0.5">O agente pede confirmação extra acima do limite configurado.</p>
-            </div>
+                <p className="text-sm font-medium text-text-primary">Per-transaction limit</p>
+                <p className="text-xs text-text-muted mt-0.5">The agent requests extra confirmation above the configured limit.</p>
+              </div>
             <Toggle enabled={agentLimit} onToggle={() => setAgentLimit((v) => !v)} color="#F59E0B" />
           </div>
           <div className="flex items-center gap-3 px-4 py-3.5">
@@ -179,8 +179,8 @@ export function ProfileSegurancaPage() {
               <Eye className="w-4.5 h-4.5" style={{ color: "#8B5CF6" }} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-text-primary">Ocultar saldo</p>
-              <p className="text-xs text-text-muted mt-0.5">Esconde valores em toda a interface</p>
+              <p className="text-sm font-medium text-text-primary">Hide balance</p>
+              <p className="text-xs text-text-muted mt-0.5">Hides values across the interface</p>
             </div>
             <Toggle enabled={hideBalance} onToggle={() => setHideBalance((v) => !v)} color="#8B5CF6" />
           </div>
@@ -190,7 +190,7 @@ export function ProfileSegurancaPage() {
       {/* Phrase / Key */}
       <div className="px-5 mb-5">
         <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3 px-1">
-          Chave de Recuperação
+          Recovery Key
         </p>
         <motion.div
           initial={{ opacity: 0, y: 6 }}
@@ -209,7 +209,7 @@ export function ProfileSegurancaPage() {
             </div>
             <div>
               <p className="text-sm font-medium text-text-primary">Recovery Phrase</p>
-              <p className="text-xs text-text-muted">Gerenciada pela sua wallet (MiniPay / MetaMask)</p>
+              <p className="text-xs text-text-muted">Managed by your wallet (MiniPay / MetaMask)</p>
             </div>
           </div>
 
@@ -228,7 +228,7 @@ export function ProfileSegurancaPage() {
           <div className="flex items-start gap-2 mb-3 p-2.5 rounded-xl" style={{ background: "rgba(239,68,68,0.06)" }}>
             <AlertTriangle className="w-3.5 h-3.5 text-red-500 flex-shrink-0 mt-0.5" />
             <p className="text-xs" style={{ color: "#EF4444" }}>
-              Nunca compartilhe sua recovery phrase. O app não exibe palavras reais e nenhuma pessoa da LiquidAI irá pedi-la.
+              Never share your recovery phrase. The app does not display real words and no one from LiquidAI will ever ask for it.
             </p>
           </div>
 
@@ -249,16 +249,16 @@ export function ProfileSegurancaPage() {
       {/* Activity */}
       <div className="px-5">
         <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3 px-1">
-          Atividade Recente de Login
+          Recent Login Activity
         </p>
         <div
           className="bg-surface-solid rounded-2xl overflow-hidden"
           style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.06)" }}
         >
           {[
-            { device: "Chrome · Brasil", time: "Agora · São Paulo", ok: true },
-            { device: "MiniPay · Android", time: "Ontem 14:30 · São Paulo", ok: true },
-            { device: "Safari · iOS", time: "12 Mar 09:00 · Brasil", ok: true },
+            { device: "Chrome · Brazil", time: "Now · São Paulo", ok: true },
+            { device: "MiniPay · Android", time: "Yesterday 14:30 · São Paulo", ok: true },
+            { device: "Safari · iOS", time: "12 Mar 09:00 · Brazil", ok: true },
           ].map((s, i) => (
             <div
               key={i}
@@ -275,7 +275,7 @@ export function ProfileSegurancaPage() {
                   className="text-xs px-1.5 py-0.5 rounded-full font-semibold"
                   style={{ background: "rgba(163,217,119,0.12)", color: "#A3D977", fontSize: "9px" }}
                 >
-                  Atual
+                  Current
                 </span>
               )}
             </div>

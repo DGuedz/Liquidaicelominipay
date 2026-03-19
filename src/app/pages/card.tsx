@@ -98,9 +98,9 @@ const ROADMAP_QUARTERS = [
     status: "active",
     items: [
       "PIX Off-Ramp (Transfero / Bipa)",
-      "Mento Bridge: cUSD → BRL (Belo)",
+      "Mento Bridge: USDm → BRL (Belo)",
       "Yield-Covered Withdrawals",
-      "Smart Contract Audit",
+      "A2A Dark Pools · Zero AMM slippage matching",
     ],
   },
   {
@@ -110,10 +110,10 @@ const ROADMAP_QUARTERS = [
     bg: "rgba(6,182,212,0.1)",
     status: "upcoming",
     items: [
-      "Rain Cards API — Visa/cUSD Issuance",
+      "Rain Cards API — Visa/USDm Issuance",
       "JIT Funding Engine (webhook Visa)",
       "Striga KYC — Physical Card LatAm",
-      "Cashback 1% in cUSD automatic",
+      "Cashback 1% in USDm automatic",
     ],
   },
   {
@@ -125,8 +125,8 @@ const ROADMAP_QUARTERS = [
     items: [
       "Pismo (Visa) — Brazil integration",
       "Metal Card for Premium tier",
-      "Collateralized Credit (70% DeFi)",
-      "Tokenomics LQD — governance",
+      "Gas-Optimized Yield Batching",
+      "Self-Repaying Micro-Credit",
     ],
   },
 ];
@@ -134,7 +134,7 @@ const ROADMAP_QUARTERS = [
 const BAAS_PARTNERS = [
   {
     name: "Rain Cards",
-    role: "Visa Issuance · cUSD/USDC",
+    role: "Visa Issuance · USDm/USDC",
     color: "#06B6D4",
     bg: "rgba(6,182,212,0.1)",
     q: "Q3",
@@ -179,11 +179,11 @@ const BAAS_PARTNERS = [
   },
   {
     name: "Mento V3",
-    role: "Internet FX Layer · cUSD/cBRL/cEUR",
+    role: "Internet FX Layer · USDm/BRLm/EURm",
     color: "#A3D977",
     bg: "rgba(163,217,119,0.1)",
     q: "Q2",
-    desc: "Mento V3 is the internet's exchange layer. cUSD↔cBRL↔cEUR with 40% lower spread vs V2. Main Stable Routing route for LiquidAI.",
+    desc: "Mento V3 is the internet's exchange layer. USDm↔BRLm↔EURm with 40% lower spread vs V2. Main Stable Routing route for LiquidAI.",
     LogoIcon: SwapIcon,
   },
 ];
@@ -204,8 +204,8 @@ type PixStatus = "idle" | "quoting" | "swapping" | "sending" | "done";
 
 const PIX_STEPS: Record<PixStatus, string> = {
   idle: "",
-  quoting: "Quoting Mento rate (cUSD → BRL)...",
-  swapping: "Swap via Mento Protocol: cUSD → Belo (BRL)...",
+  quoting: "Quoting Mento rate (USDm → BRL)...",
+  swapping: "Swap via Mento Protocol: USDm → Belo (BRL)...",
   sending: "Firing PIX via Transfero API...",
   done: "PIX sent successfully!",
 };
@@ -451,7 +451,7 @@ function PixOffRampSimulator() {
   const [pixKey, setPixKey] = useState("+55 11 99999-1234");
   const [showResult, setShowResult] = useState(false);
 
-  const brlRate = 5.82; // cUSD → BRL
+  const brlRate = 5.82; // USDm → BRL
   const mentoSpread = 0.002; // 0.2%
   const networkFee = 0.01;
   const numAmount = parseFloat(amount) || 0;
@@ -505,7 +505,7 @@ function PixOffRampSimulator() {
             </span>
           </div>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-            cUSD → BRL (Mento) → PIX (Transfero)
+            USDm → BRL (Mento) → PIX (Transfero)
           </p>
         </div>
       </div>
@@ -513,7 +513,7 @@ function PixOffRampSimulator() {
       {/* Amount input */}
       <div className="mb-3">
         <p className="text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "var(--text-muted)" }}>
-          Amount in cUSD
+          Amount in USDm
         </p>
         <div
           className="flex items-center gap-2 rounded-xl px-4 py-3"
@@ -530,7 +530,7 @@ function PixOffRampSimulator() {
             min="1"
             max="500"
           />
-          <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>cUSD</span>
+          <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>USDm</span>
         </div>
       </div>
 
@@ -564,7 +564,7 @@ function PixOffRampSimulator() {
           style={{ background: "var(--muted)" }}
         >
           {[
-            { label: "Mento Rate (cUSD→BRL)", value: `R$ ${brlRate.toFixed(2)}/cUSD`, muted: true },
+            { label: "Mento Rate (USDm→BRL)", value: `R$ ${brlRate.toFixed(2)}/USDm`, muted: true },
             { label: "Mento Spread", value: "-0.2%", muted: true },
             { label: "Celo Network Fee", value: `$${networkFee.toFixed(2)}`, muted: true },
             { label: "You Receive", value: `R$ ${brlAmount > 0 ? brlAmount.toFixed(2) : "–"}`, highlight: true },
@@ -957,7 +957,7 @@ const RISK_METRICS = [
 const INTENT_SIGNALS = [
   { signal: "User opens card screen", action: "Preloads available buffer", icon: "👁️", lag: "0ms" },
   { signal: "Taps 'Pay'", action: "Initiates early remove_liquidity()", icon: "👆", lag: "~50ms" },
-  { signal: "Types amount at POS", action: "Swap cUSD ready in mempool", icon: "⌨️", lag: "~200ms" },
+  { signal: "Types amount at POS", action: "Swap USDm ready in mempool", icon: "⌨️", lag: "~200ms" },
   { signal: "Visa webhook arrives", action: "Instant approval · T+0", icon: "⚡", lag: "<200ms" },
 ];
 
@@ -1038,8 +1038,8 @@ function LiquidityRiskEngine() {
       >
         <Brain className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: "#A3D977" }} />
         <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-          <span style={{ color: "#A3D977", fontWeight: 600 }}>Agente avalia:</span> qual pool tem menor IL + maior profundidade para saída segura. Sempre prioriza{" "}
-          <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>cUSD/USDC</span> na rota de liquidação.
+          <span style={{ color: "#A3D977", fontWeight: 600 }}>Agent evaluates:</span> which pool has lowest IL + highest depth for safe exit. Always prioritizes{" "}
+          <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>USDm/USDC</span> in the liquidation route.
         </p>
       </div>
     </div>
@@ -1082,7 +1082,7 @@ function TransactionIntentDetection() {
         </span>
       </div>
       <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>
-        Agente detecta intenção de pagamento e pré-carrega liquidez <em>antes</em> do webhook Visa chegar
+        Agent detects payment intent and pre-loads liquidity <em>before</em> the Visa webhook arrives
       </p>
 
       <div className="space-y-2 mb-4">
@@ -1141,12 +1141,12 @@ function TransactionIntentDetection() {
               transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
               className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white"
             />
-            Detectando sinais...
+            Detecting signals...
           </>
         ) : (
           <>
             <Brain className="w-3.5 h-3.5" />
-            Simular Detecção de Intenção
+            Simulate Intent Detection
           </>
         )}
       </motion.button>
@@ -1158,9 +1158,9 @@ function TransactionIntentDetection() {
 
 function StableRoutingCard() {
   const routes = [
-    { from: "cUSD", to: "USDC", via: "Mento", preferred: true, reason: "Spread mínimo · native Celo" },
-    { from: "cUSD", to: "cEUR", via: "Mento", preferred: false, reason: "Conversão EUR para viagens" },
-    { from: "USDC", to: "cUSD", via: "Ubeswap", preferred: false, reason: "Fallback se Mento tiver baixa liquidez" },
+    { from: "USDm", to: "USDC", via: "Mento", preferred: true, reason: "Spread mínimo · native Celo" },
+    { from: "USDm", to: "EURm", via: "Mento", preferred: false, reason: "Conversão EUR para viagens" },
+    { from: "USDC", to: "USDm", via: "Ubeswap", preferred: false, reason: "Fallback se Mento tiver baixa liquidez" },
   ];
 
   return (
@@ -1190,7 +1190,7 @@ function StableRoutingCard() {
 
       <div className="px-4 py-3">
         <p className="text-xs mb-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-          O agente <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>sempre roteia liquidações via stablecoins</span> — cUSD ou USDC. Tokens voláteis (ETH, CELO) nunca são usados como ponte.
+          The agent <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>always routes liquidations via stablecoins</span> — USDm or USDC. Volatile tokens (ETH, CELO) are never used as a bridge.
         </p>
         <div className="space-y-2">
           {routes.map((r, i) => (
@@ -1239,9 +1239,9 @@ const CELO_NEWS = [
     tag: "LIVE · Mar 2026",
     tagColor: "#10B981",
     tagBg: "rgba(16,185,129,0.1)",
-    headline: "Looping via stCELO — APY turbinado",
-    desc: "stCELO agora como colateral no Morpho para looping de yield. APY orgânico 1.85% turbinado para 8–15% via alavancagem gerenciada pelo agente LiquidAI — sem que o usuário precise entender de colateralização.",
-    impact: "Ativado nos perfis Balanceado e Arrojado do Agente.",
+    headline: "Looping via stCELO — boosted APY",
+    desc: "stCELO now as collateral in Morpho for yield looping. Organic APY 1.85% boosted to 8–15% via leverage managed by the LiquidAI agent — without the user needing to understand collateralization.",
+    impact: "Activated in Balanced and Bold Agent profiles.",
     color: "#10B981",
   },
   {
@@ -1251,9 +1251,9 @@ const CELO_NEWS = [
     tag: "LIVE · Mar 2026",
     tagColor: "#A3D977",
     tagBg: "rgba(163,217,119,0.1)",
-    headline: "Receba de qualquer chain",
-    desc: "MiniPay + Daimo permite receber fundos de Base, Solana, Ethereum ou qualquer L2 diretamente no Vault Celo. O bridge é invisível — o usuário não precisa ter CELO para começar.",
-    impact: "On-ramp universal para o capital real que chega à wallet.",
+    headline: "Receive from any chain",
+    desc: "MiniPay + Daimo allows receiving funds from Base, Solana, Ethereum or any L2 directly into the Celo Vault. The bridge is invisible — the user doesn't need to hold CELO to start.",
+    impact: "Universal on-ramp for real capital entering the wallet.",
     color: "#A3D977",
   },
   {
@@ -1263,9 +1263,9 @@ const CELO_NEWS = [
     tag: "LIVE · Mar 2026",
     tagColor: "#06B6D4",
     tagBg: "rgba(6,182,212,0.1)",
-    headline: "EUA, Europa, LatAm (60+ países)",
-    desc: "MiniPay agora envia diretamente para contas bancárias nos EUA e Europa via SEPA, incluindo Argentina e México. LiquidAI é a camada inteligente que decide quando e quanto sacar para maximizar yield.",
-    impact: "Trilho de saída oficial — LiquidAI otimiza o timing.",
+    headline: "US, Europe, LatAm (60+ countries)",
+    desc: "MiniPay now sends directly to bank accounts in the US and Europe via SEPA, including Argentina and Mexico. LiquidAI is the intelligent layer that decides when and how much to withdraw to maximize yield.",
+    impact: "Official exit rail — LiquidAI optimizes timing.",
     color: "#06B6D4",
   },
   {
@@ -1275,9 +1275,9 @@ const CELO_NEWS = [
     tag: "LIVE · Mar 2026",
     tagColor: "#F59E0B",
     tagBg: "rgba(245,158,11,0.1)",
-    headline: "Spread 40% menor · cBRL nativo",
-    desc: "Mento V3 é a camada de câmbio da internet. Conversões ultra-eficientes cUSD↔cBRL (Belo)↔cEUR. Cada saque PIX gera 40% mais real líquido para o usuário vs Mento V2.",
-    impact: "+40% de spread preservado por transação PIX.",
+    headline: "40% lower spread · native BRLm",
+    desc: "Mento V3 is the internet's exchange layer. Ultra-efficient conversions USDm↔BRLm (Belo)↔EURm. Each PIX withdrawal generates 40% more net real for the user vs Mento V2.",
+    impact: "+40% spread preserved per PIX transaction.",
     color: "#F59E0B",
   },
   {
@@ -1287,9 +1287,9 @@ const CELO_NEWS = [
     tag: "Deadline: 18 Mar",
     tagColor: "#8B5CF6",
     tagBg: "rgba(139,92,246,0.1)",
-    headline: "Categoria: Agentes Financeiros",
-    desc: "LiquidAI é o fit perfeito: capital real na wallet, problema real de idle cash e uma solução autônoma que responde ao rendimento on-chain. Foco em utilidade para mercados emergentes e execução verificável.",
-    impact: "Submissão demonstrável: agente + yield + cartão + PIX.",
+    headline: "Category: Financial Agents",
+    desc: "LiquidAI is the perfect fit: real capital in the wallet, a real problem of idle cash, and an autonomous solution that responds to on-chain yield. Focus on utility for emerging markets and verifiable execution.",
+    impact: "Demonstrable submission: agent + yield + card + PIX.",
     color: "#8B5CF6",
   },
 ];
@@ -1385,9 +1385,9 @@ function CeloEcosystemFeed() {
 // ─── Tab navigation ───────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: "card", label: "Cartão", icon: CreditCard },
+  { id: "card", label: "Card", icon: CreditCard },
   { id: "pix", label: "PIX", icon: Banknote },
-  { id: "infra", label: "Infraestrutura", icon: Rocket },
+  { id: "infra", label: "Infrastructure", icon: Rocket },
 ];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -1462,10 +1462,10 @@ export function CardPage() {
         <div className="flex items-center justify-between mb-1">
           <div>
             <h1 className="font-bold" style={{ color: "var(--text-primary)", fontSize: "1.5rem" }}>
-              Cartão & Banking
+              Card & Banking
             </h1>
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-              Yield-Backed Banking · LiquidAI
+              Your balance is fueled by a smart combination of Immediate Buffer and Strategy Vault.
             </p>
           </div>
           <div
@@ -1474,7 +1474,7 @@ export function CardPage() {
           >
             <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#A3D977" }} />
             <span className="text-xs font-semibold" style={{ color: "#A3D977" }}>
-              Agente Ativo
+              Active Agent
             </span>
           </div>
         </div>
@@ -1496,7 +1496,7 @@ export function CardPage() {
             <Info className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#06B6D4" }} />
             <p className="flex-1 text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
               <span className="font-semibold" style={{ color: "#06B6D4" }}>Roadmap Q3:</span>{" "}
-              O Cartão Físico + JIT Funding via Rain Cards/Striga está planejado para Q3 2026. Explore as features interativas abaixo como preview.
+              The Physical Card + JIT Funding via Rain Cards/Striga is planned for Q3 2026. Explore the interactive features below as a preview.
             </p>
             <button onClick={() => setShowInfoBanner(false)}>
               <X className="w-3.5 h-3.5" style={{ color: "var(--text-muted)" }} />
@@ -1593,7 +1593,7 @@ export function CardPage() {
                       >
                         <Lock className="w-7 h-7 text-white" />
                       </div>
-                      <span className="text-white/90 text-sm font-medium tracking-wide">Cartão Bloqueado</span>
+                      <span className="text-white/90 text-sm font-medium tracking-wide">Card Locked</span>
                     </div>
                   </div>
                 )}
@@ -1638,11 +1638,11 @@ export function CardPage() {
                     <div className="flex items-end justify-between">
                       <div className="flex gap-6">
                         <div>
-                          <p className="text-white/40 text-[9px] uppercase tracking-widest mb-1">Titular</p>
+                          <p className="text-white/40 text-[9px] uppercase tracking-widest mb-1">Cardholder</p>
                           <p className="text-white font-medium text-xs tracking-wider drop-shadow-sm">{cardholderLabel}</p>
                         </div>
                         <div>
-                          <p className="text-white/40 text-[9px] uppercase tracking-widest mb-1">Expira</p>
+                          <p className="text-white/40 text-[9px] uppercase tracking-widest mb-1">Expires</p>
                           <p className="text-white font-mono text-xs tracking-wider drop-shadow-sm">25/29</p>
                         </div>
                         <AnimatePresence>
@@ -1731,12 +1731,12 @@ export function CardPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                  Off-Ramp: cUSD → PIX
+                  Off-Ramp: USDm → PIX
                 </p>
                 <p className="text-xs leading-relaxed mt-0.5" style={{ color: "var(--text-muted)" }}>
-                  Fluxo:{" "}
+                  Flow:{" "}
                   <span style={{ color: "var(--text-secondary)" }}>
-                    cUSD → Mento Bridge → Belo (BRL) → Transfero API → PIX na sua conta
+                    USDm → Mento Bridge → Belo (BRL) → Transfero API → PIX to your account
                   </span>
                 </p>
               </div>
@@ -1746,7 +1746,7 @@ export function CardPage() {
             <PixOffRampSimulator />
 
             {/* Yield-covered */}
-            <YieldCoveredWidget />
+            <YieldCoveredWidget yieldToday={monthlyYieldUsd / 30} />
 
             {/* Flow diagram */}
             <div
@@ -1754,15 +1754,15 @@ export function CardPage() {
               style={{ background: "var(--surface-solid)", boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}
             >
               <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-                Arquitetura Técnica
+                Technical Architecture
               </p>
               <div className="space-y-2">
                 {[
-                  { step: "1", label: "User → insere chave PIX + valor", color: "#A3D977" },
-                  { step: "2", label: "Vault → LiquidAI desbloqueio de cUSD", color: "#06B6D4" },
-                  { step: "3", label: "Mento AMM → swap cUSD → Belo (BRL)", color: "#8B5CF6" },
-                  { step: "4", label: "Transfero API → dispara PIX em BRL", color: "#F59E0B" },
-                  { step: "5", label: "Conta bancária recebe PIX em <5s", color: "#10B981" },
+                  { step: "1", label: "User → enters PIX key + amount", color: "#A3D977" },
+                  { step: "2", label: "Vault → LiquidAI USDm unlock", color: "#06B6D4" },
+                  { step: "3", label: "Mento AMM → swap USDm → Belo (BRL)", color: "#8B5CF6" },
+                  { step: "4", label: "Transfero API → fires PIX in BRL", color: "#F59E0B" },
+                  { step: "5", label: "Bank account receives PIX in <5s", color: "#10B981" },
                 ].map((s) => (
                   <div key={s.step} className="flex items-center gap-3">
                     <div
@@ -1779,7 +1779,7 @@ export function CardPage() {
           </motion.div>
         )}
 
-        {/* ════════════ TAB: INFRAESTRUTURA ════════════ */}
+        {/* ════════════ TAB: INFRASTRUCTURE ════════════ */}
         {activeTab === "infra" && (
           <motion.div
             key="infra"
@@ -1791,7 +1791,7 @@ export function CardPage() {
             {/* JIT Engine */}
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-                JIT Funding · Como Coinbase/Revolut fazem
+                JIT Funding · How Coinbase/Revolut do it
               </p>
               <JITFundingEngine />
             </div>
@@ -1799,7 +1799,7 @@ export function CardPage() {
             {/* Transaction Intent Detection */}
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-                Intent Detection · Pre-autorização de Liquidez
+                Intent Detection · Liquidity Pre-authorization
               </p>
               <TransactionIntentDetection />
             </div>
@@ -1807,7 +1807,7 @@ export function CardPage() {
             {/* Liquidity Risk Engine */}
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-                Liquidity Risk Engine · Monitoramento contínuo
+                Liquidity Risk Engine · Continuous monitoring
               </p>
               <LiquidityRiskEngine />
             </div>
@@ -1815,7 +1815,7 @@ export function CardPage() {
             {/* Stable Routing */}
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-                Stable Routing · Rota de liquidação segura
+                Stable Routing · Secure liquidation route
               </p>
               <StableRoutingCard />
             </div>
@@ -1823,7 +1823,7 @@ export function CardPage() {
             {/* Celo Ecosystem Live */}
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-                Ecossistema Celo · Março 2026 Live
+                Celo Ecosystem · March 2026 Live
               </p>
               <CeloEcosystemFeed />
             </div>
@@ -1831,7 +1831,7 @@ export function CardPage() {
             {/* BaaS Partners */}
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-                Parceiros BaaS · Card-as-a-Service
+                BaaS Partners · Card-as-a-Service
               </p>
               <BaaSPartners />
             </div>
@@ -1839,7 +1839,7 @@ export function CardPage() {
             {/* Roadmap */}
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-                Roadmap Técnico
+                Technical Roadmap
               </p>
               <RoadmapTimeline />
             </div>
@@ -1847,53 +1847,53 @@ export function CardPage() {
             {/* Revenue model */}
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-                Sustentabilidade do Protocolo
+                Protocol Sustainability
               </p>
               <RevenueModel />
             </div>
 
-            {/* Credit collateral model */}
-            <div
-              className="rounded-2xl p-4"
-              style={{
-                background: "linear-gradient(135deg, #0B3D25, #0D4B2E)",
-                boxShadow: "0 4px 24px rgba(13,75,46,0.22)",
-              }}
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <Building2 className="w-4 h-4" style={{ color: "#A3D977" }} />
-                <span className="text-sm font-bold text-white">Crédito Colateralizado · Q4</span>
-                <span
-                  className="text-xs px-2 py-0.5 rounded-full font-bold"
-                  style={{ background: "rgba(139,92,246,0.3)", color: "#C4B5FD" }}
-                >
-                  Planejado
-                </span>
-              </div>
-              <p className="text-xs leading-relaxed mb-3" style={{ color: "rgba(255,255,255,0.6)" }}>
-                Modelo planejado: o usuário mantém o capital real da própria wallet em DeFi e recebe uma linha de crédito proporcional ao colateral disponível. O yield ajuda a compensar o custo de uso sem desmontar a posição principal.
-              </p>
-              <div className="grid grid-cols-3 rounded-xl overflow-hidden" style={{ background: "rgba(0,0,0,0.2)" }}>
-                {[
-                  { label: "Capital atual", value: formatUsd(walletCapitalUsd) },
-                  { label: "Preview 70%", value: formatUsd(creditPreviewUsd) },
-                  { label: "Juros pagos por", value: "Yield" },
-                ].map((s, i) => (
-                  <div
-                    key={s.label}
-                    className="px-2 py-2.5 text-center"
-                    style={{ borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.08)" : "none" }}
+              {/* Credit collateral model */}
+              <div
+                className="rounded-2xl p-4"
+                style={{
+                  background: "linear-gradient(135deg, #0B3D25, #0D4B2E)",
+                  boxShadow: "0 4px 24px rgba(13,75,46,0.22)",
+                }}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <Building2 className="w-4 h-4" style={{ color: "#A3D977" }} />
+                  <span className="text-sm font-bold text-white">Self-Repaying Micro-Credit</span>
+                  <span
+                    className="text-xs px-2 py-0.5 rounded-full font-bold"
+                    style={{ background: "rgba(139,92,246,0.3)", color: "#C4B5FD" }}
                   >
-                    <div className="font-mono font-bold text-sm" style={{ color: "#A3D977" }}>
-                      {s.value}
+                    Planned
+                  </span>
+                </div>
+                <p className="text-xs leading-relaxed mb-3" style={{ color: "rgba(255,255,255,0.6)" }}>
+                  Need to make a PIX but don't want to break your yield position? LiquidAI instantly advances the amount in local currency. The debt is automatically paid off month by month using the yield generated by your vault. Zero liquidation risk.
+                </p>
+                <div className="grid grid-cols-3 rounded-xl overflow-hidden" style={{ background: "rgba(0,0,0,0.2)" }}>
+                  {[
+                    { label: "Available Credit", value: formatUsd(creditPreviewUsd) },
+                    { label: "Interest Rate", value: "0% Out of Pocket" },
+                    { label: "Paid By", value: "Your Yield" },
+                  ].map((s, i) => (
+                    <div
+                      key={s.label}
+                      className="px-2 py-2.5 text-center"
+                      style={{ borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.08)" : "none" }}
+                    >
+                      <div className="font-mono font-bold text-sm" style={{ color: "#A3D977" }}>
+                        {s.value}
+                      </div>
+                      <div className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.4)", fontSize: "10px" }}>
+                        {s.label}
+                      </div>
                     </div>
-                    <div className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.4)", fontSize: "10px" }}>
-                      {s.label}
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
 
             {/* Pitch summary */}
             <div
@@ -1907,21 +1907,21 @@ export function CardPage() {
               <div className="flex items-center gap-2 mb-2">
                 <Shield className="w-4 h-4" style={{ color: "#A3D977" }} />
                 <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-                  O "Santo Graal" para Celo + MiniPay
+                  The "Holy Grail" for Celo + MiniPay
                 </span>
               </div>
               <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                "Yield-Backed Banking" resolve o maior problema do usuário de baixa renda:{" "}
+                "Yield-Backed Banking" solves the biggest problem for low-income users:{" "}
                 <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
-                  o custo de oportunidade de deixar o dinheiro parado
+                  the opportunity cost of leaving money idle
                 </span>
-                . Com o capital real da wallet, o LiquidAI projeta{" "}
+                . With the wallet's actual capital, LiquidAI projects{" "}
                 <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
-                  {formatUsd(monthlyYieldUsd)}/mês
+                  {formatUsd(monthlyYieldUsd)}/month
                 </span>{" "}
-                em rendimento e mantém um{" "}
+                in yield and maintains a{" "}
                 <span style={{ color: "#A3D977" }} className="font-semibold">
-                  loop de valor progressivamente sustentável
+                  progressively sustainable value loop
                 </span>
                 .
               </p>

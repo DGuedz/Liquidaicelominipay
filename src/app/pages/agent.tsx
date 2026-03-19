@@ -65,8 +65,8 @@ const RISK_CONFIG = {
       "Monitors stable routes and keeps the liquidity buffer protected before moving capital into lower-risk pools.",
     sampleLog: "Stable route favored → balance kept productive without reducing the payment buffer.",
     pools: [
-      { name: "Aave v3 (cUSD)", type: "Lending · low risk", apy: "4.8%", pct: 55, amount: 0, color: "#06B6D4", iconUrl: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9/logo.png" },
-      { name: "Mento cUSD/USDC", type: "Stable AMM · min IL", apy: "3.8%", pct: 30, amount: 0, color: "#10B981", iconUrl: "https://raw.githubusercontent.com/valora-inc/address-metadata/main/assets/tokens/cUSD.png" },
+      { name: "Aave v3 (USDm)", type: "Lending · low risk", apy: "4.8%", pct: 55, amount: 0, color: "#06B6D4", iconUrl: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9/logo.png" },
+      { name: "Mento USDm/USDC", type: "Stable AMM · min IL", apy: "3.8%", pct: 30, amount: 0, color: "#10B981", iconUrl: "https://raw.githubusercontent.com/valora-inc/address-metadata/main/assets/tokens/USDm.png" },
       { name: "Liquidity Buffer", type: "Card + Instant PIX", apy: "0%", pct: 15, amount: 0, color: "#A3D977" },
     ],
     riskMetrics: { il: 8, ilLabel: "Very Low", poolDepth: 95, withdrawalTime: 98, ilPositive: true },
@@ -89,9 +89,9 @@ const RISK_CONFIG = {
       "Executes looping only when the collateral profile stays healthy. If volatility rises materially, the agent rotates part of the position back into stables.",
     sampleLog: "Looping opportunity approved → position resized while preserving exit liquidity.",
     pools: [
-      { name: "Aave v3 (cUSD)", type: "Lending · stable base", apy: "4.8%", pct: 30, amount: 0, color: "#06B6D4", iconUrl: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9/logo.png" },
+      { name: "Aave v3 (USDm)", type: "Lending · stable base", apy: "4.8%", pct: 30, amount: 0, color: "#06B6D4", iconUrl: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9/logo.png" },
       { name: "Morpho + stCELO Loop", type: "🆕 Institutional Looping · Mar 2026", apy: "9.1%", pct: 32, amount: 0, color: "#10B981", iconUrl: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x9994E35Db50125E0DF82e4c2dde124b36Ee1535e/logo.png" },
-      { name: "Ubeswap cUSD/CELO", type: "AMM · extra yield", apy: "8.2%", pct: 22, amount: 0, color: "#F59E0B", iconUrl: "https://raw.githubusercontent.com/valora-inc/address-metadata/main/assets/tokens/CELO.png" },
+      { name: "Ubeswap USDm/CELO", type: "AMM · extra yield", apy: "8.2%", pct: 22, amount: 0, color: "#F59E0B", iconUrl: "https://raw.githubusercontent.com/valora-inc/address-metadata/main/assets/tokens/CELO.png" },
       { name: "Liquidity Buffer", type: "Card + PIX", apy: "0%", pct: 16, amount: 0, color: "#A3D977" },
     ],
     riskMetrics: { il: 42, ilLabel: "Moderate", poolDepth: 85, withdrawalTime: 92, ilPositive: true },
@@ -118,7 +118,7 @@ const RISK_CONFIG = {
       { name: "CELO/ETH (Ubeswap)", type: "Volatile Pair · arbitrage", apy: "18%", pct: 25, amount: 0, color: "#EF4444", iconUrl: "https://raw.githubusercontent.com/valora-inc/address-metadata/main/assets/tokens/CELO.png" },
       { name: "PWN / EthicHub (RWA)", type: "Real Credit · stable yield", apy: "11.4%", pct: 22, amount: 0, color: "#8B5CF6" },
       { name: "Credit Engine (Bridge)", type: "Bridge · does not touch profitable pools", apy: "–", pct: 13, amount: 0, color: "#06B6D4" },
-      { name: "Emergency Buffer", type: "Fast Mento V3 Exit · 2–5s", apy: "0%", pct: 10, amount: 0, color: "#A3D977", iconUrl: "https://raw.githubusercontent.com/valora-inc/address-metadata/main/assets/tokens/cUSD.png" },
+      { name: "Emergency Buffer", type: "Fast Mento V3 Exit · 2–5s", apy: "0%", pct: 10, amount: 0, color: "#A3D977", iconUrl: "https://raw.githubusercontent.com/valora-inc/address-metadata/main/assets/tokens/USDm.png" },
     ],
     riskMetrics: { il: 78, ilLabel: "High", poolDepth: 65, withdrawalTime: 72, ilPositive: false },
     creditEngine: true,
@@ -398,7 +398,7 @@ function LiveRiskMonitor({ mode }: { mode: RiskMode }) {
             <span style={{ color: "#06B6D4", fontWeight: 600 }}>Guaranteed Route:</span>{" "}
             {mode === "aggressive"
               ? "Buffer and bridge capacity cover payment events without touching the highest-yield pools."
-              : "Liquidation always via cUSD → USDC (Mento). Volatile tokens never used as bridge."}
+              : "Liquidation always via USDm → USDC (Mento). Volatile tokens never used as bridge."}
           </p>
         </div>
       </div>
@@ -1234,17 +1234,17 @@ export function AgentPage() {
           </div>
           <div className="flex-1">
             <p className="text-sm font-semibold text-white mb-1">
-              {riskMode === "conservative" && "Proteção Máxima Ativa"}
-              {riskMode === "balanced" && "Próxima Oportunidade"}
-              {riskMode === "aggressive" && "Arbitragem Detectada"}
+              {riskMode === "conservative" && "Maximum Protection Active"}
+              {riskMode === "balanced" && "Next Opportunity"}
+              {riskMode === "aggressive" && "Arbitrage Detected"}
             </p>
             <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.7)" }}>
               {riskMode === "conservative" &&
-                <>O agente está mantendo a wallet priorizando liquidez imediata e rotas estáveis enquanto monitora inflação e spread on-chain.</>}
+                <>The agent is maintaining the wallet prioritizing immediate liquidity and stable routes while monitoring inflation and on-chain spread.</>}
               {riskMode === "balanced" &&
-                <>O melhor destino atual é <span className="font-semibold text-white">{remoteState?.bestProtocol?.name || "a melhor pool disponível"}</span>. A decisão usa apenas o capital já sincronizado da wallet e o delta real de APY.</>}
+                <>The best current destination is <span className="font-semibold text-white">{remoteState?.bestProtocol?.name || "the best available pool"}</span>. The decision uses only the synced wallet capital and the real APY delta.</>}
               {riskMode === "aggressive" &&
-                <>A camada agressiva só abre uma rota de maior retorno quando o risco de saída continua aceitável e a melhoria esperada supera o threshold de realocação.</>}
+                <>The aggressive layer only opens a higher return route when the exit risk remains acceptable and the expected improvement exceeds the reallocation threshold.</>}
             </p>
             <div className="flex gap-2 mt-3">
               <button
@@ -1252,13 +1252,13 @@ export function AgentPage() {
                 className="px-4 py-1.5 rounded-full text-xs font-semibold"
                 style={{ background: "#A3D977", color: "#0D4B2E" }}
               >
-                Autorizar
+                Authorize
               </button>
               <button
                 className="px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1"
                 style={{ background: "rgba(255,255,255,0.12)", color: "#fff" }}
               >
-                Detalhes
+                Details
                 <ArrowUpRight className="w-3 h-3" />
               </button>
             </div>
@@ -1269,14 +1269,14 @@ export function AgentPage() {
       {/* ── PERFORMANCE STATS ──────────────────────────────── */}
       <div className="px-5 mb-5">
         <p className="text-xs font-semibold uppercase tracking-wider mb-3 px-1" style={{ color: "var(--text-muted)" }}>
-          Performance Acumulada
+          Cumulative Performance
         </p>
         <div className="grid grid-cols-2 gap-3">
           {[
-            { icon: DollarSign, label: "Yield projetado", value: remoteState ? `$${remoteState.projectedMonthlyYieldUsd.toFixed(2)}` : "--", sub: remoteState ? "Com base no capital atual da wallet" : "Aguardando sync", color: "#10B981", bg: "rgba(16,185,129,0.1)" },
-            { icon: TrendingUp, label: "APY atual", value: apyDisplay, sub: cfg.subtitle, color: cfg.color, bg: cfg.bg },
-            { icon: Clock, label: "Estado", value: remoteState ? "Live" : "Standby", sub: remoteState ? "Session synced" : "Waiting wallet snapshot", color: "#8B5CF6", bg: "rgba(139,92,246,0.1)" },
-            { icon: Activity, label: "Operações", value: opsCount.toString(), sub: "Automáticas pelo agente", color: "#F59E0B", bg: "rgba(245,158,11,0.1)" },
+            { icon: DollarSign, label: "Projected Yield", value: remoteState ? `$${remoteState.projectedMonthlyYieldUsd.toFixed(2)}` : "--", sub: remoteState ? "Based on current capital" : "Waiting sync", color: "#10B981", bg: "rgba(16,185,129,0.1)" },
+            { icon: TrendingUp, label: "Current APY", value: apyDisplay, sub: cfg.subtitle, color: cfg.color, bg: cfg.bg },
+            { icon: Clock, label: "State", value: remoteState ? "Live" : "Standby", sub: remoteState ? "Session synced" : "Waiting wallet snapshot", color: "#8B5CF6", bg: "rgba(139,92,246,0.1)" },
+            { icon: Activity, label: "Operations", value: opsCount.toString(), sub: "Automated by agent", color: "#F59E0B", bg: "rgba(245,158,11,0.1)" },
           ].map((stat, i) => {
             const Icon = stat.icon;
             return (

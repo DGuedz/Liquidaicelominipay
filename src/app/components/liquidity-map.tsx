@@ -328,9 +328,9 @@ export function LiquidityMap() {
           )}
           <span className="text-sm font-semibold">
             {isDone
-              ? `+$${counter.toFixed(2)} Yield Capturado`
+              ? `+$${counter.toFixed(2)} Yield Captured`
               : isRunning
-              ? "Otimizando Liquidez..."
+              ? "Optimizing Liquidity..."
               : "Optimize Liquidity"}
           </span>
         </motion.button>

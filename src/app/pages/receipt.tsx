@@ -32,14 +32,14 @@ export function ReceiptPage() {
   }, []);
 
   const details = [
-    { label: "Valor", value: `$${amount.toFixed(2)}`, mono: true, highlight: true },
-    { label: "Para", value: recipient, mono: false },
-    { label: "Conta", value: recipientAccount, mono: true },
-    { label: "Status", value: "Sucesso", mono: false, success: true },
-    { label: "Ref. nº", value: refNumber, mono: true },
-    { label: "Método", value: "LiquidAI Transfer", mono: false },
-    { label: "Data", value: date, mono: true },
-    { label: "Hora", value: time, mono: true },
+    { label: "Amount", value: `$${amount.toFixed(2)}`, mono: true, highlight: true },
+    { label: "To", value: recipient, mono: false },
+    { label: "Account", value: recipientAccount, mono: true },
+    { label: "Status", value: "Success", mono: false, success: true },
+    { label: "Ref. No.", value: refNumber, mono: true },
+    { label: "Method", value: "LiquidAI Transfer", mono: false },
+    { label: "Date", value: date, mono: true },
+    { label: "Time", value: time, mono: true },
   ];
 
   return (
@@ -54,7 +54,7 @@ export function ReceiptPage() {
           <ArrowLeft className="w-5 h-5 text-text-primary" />
         </button>
         <span className="font-semibold text-text-primary mx-auto">
-          Comprovante
+          Receipt
         </span>
       </header>
 
@@ -207,7 +207,7 @@ export function ReceiptPage() {
             style={{ background: "var(--card-bg)", color: "#0D4B2E" }}
           >
             <Share2 className="w-5 h-5" />
-            Compartilhar Comprovante
+            Share Receipt
           </motion.button>
 
           <motion.button
@@ -234,7 +234,7 @@ export function ReceiptPage() {
               boxShadow: "0 4px 20px rgba(13,75,46,0.25)",
             }}
           >
-            Voltar ao Início
+            Back to Home
           </motion.button>
         </div>
       </div>

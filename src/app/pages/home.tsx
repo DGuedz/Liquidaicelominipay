@@ -586,28 +586,26 @@ export function HomePage() {
           <div className="relative z-10 p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <span className="text-xs tracking-wider uppercase font-medium" style={{ color: "rgba(255,255,255,0.55)" }}>
-                  Total Balance
+                <span className="text-[10px] tracking-wider uppercase font-semibold" style={{ color: "rgba(255,255,255,0.55)" }}>
+                  Your MiniPay Balance
                 </span>
                 <button
                   onClick={() => setBalanceVisible(!balanceVisible)}
-                  className="opacity-60 hover:opacity-100 transition-opacity"
+                  className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
                 >
                   {balanceVisible ? (
-                    <Eye className="w-3.5 h-3.5 text-white" />
+                    <Eye className="w-3.5 h-3.5" style={{ color: "rgba(255,255,255,0.7)" }} />
                   ) : (
-                    <EyeOff className="w-3.5 h-3.5 text-white" />
+                    <EyeOff className="w-3.5 h-3.5" style={{ color: "rgba(255,255,255,0.7)" }} />
                   )}
                 </button>
               </div>
               <div
-                className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
-                style={{ background: "rgba(163,217,119,0.18)", border: "1px solid rgba(163,217,119,0.3)", backdropFilter: "blur(4px)" }}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full backdrop-blur-md"
+                style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)" }}
               >
-                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#A3D977", boxShadow: "0 0 8px #A3D977" }} />
-                <span className="text-xs" style={{ color: "#A3D977", fontWeight: 600 }}>
-                  Agent Active
-                </span>
+                <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#10B981" }} />
+                <span className="text-[10px] font-bold text-white tracking-wide">Celo Network</span>
               </div>
             </div>
 
@@ -651,23 +649,31 @@ export function HomePage() {
               </button>
             )}
 
-            <div className="flex items-center justify-between pt-2 border-t border-white/10">
-              <span
-                className="font-mono text-sm tracking-[0.15em] drop-shadow-sm"
-                style={{ color: "rgba(255,255,255,0.7)" }}
-              >
-                •••• •••• •••• 3424
-              </span>
-              
-              {/* MiniPay / LiquidAI Logo */}
-              <div className="flex items-center gap-1.5 opacity-80">
-                <div className="text-white">
-                  <LiquidLogo size={14} variant="icon" theme="dark" background="transparent" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-white font-bold leading-none text-[10px] tracking-tight">MiniPay</span>
+            <div className="mt-8 mb-6 flex justify-between items-end">
+              <div>
+                <p className="text-sm font-medium mb-1" style={{ color: "rgba(255,255,255,0.7)" }}>
+                  Daily Yield <span className="text-[10px] ml-1 px-1.5 py-0.5 rounded bg-white/10 text-white/90">Agent</span>
+                </p>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xl font-bold" style={{ color: "#A3D977" }}>
+                    {balanceVisible ? (yieldEarned != null ? `+$${(yieldEarned / 30).toFixed(2)}` : "--") : "****"}
+                  </span>
+                  <MiniTrend up={true} />
                 </div>
               </div>
+              <div className="text-right">
+                <p className="text-sm font-medium mb-1" style={{ color: "rgba(255,255,255,0.7)" }}>
+                  Managed Capital
+                </p>
+                <span className="font-mono text-xl font-bold text-white">
+                  {balanceVisible ? formatCompactUsd(managedCapital) : "****"}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-4 border-t border-white/10 mt-6">
+              <span className="text-[10px] uppercase tracking-wider text-white/50">Current APY</span>
+              <span className="text-xs font-bold text-white px-2 py-1 rounded-md bg-white/10">{formatPercent(yieldRate)}</span>
             </div>
           </div>
         </motion.div>
@@ -675,35 +681,29 @@ export function HomePage() {
 
       {/* ── QUICK ACTIONS ──────────────────────────────────── */}
       <div className="px-5 mb-5">
-        <div className="grid grid-cols-4 gap-2.5">
-          {quickActions.map(({ icon: Icon, label, path, primary }, i) => (
-            <motion.button
-              key={label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.08 + i * 0.05, ease: "easeOut" }}
-              whileTap={{ scale: 0.88 }}
-              onClick={() => path && navigate(path)}
-              className="flex flex-col items-center gap-2"
+        <div className="grid grid-cols-4 gap-2">
+          {quickActions.map((action) => (
+            <button
+              key={action.label}
+              onClick={() => navigate(action.path)}
+              className="flex flex-col items-center justify-center p-3 rounded-2xl active:scale-95 transition-transform"
+              style={{
+                background: action.primary ? "rgba(163,217,119,0.15)" : "var(--surface-solid)",
+                border: `1px solid ${action.primary ? "rgba(163,217,119,0.3)" : "var(--border-light)"}`,
+                boxShadow: action.primary ? "0 4px 12px rgba(163,217,119,0.1)" : "0 2px 8px rgba(0,0,0,0.05)",
+              }}
             >
-              <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                style={{
-                  background: primary ? "#0D4B2E" : "var(--surface-solid)",
-                  boxShadow: primary
-                    ? "0 4px 18px rgba(13,75,46,0.28)"
-                    : "0 1px 8px rgba(0,0,0,0.1)",
-                }}
+              <action.icon
+                className="w-5 h-5 mb-1.5"
+                style={{ color: action.primary ? "#A3D977" : "var(--text-primary)" }}
+              />
+              <span
+                className="text-[10px] font-semibold tracking-wide"
+                style={{ color: action.primary ? "#A3D977" : "var(--text-secondary)" }}
               >
-                <Icon
-                  className="w-5 h-5"
-                  style={{ color: primary ? "#A3D977" : "var(--text-secondary)" }}
-                />
-              </div>
-              <span className="text-xs" style={{ color: "var(--text-muted)", fontWeight: 500 }}>
-                {label}
+                {action.label}
               </span>
-            </motion.button>
+            </button>
           ))}
         </div>
       </div>
@@ -743,15 +743,15 @@ export function HomePage() {
               />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mb-0.5">
                 <span className="text-sm" style={{ color: "var(--text-primary)", fontWeight: 600 }}>
-                  LiquidAI Agent
+                  LiquidAI Engine
                 </span>
                 <span
-                  className="text-xs px-2 py-0.5 rounded-full"
-                  style={{ background: "rgba(163,217,119,0.15)", color: "#FFFFFF", fontWeight: 600 }}
+                  className="text-[9px] px-2 py-0.5 rounded-full uppercase tracking-widest font-bold"
+                  style={{ background: "rgba(163,217,119,0.15)", color: "#0D4B2E" }}
                 >
-                  Online
+                  Autopilot
                 </span>
               </div>
               <AnimatePresence mode="wait">
@@ -771,27 +771,38 @@ export function HomePage() {
             <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: "var(--text-muted)" }} />
           </div>
 
-          <div className="grid grid-cols-3">
+          <div className="grid grid-cols-1 divide-y divide-[var(--border-light)]">
             {[
               {
-                label: "Daily Yield",
-                value: yieldEarned == null ? "--" : `+$${(yieldEarned / 30).toFixed(2)}`,
+                icon: <Zap className="w-3.5 h-3.5" style={{ color: "#A3D977" }} />,
+                title: "Smart Remittances",
+                desc: "FX Routing via Mento V3 Oracles",
               },
-              { label: "Managed Assets", value: formatCompactUsd(managedCapital) },
-              { label: "Current APY", value: formatPercent(yieldRate) },
+              {
+                icon: <Shield className="w-3.5 h-3.5" style={{ color: "#3B82F6" }} />,
+                title: "Agent-to-Agent Dark Pool",
+                desc: "Zero AMM Slippage Matching",
+              },
+              {
+                icon: <Sparkles className="w-3.5 h-3.5" style={{ color: "#F59E0B" }} />,
+                title: "Gas-Optimized Batching",
+                desc: "Institutional Yield Access",
+              },
             ].map((m, i) => (
-              <div
-                key={m.label}
-                className="px-3 py-3 text-center"
-                style={{
-                  borderLeft: i > 0 ? "1px solid var(--border-light)" : "none",
-                }}
-              >
-                <div className="font-mono text-sm" style={{ color: "#A3D977", fontWeight: 700 }}>
-                  {m.value}
+              <div key={m.title} className="flex items-center gap-3 px-4 py-3">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: "var(--background)", border: "1px solid var(--border-light)" }}
+                >
+                  {m.icon}
                 </div>
-                <div className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                  {m.label}
+                <div>
+                  <div className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
+                    {m.title}
+                  </div>
+                  <div className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+                    {m.desc}
+                  </div>
                 </div>
               </div>
             ))}

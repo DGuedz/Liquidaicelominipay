@@ -30,7 +30,7 @@ const RISK_PROFILES = {
 };
 
 const PROTOCOL_LABELS = {
-  aave: "Aave v3 (cUSD)",
+  aave: "Aave v3 (USDm)",
   morpho: "Morpho (Looping)",
   mento: "Mento V3 (Stable AMM)",
 };
@@ -296,7 +296,7 @@ export function buildAgentState({
     logAgentAction({
       type: "REBALANCE",
       protocol: plan.bestProtocol.name,
-      asset: "cUSD",
+      asset: "USDm",
       amount: plan.bestProtocol.amount,
     });
   }

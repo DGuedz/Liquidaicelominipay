@@ -256,7 +256,7 @@ function AddGoalModal({ onClose, onAdd }: { onClose: () => void; onAdd: (name: s
               className="mb-5"
             >
               <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-                Target Amount (cUSD)
+                Target Amount (USDm)
               </p>
               <div
                 className="flex items-center gap-2 rounded-2xl px-4 py-3"
@@ -274,7 +274,7 @@ function AddGoalModal({ onClose, onAdd }: { onClose: () => void; onAdd: (name: s
                   placeholder={String(selected.target)}
                 />
                 <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
-                  cUSD
+                  USDm
                 </span>
               </div>
               <p className="text-xs mt-1.5" style={{ color: "var(--text-muted)" }}>

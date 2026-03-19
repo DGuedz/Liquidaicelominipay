@@ -66,7 +66,7 @@ const EVENT_POOL: Omit<AgentEvent, "id" | "ts">[] = [
   {
     kind: "protection",
     title: "Currency Protection",
-    detail: "BRL -0.8% · cUSD stable",
+    detail: "BRL -0.8% · USDm stable",
     amount: "Shield ✓",
   },
   {

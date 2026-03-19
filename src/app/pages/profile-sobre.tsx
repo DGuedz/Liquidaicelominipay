@@ -5,7 +5,7 @@ import { useTheme } from "../hooks/useTheme";
 
 const TECH_STACK = [
   { label: "Blockchain", value: "Celo Mainnet · L2 EVM", color: "#A3D977" },
-  { label: "Stablecoin", value: "cUSD (Mento Protocol)", color: "#10B981" },
+  { label: "Stablecoin", value: "USDm (Mento Protocol)", color: "#10B981" },
   { label: "DeFi Layer", value: "Aave v3 · Morpho · Mento V3", color: "#3B82F6" },
   { label: "Off-ramp", value: "Transfero · Bipa · MiniPay", color: "#F59E0B" },
   { label: "Identity", value: "Self Protocol (Anti-Sybil)", color: "#8B5CF6" },
@@ -14,7 +14,7 @@ const TECH_STACK = [
 
 const FEATURES = [
   { icon: Zap, label: "Agente Autônomo", desc: "Rebalanceamento 24/7 sem intervenção humana", color: "#A3D977" },
-  { icon: Shield, label: "Invisible DeFi", desc: "Complexidade DeFi zero para o usuário final", color: "#3B82F6" },
+  { icon: Shield, label: "Invisible DeFi", desc: "Zero DeFi complexity for the end user", color: "#3B82F6" },
   { icon: Globe, label: "Mercados Emergentes", desc: "Proteção real contra inflação do BRL/MXN/COP", color: "#10B981" },
   { icon: TrendingUp, label: "Yield-Backed Banking", desc: "Cartão + PIX financiado pelo yield gerado", color: "#F59E0B" },
 ];
@@ -76,11 +76,11 @@ export function ProfileSobrePage() {
           className="bg-surface-solid rounded-2xl p-5"
           style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.06)" }}
         >
-          <p className="text-sm text-text-secondary leading-relaxed">
-            LiquidAI é um <span className="font-semibold text-text-primary">Sistema Operacional de Tesouraria</span> para o usuário da MiniPay que começa com o capital real da própria wallet, faz microtransações diárias e precisa preservar liquidez sem deixar saldo parado.
+          <p className="text-sm leading-relaxed text-text-secondary">
+            LiquidAI is an <span className="font-semibold text-text-primary">Autonomous Treasury OS</span> for the MiniPay user. We start with the real capital in the wallet, enabling daily microtransactions while preserving liquidity and ensuring no balance is left idle.
           </p>
-          <p className="text-sm text-text-secondary leading-relaxed mt-3">
-            Nossa filosofia é <span className="font-semibold text-text-primary">Invisible DeFi</span>: o máximo de 3 toques por ação, com complexidade DeFi zero — o agente faz tudo automaticamente.
+          <p className="text-sm leading-relaxed text-text-secondary">
+            Our philosophy is <span className="font-semibold text-text-primary">Invisible DeFi</span>: a maximum of 3 taps per action, with zero DeFi complexity — the agent handles everything automatically.
           </p>
         </div>
       </div>
@@ -151,7 +151,7 @@ export function ProfileSobrePage() {
             </div>
             <div className="text-left">
               <p className="text-sm font-bold text-primary">Project Brief & Handoff</p>
-              <p className="text-xs text-text-muted">Documentação técnica completa</p>
+              <p className="text-xs text-text-muted">Complete technical documentation</p>
             </div>
           </div>
           <ChevronRight className="w-5 h-5 text-primary/60" />

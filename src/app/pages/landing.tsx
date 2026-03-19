@@ -163,7 +163,7 @@ const AppMockup = () => {
                 <span className="text-xs font-bold text-white">LiquidAI Agent</span>
                 <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-white font-bold">Online</span>
               </div>
-              <div className="text-[9px] text-white/40 truncate mt-0.5">Best current opportunity: Aave v3 (cUSD)...</div>
+              <div className="text-[9px] text-white/40 truncate mt-0.5">Best current opportunity: Aave v3 (USDm)...</div>
             </div>
           </div>
           <div className="grid grid-cols-3 px-2 py-2">
@@ -419,7 +419,7 @@ export function LandingPage() {
                             </div>
                             <div className="flex justify-between">
                                 <span>Gas Strategy</span>
-                                <span className="text-white">cUSD Fee Abstraction</span>
+                                <span className="text-white">USDm Fee Abstraction</span>
                             </div>
                         </div>
                     </div>

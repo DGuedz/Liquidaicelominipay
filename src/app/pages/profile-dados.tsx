@@ -199,7 +199,7 @@ export function ProfileDadosPage() {
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-text-muted">Celo Address (cUSD)</p>
+            <p className="text-xs text-text-muted">Celo Address (USDm)</p>
             <p
               className="text-sm font-mono font-semibold mt-0.5 truncate"
               style={{ color: "var(--text-primary)" }}

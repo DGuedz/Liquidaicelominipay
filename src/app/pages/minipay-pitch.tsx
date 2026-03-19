@@ -425,7 +425,7 @@ export function MiniPayPitchPage() {
               {
                 step: "03",
                 title: "Hold & Earn",
-                desc: "LiquidAI Agent optimizes your cUSD 24/7, keeping liquidity for your daily spending.",
+                desc: "LiquidAI Agent optimizes your USDm 24/7, keeping liquidity for your daily spending.",
                 color: "#06B6D4",
               },
             ].map((item, i) => (

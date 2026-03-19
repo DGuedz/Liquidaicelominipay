@@ -25,7 +25,7 @@ export const ECOSYSTEM_RADAR = [
     name: "Mento Protocol",
     layer: "liquidity-swap",
     status: "active",
-    note: "Rampa principal para swap atomico cUSD/cEUR/cBRL.",
+    note: "Rampa principal para swap atomico USDm/EURm/BRLm.",
   },
   {
     id: "uniswap-v3",

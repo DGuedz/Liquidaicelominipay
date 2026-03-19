@@ -53,7 +53,7 @@ const NODE_DIAMETER = NODE_RADIUS * 2;
 
 const LOGO_MAP: Record<string, string> = {
   // ── Valora address-metadata (Celo native / ecosystem) ─────────────────────
-  mento: "https://raw.githubusercontent.com/valora-inc/address-metadata/main/assets/tokens/cUSD.png",
+  mento: "https://raw.githubusercontent.com/valora-inc/address-metadata/main/assets/tokens/USDm.png",
   moola: "https://raw.githubusercontent.com/valora-inc/address-metadata/main/assets/tokens/MOO.png",
   ethichub: "https://raw.githubusercontent.com/valora-inc/address-metadata/main/assets/tokens/ETHIX.png",
   ube: "https://raw.githubusercontent.com/valora-inc/address-metadata/main/assets/tokens/UBE.png",

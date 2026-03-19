@@ -15,7 +15,7 @@ Communicate the full LiquidAI thesis in one frame for judges scanning many submi
 
 2. Middle-left (product mechanics):
 - Three bullets map directly to architecture:
-  - idle cUSD -> autonomous yield
+  - idle USDm -> autonomous yield
   - Self Protocol identity gate
   - instant spend liquidity buffer
 

@@ -5,7 +5,7 @@ import { normalizeRiskDetails } from "./risk-normalizer.mjs";
 
 const PROTOCOL_ID = "morpho";
 const PROJECT_ALIASES = ["morpho-blue", "morpho"];
-const TOKEN_HINT = /stCELO|CELO|cUSD/i;
+const TOKEN_HINT = /stCELO|CELO|USDm/i;
 
 const cache = createTtlCache(env.cacheTtlMs);
 

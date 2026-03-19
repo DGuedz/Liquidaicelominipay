@@ -402,10 +402,10 @@ Other:       fill=#1E293B · stroke=#64748B · particle=#94A3B8
 ## 🔑 INTEGRAÇÕES WEB3
 
 ### Protocolos Celo Nativos
-- **Mento V3:** Swap cUSD↔cBRL · spread reduzido 40%
-- **Aave v3 on Celo:** cUSD lending · 4.8% APY base
+- **Mento V3:** Swap USDm↔BRLm · spread reduzido 40%
+- **Aave v3 on Celo:** USDm lending · 4.8% APY base
 - **Morpho on Celo:** stCELO looping · 9.1% APY com alavancagem
-- **Ubeswap:** AMM nativo Celo · pares CELO/cUSD
+- **Ubeswap:** AMM nativo Celo · pares CELO/USDm
 - **Curve on Celo:** Stable pools
 - **EthicHub:** RWA crédito rural · 12.8% APY
 - **PWN:** NFT-backed lending · 8.2% APY
@@ -416,8 +416,8 @@ Other:       fill=#1E293B · stroke=#64748B · particle=#94A3B8
 - **Self Protocol:** Verificação de identidade descentralizada (Self Badge no perfil)
 
 ### Moedas Suportadas
-- cUSD (Celo Dollar — stablecoin principal)
-- cBRL (Celo Real — proteção cambial Brasil)
+- USDm (Celo Dollar — stablecoin principal)
+- BRLm (Celo Real — proteção cambial Brasil)
 - CELO (token nativo — colateral em Morpho)
 - stCELO (Celo Liquid Staking — via Morpho looping)
 
@@ -582,7 +582,7 @@ Antes de implementar qualquer nova funcionalidade:
 
 1. **Integração Real com Celo Mainnet**
    - Conectar carteira via WalletConnect + wagmi
-   - Ler saldos reais de cUSD/cBRL/CELO
+   - Ler saldos reais de USDm/BRLm/CELO
    - Executar swaps via Mento V3 SDK
 
 2. **Agente Autônomo Real**
@@ -593,7 +593,7 @@ Antes de implementar qualquer nova funcionalidade:
 3. **MiniPay Deep Integration**
    - Detecção de ambiente MiniPay (window.ethereum provider)
    - UX simplificado para usuários MiniPay (sem seed phrase)
-   - Pagamentos diretos via cUSD
+   - Pagamentos diretos via USDm
 
 4. **Self Protocol KYC**
    - Integrar SDK Self para verificação de identidade
@@ -602,7 +602,7 @@ Antes de implementar qualquer nova funcionalidade:
 
 5. **Karma System**
    - Score on-chain baseado em comportamento DeFi
-   - Recompensas em cUSD por uso responsável do agente
+   - Recompensas em USDm por uso responsável do agente
    - Leaderboard comunitário
 
 ---
@@ -1217,7 +1217,7 @@ https://tokens.1inch.io/{chainId}/{address}.png`} />
           {[
             { name: "Daimo", desc: "Bridge da Base Network → Celo · recebimento multi-chain", color: "#818CF8" },
             { name: "Self Protocol", desc: "Verificação de identidade ZK · badge no perfil", color: "#2563EB" },
-            { name: "Mento V3", desc: "Swap cUSD↔cBRL · saída de emergência em 2–5s", color: "#10B981" },
+            { name: "Mento V3", desc: "Swap USDm↔BRLm · saída de emergência em 2–5s", color: "#10B981" },
           ].map(({ name, desc, color }) => (
             <div key={name} className="flex gap-3">
               <div
@@ -1238,8 +1238,8 @@ https://tokens.1inch.io/{chainId}/{address}.png`} />
       <Accordion title="🪙 Moedas Suportadas">
         <div className="pt-3 space-y-2">
           {[
-            { coin: "cUSD", desc: "Celo Dollar — stablecoin principal, lastreada em USD", color: "#10B981" },
-            { coin: "cBRL", desc: "Celo Real — proteção cambial para usuários BR", color: "#F59E0B" },
+            { coin: "USDm", desc: "Celo Dollar — stablecoin principal, lastreada em USD", color: "#10B981" },
+            { coin: "BRLm", desc: "Celo Real — proteção cambial para usuários BR", color: "#F59E0B" },
             { coin: "CELO", desc: "Token nativo — colateral em Morpho looping", color: "#35D07F" },
             { coin: "stCELO", desc: "Liquid Staking — base para looping alavancado", color: "#06B6D4" },
           ].map(({ coin, desc, color }) => (

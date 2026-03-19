@@ -101,11 +101,11 @@ const keyMetrics = [
   },
 ];
 
-const tabs = ["Cashflow", "Allocation", "Yield", "Protection"];
+const tabs = ["Cashflow", "Allocation", "Yield", "Protection", "Value"];
 
 // ─── Inflation Shield data (12 months) ────────────────────────────────────────
 // BRL Savings: 7% SELIC nominal − 6.5% IPCA = ~0.5% real → purchasing power barely moves
-// cUSD + LiquidAI: 4.8% APY, dollar-pegged = no inflation risk
+// USDm + LiquidAI: 4.8% APY, dollar-pegged = no inflation risk
 function buildInflationData(startBRL: number) {
   const months = ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9", "M10", "M11", "M12"];
   const inflationMonthly = 0.0054;    // ~6.5% IPCA annually
@@ -509,7 +509,7 @@ export function AnalyticsPage() {
             </motion.div>
           )}
 
-          {/* ── Proteção (Inflation Shield) ─ */}
+          {/* ── Protection (Inflation Shield) ─ */}
           {activeTab === 3 && (
             <motion.div
               key="protection"
@@ -529,7 +529,7 @@ export function AnalyticsPage() {
                       Inflation Shield
                     </span>
                     <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                      BRL Savings vs cUSD + LiquidAI · 12 months
+                      BRL Savings vs USDm + LiquidAI · 12 months
                     </p>
                   </div>
                   <span
@@ -554,7 +554,7 @@ export function AnalyticsPage() {
                   <div className="flex items-center gap-1.5">
                     <div className="w-3 h-0.5 rounded-full" style={{ background: "#A3D977" }} />
                     <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                      cUSD + LiquidAI
+                      USDm + LiquidAI
                     </span>
                   </div>
                 </div>
@@ -746,7 +746,7 @@ export function AnalyticsPage() {
                 </p>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { label: "Keeps in $", value: "cUSD" },
+                    { label: "Keeps in $", value: "USDm" },
                     { label: "Yield generated", value: "4.8%" },
                     { label: "Bank required", value: "Zero" },
                   ].map((s) => (
@@ -767,7 +767,176 @@ export function AnalyticsPage() {
               </div>
             </motion.div>
           )}
+          {/* ── Value Delivered (Win-Win) ─ */}
+          {activeTab === 4 && (
+            <motion.div
+              key="value"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="space-y-4"
+            >
+              {/* Win-Win Model Header */}
+              <div
+                className="rounded-2xl p-5"
+                style={{ background: "var(--surface-solid)", boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
+                      Agent Value Delivered
+                    </span>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                      Win-Win Protocol Economics
+                    </p>
+                  </div>
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: "rgba(163,217,119,0.12)" }}
+                  >
+                    <Bot className="w-5 h-5" style={{ color: "#A3D977" }} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="p-3 rounded-xl" style={{ background: "var(--background)", border: "1px solid var(--border-light)" }}>
+                    <p className="text-[10px] uppercase tracking-wider text-text-muted mb-1">User Value</p>
+                    <p className="font-mono text-lg font-bold" style={{ color: "#10B981" }}>+${(monthlyYieldUsd * 0.9 + 2.5).toFixed(2)}</p>
+                    <p className="text-[10px] mt-1 text-text-secondary">Slippage & gas saved</p>
+                  </div>
+                  <div className="p-3 rounded-xl" style={{ background: "rgba(139,92,246,0.05)", border: "1px solid rgba(139,92,246,0.15)" }}>
+                    <p className="text-[10px] uppercase tracking-wider" style={{ color: "#8B5CF6" }}>Protocol Revenue</p>
+                    <p className="font-mono text-lg font-bold" style={{ color: "#8B5CF6" }}>${(monthlyYieldUsd * 0.1).toFixed(2)}</p>
+                    <p className="text-[10px] mt-1 text-text-secondary">Invisible success fee (10%)</p>
+                  </div>
+                </div>
+
+                <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                  LiquidAI <span className="font-semibold text-text-primary">never charges from your principal</span>. The protocol sustains itself by taking a fraction of the extra value generated by the AI agent's optimizations (Dark Pools, Yield Routing, and Gas Batching).
+                </p>
+              </div>
+
+              {/* Revenue Streams Breakdown */}
+              <div
+                className="rounded-2xl overflow-hidden"
+                style={{ background: "var(--surface-solid)", boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}
+              >
+                <div
+                  className="px-4 py-3 flex items-center gap-2"
+                  style={{ borderBottom: "1px solid var(--border-light)", background: "var(--muted)" }}
+                >
+                  <Layers className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
+                  <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+                    Unfair Advantage Engines
+                  </span>
+                </div>
+
+                {[
+                  {
+                    title: "Smart Remittances & FX Timing",
+                    desc: "Agent waits for optimal Mento V3 oracle rates before swapping local currencies.",
+                    userWin: "Better exchange rate",
+                    protoWin: "Spread capture",
+                    color: "#A3D977",
+                    icon: SwapIcon
+                  },
+                  {
+                    title: "A2A Dark Pools",
+                    desc: "Agents match intent peer-to-peer at oracle price before hitting the AMM.",
+                    userWin: "Zero AMM slippage",
+                    protoWin: "Match fee",
+                    color: "#F59E0B",
+                    icon: PoolsIcon
+                  },
+                  {
+                    title: "Gas-Optimized Batching",
+                    desc: "Thousands of user intents executed in a single transaction via Fee Abstraction.",
+                    userWin: "Institutional yield access",
+                    protoWin: "Performance fee",
+                    color: "#3B82F6",
+                    icon: NetworkIcon
+                  }
+                ].map((item, i) => (
+                  <div key={i} className="p-4" style={{ borderTop: i > 0 ? "1px solid var(--border-light)" : "none" }}>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${item.color}20` }}>
+                        <item.icon className="w-4 h-4" style={{ color: item.color }} />
+                      </div>
+                      <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{item.title}</span>
+                    </div>
+                    <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>{item.desc}</p>
+                    <div className="flex gap-2">
+                      <span className="text-[10px] px-2 py-1 rounded-md" style={{ background: "rgba(16,185,129,0.1)", color: "#10B981" }}>
+                        <span className="font-semibold">User:</span> {item.userWin}
+                      </span>
+                      <span className="text-[10px] px-2 py-1 rounded-md" style={{ background: "rgba(139,92,246,0.1)", color: "#8B5CF6" }}>
+                        <span className="font-semibold">Protocol:</span> {item.protoWin}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
+      </div>
+
+      {/* Route Intelligence Panel */}
+      <div className="px-5 mb-5">
+        <div
+          className="rounded-2xl overflow-hidden"
+          style={{
+            background: "var(--surface-solid)",
+            boxShadow: "0 4px 20px rgba(13,75,46,0.15)",
+            border: "1px solid rgba(163,217,119,0.25)",
+          }}
+        >
+          <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border-light)", background: "rgba(163,217,119,0.05)" }}>
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4" style={{ color: "#A3D977" }} />
+              <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+                Route Intelligence
+              </span>
+            </div>
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider" style={{ background: "#A3D977", color: "#0D4B2E" }}>
+              Live Mento V3
+            </span>
+          </div>
+          
+          <div className="p-4 space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl p-3" style={{ background: "var(--background)" }}>
+                <p className="text-[10px] text-text-muted mb-1 uppercase tracking-wider">Effective Rate</p>
+                <p className="font-mono text-sm font-bold" style={{ color: "#A3D977" }}>1 USDm = 5.02 BRLm</p>
+              </div>
+              <div className="rounded-xl p-3" style={{ background: "var(--background)" }}>
+                <p className="text-[10px] text-text-muted mb-1 uppercase tracking-wider">Projected Slippage</p>
+                <p className="font-mono text-sm font-bold" style={{ color: "var(--text-primary)" }}>&lt; 0.1%</p>
+              </div>
+              <div className="rounded-xl p-3" style={{ background: "var(--background)" }}>
+                <p className="text-[10px] text-text-muted mb-1 uppercase tracking-wider">Gas Cost</p>
+                <p className="font-mono text-sm font-bold" style={{ color: "var(--text-primary)" }}>0.001 USDm</p>
+              </div>
+              <div className="rounded-xl p-3" style={{ background: "var(--background)" }}>
+                <p className="text-[10px] text-text-muted mb-1 uppercase tracking-wider">Pool Depth</p>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                  <p className="font-mono text-sm font-bold" style={{ color: "var(--success)" }}>Healthy</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl p-3 flex items-start gap-3" style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)" }}>
+              <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#8B5CF6" }} />
+              <div>
+                <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Reward Overlay Active</p>
+                <p className="text-[10px] mt-0.5" style={{ color: "var(--text-secondary)" }}>
+                  Agent is optimizing yield across Uniswap/Merkl with fee abstraction in stablecoins.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* AI Insight Card */}

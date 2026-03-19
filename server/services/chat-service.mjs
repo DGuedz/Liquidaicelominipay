@@ -8,6 +8,7 @@ function safeMonthlyTarget(summary) {
 
 function recommendedRebalanceAmount(dashboard) {
   const managed = Number(dashboard.summary.managedCapitalUsd || 0);
+  if (managed === 0) return 0;
   return Number.parseFloat(Math.max(1, Math.min(managed * 0.25, managed)).toFixed(2));
 }
 
@@ -24,53 +25,60 @@ export function generateChatReply({ message, dashboard }) {
     bestProtocol,
   };
 
-  if (includesAny(text, ["saldo", "carteira", "quanto tenho"])) {
+  if (includesAny(text, ["pix", "send", "pay", "transfer", "withdraw", "fx", "enviar", "pagar", "transferir", "saque"])) {
     return {
       type: "text",
-      thinkingSteps: ["Lendo saldo on-chain...", "Consolidando liquidez + yield..."],
-      text: `Seu saldo total é **$${baseContext.balance}**.\n\n• Capital produtivo: **$${baseContext.capital}**\n• Liquidez imediata: **$${summary.liquidityBufferUsd.toFixed(2)}**\n• APY blended atual: **${baseContext.apy}%**`,
+      thinkingSteps: ["Monitoring Mento V3 oracles for best BRLm rate...", "Activating Smart Remittance..."],
+      text: `You have **$${summary.liquidityBufferUsd.toFixed(2)}** in the immediate buffer. Need more? The **Self-Repaying Micro-Credit** can advance you BRLm instantly without breaking your DeFi position.\n\nFlow:\n1. Agent locks USDm in Vault.\n2. Advances BRLm via PIX.\n3. Debt is paid automatically by your Vault's yield.`,
     };
   }
 
-  if (includesAny(text, ["hoje", "atividade", "resumo"])) {
+  if (includesAny(text, ["balance", "wallet", "how much", "funds", "saldo", "carteira", "quanto"])) {
+    return {
+      type: "text",
+      thinkingSteps: ["Reading on-chain balance...", "Splitting immediate buffer and yield vault..."],
+      text: `Your total balance is **$${baseContext.balance}**.\n\n• Vault (Yield): **$${baseContext.capital}**\n• Immediate Buffer (MiniPay): **$${summary.liquidityBufferUsd.toFixed(2)}**\n• Current APY: **${baseContext.apy}%**`,
+    };
+  }
+
+  if (includesAny(text, ["today", "activity", "summary", "log", "hoje", "atividade", "resumo"])) {
     const events = dashboard.agentEvents.slice(0, 3).map((event, index) => `${index + 1}. ${event}`).join("\n");
     return {
       type: "insight",
-      thinkingSteps: ["Consultando log do agente...", "Consolidando operações do dia..."],
-      text: `Resumo de hoje:\n${events}\n\nYield estimado do dia: **+$${baseContext.dailyYield}**.`,
+      thinkingSteps: ["Querying fee abstraction logs...", "Consolidating LP optimizations..."],
+      text: `Today's summary:\n${events}\n\nEstimated daily yield: **+$${baseContext.dailyYield}** (Gas paid in USDm).`,
     };
   }
 
-  if (includesAny(text, ["maximizar", "yield", "oportunidade", "otimizar"])) {
+  if (includesAny(text, ["maximize", "yield", "opportunity", "optimize", "earn", "maximizar", "oportunidade", "otimizar"])) {
     const amount = recommendedRebalanceAmount(dashboard);
+    if (amount === 0) {
+      return {
+        type: "text",
+        thinkingSteps: ["Checking available capital...", "No capital available"],
+        text: "You don't have enough balance to optimize right now. Please add funds to your wallet to start generating yield.",
+      };
+    }
     const gain = ((amount * dashboard.marketOpportunity.apy) / 100 / 12).toFixed(2);
     return {
       type: "action",
-      thinkingSteps: ["Mapeando APYs em Aave/Morpho/Mento...", "Calculando rebalance com limite de risco..."],
-      text: "Encontrei uma oportunidade para aumentar seu retorno com baixo atrito.",
+      thinkingSteps: ["Evaluating A2A Dark Pool matches...", "Batching via Gas-Optimized routing..."],
+      text: "I identified an opportunity to increase your yield without AMM slippage. The protocol retains a 10% performance fee only on the extra yield generated.",
       actionData: {
         id: "rebalance-90",
-        title: `Realocar $${amount.toFixed(2)} para ${dashboard.marketOpportunity.protocol}`,
+        title: `Gas-Optimized Routing $${amount.toFixed(2)} to ${dashboard.marketOpportunity.protocol}`,
         amount: `$${amount.toFixed(2)}`,
-        gain: `+$${gain}/mês`,
-        risk: "Baixo",
+        gain: `+$${gain}/month`,
+        risk: "Low",
         riskColor: "#10B981",
         protocol: `${dashboard.marketOpportunity.protocol} · Celo`,
       },
     };
   }
 
-  if (includesAny(text, ["pix", "enviar", "pagar", "transferir"])) {
-    return {
-      type: "text",
-      thinkingSteps: ["Verificando buffer de liquidez...", "Conferindo disponibilidade instantânea..."],
-      text: `Você tem **$${summary.liquidityBufferUsd.toFixed(2)}** disponíveis para pagamentos imediatos.\n\nFluxo em 3 toques:\n1. Enviar\n2. Selecionar contato\n3. Confirmar valor`,
-    };
-  }
-
   return {
     type: "text",
-    thinkingSteps: ["Analisando sua solicitação...", "Buscando melhor ação com risco controlado..."],
-    text: `Sou seu agente financeiro autônomo na Celo.\n\nSaldo atual monitorado: **$${baseContext.balance}**.\nLiquidez imediata disponível: **$${summary.liquidityBufferUsd.toFixed(2)}**.\nMelhor alvo de rendimento no momento: **${baseContext.bestProtocol}** com APY de **${dashboard.marketOpportunity.apy.toFixed(2)}%**.\nMeta mensal atual: **+$${safeMonthlyTarget(summary).toFixed(2)}**.`,
+    thinkingSteps: ["Evaluating intent...", "Analyzing liquidity and unfair advantages..."],
+    text: `I am your Liquidity Agent for MiniPay.\n\nProtected balance: **$${baseContext.balance}**.\nImmediate buffer: **$${summary.liquidityBufferUsd.toFixed(2)}**.\n\nI can execute **Smart Remittances** (waiting for the best FX rate), match trades in our **A2A Dark Pool** to avoid slippage, or provide **Self-Repaying Credit** so you never have to break your yield position.`,
   };
 }

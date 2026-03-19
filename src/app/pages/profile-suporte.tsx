@@ -27,8 +27,8 @@ const FAQS = [
     color: "#A3D977",
   },
   {
-    q: "How does PIX work with cUSD?",
-    a: "Via Mento V3: cUSD → cBRL (on-chain conversion) → Transfero/Bipa converts to BRL and sends via PIX. The process takes 30 seconds to 2 minutes. Total fee: ~0.5% vs ~1.5% traditional exchange.",
+    q: "How does PIX work with USDm?",
+    a: "Via Mento V3: USDm → BRLm (on-chain conversion) → Transfero/Bipa converts to BRL and sends via PIX. The process takes 30 seconds to 2 minutes. Total fee: ~0.5% vs ~1.5% traditional exchange.",
     icon: RotateCcw,
     color: "#10B981",
   },

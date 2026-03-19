@@ -145,13 +145,13 @@ async function attemptRealMentoSwap(lock) {
     const chainId = env.celoChain === "mainnet" ? ChainId.CELO : ChainId.CELO_ALFAJORES;
     const mento = await Mento.create(chainId, celoWalletClient);
     
-    // Swap 0.01 cUSD for CELO (Buy CELO)
+    // Swap 0.01 USDm for CELO (Buy CELO)
     // In a real scenario, amounts would match lock.amount
-    const fromToken = env.usdStableAddress; // cUSD
+    const fromToken = env.usdStableAddress; // USDm
     const toToken = "CELO"; 
-    const amountIn = parseUnits("0.01", 18); // 0.01 cUSD
+    const amountIn = parseUnits("0.01", 18); // 0.01 USDm
 
-    console.log(`[Settlement] Attempting Real Mento Swap: ${formatUnits(amountIn, 18)} cUSD -> CELO`);
+    console.log(`[Settlement] Attempting Real Mento Swap: ${formatUnits(amountIn, 18)} USDm -> CELO`);
     
     // Check allowance first
     const allowance = await celoClient.readContract({

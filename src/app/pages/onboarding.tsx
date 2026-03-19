@@ -550,12 +550,15 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       
       const openSelfAction = (url: string) => {
         if (!url) return false;
-        // In MiniPay webview, opening a blank popup first can replace current view with a white page.
-        // Open only with a concrete URL and fallback to manual CTA if popup is blocked.
+        
+        // Modal Flow / Deep Link Handling
         if (isMiniPay) {
+          // Dentro do MiniPay, o deep link direto é mais seguro
           window.location.href = url;
           return true;
         }
+        
+        // Em navegadores normais, tentamos abrir em nova aba
         const popup = window.open(url, "_blank", "noopener,noreferrer");
         return Boolean(popup);
       };
@@ -570,7 +573,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
          setSelfQrDataUrl(generatedQr);
          const opened = openSelfAction(session.deepLink);
          if (!opened) {
-           setInlineSuccess("Abra o Self manualmente pelo botão abaixo para continuar.");
+           setInlineSuccess("Open Self manually using the button below to continue.");
          }
       } else if (session.qrData) {
          setInlineSuccess("Verifique via QR Code ou abra o app Self...");
@@ -579,10 +582,10 @@ function StepConnect({ onNext }: { onNext: () => void }) {
          setSelfQrDataUrl(generatedQr);
          const opened = openSelfAction(session.qrData);
          if (!opened) {
-           setInlineSuccess("Abra o Self manualmente pelo botão abaixo para continuar.");
+           setInlineSuccess("Open Self manually using the button below to continue.");
          }
       } else {
-         setInlineSuccess("Verifique no seu app Self...");
+         setInlineSuccess("Check your Self app...");
          await new Promise(r => setTimeout(r, 3000));
       }
 
@@ -920,8 +923,8 @@ function StepConnect({ onNext }: { onNext: () => void }) {
             <p className="text-sm font-semibold" style={{ color: "#3B82F6" }}>
               Verificação Self Obrigatória
             </p>
-            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-              A ativação do agente ficará bloqueada até que sua identidade seja verificada via Self Protocol (Prova ZK).
+            <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+              The agent activation will be locked until your identity is verified via Self Protocol (ZK Proof).
             </p>
           </div>
         )}
@@ -939,7 +942,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
             </p>
             <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
               {activationRoute.blockers[0].includes("Complete Self verification") 
-                ? "Complete a verificação Self para desbloquear a inteligência do agente." 
+                ? "Complete Self verification to unlock the agent's intelligence." 
                 : activationRoute.blockers[0]}
             </p>
           </div>
@@ -1062,7 +1065,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
           >
             <img src={selfQrDataUrl} alt="Self verification QR" className="w-[220px] h-[220px] rounded-xl bg-white p-2" />
             <p className="text-xs text-center" style={{ color: "var(--text-muted)" }}>
-              Escaneie no app Self do celular para continuar a verificação.
+              Scan in the Self mobile app to continue verification.
             </p>
           </div>
         )}
@@ -1091,7 +1094,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
               </p>
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                 {selfIsRequired
-                  ? "Obrigatório para segurança · Prova ZK · Anti-Sybil"
+                  ? "Required for security · ZK Proof · Anti-Sybil"
                   : "Prova ZK Opcional · Anti-Sybil · Privacidade total"}
               </p>
             </div>
@@ -1190,7 +1193,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
           {phase === "idle" && !wrongNetwork ? (
             <>
               <Wallet className="w-5 h-5" />
-              {isMiniPay ? "Conectando MiniPay..." : "Conectar carteira"}
+              {isMiniPay ? "Connecting MiniPay..." : "Connect wallet"}
             </>
           ) : activationRoute?.nextAction === "activate_session" ? (
             <>
@@ -1200,7 +1203,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
           ) : phase === "connected" && requiresSelfVerification && !selfStatus?.verified ? (
             <>
               <Fingerprint className="w-5 h-5" />
-              {isVerifyingSelf ? "Gerando Link Self..." : "Desbloquear com Self ID"}
+              {isVerifyingSelf ? "Generating Self Link..." : "Unlock with Self ID"}
             </>
           ) : activationRoute?.nextAction === "claim_faucet" ? (
             <>
@@ -1215,7 +1218,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
                 className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white"
               />
               {isSwitchingChain
-                ? "Trocando para Celo..."
+                ? "Switching to Celo..."
                 : isSigningMessage
                 ? "Signing session..."
                 : phase === "connecting"
@@ -1522,7 +1525,7 @@ function StepLaunch({ onDone }: { onDone: () => void }) {
           proofData: {
             txHash: response.settlement.txHash || "0x...",
             status: response.settlement.onChainProof?.receiptStatus || "success",
-            fee: response.settlement.onChainProof?.feeCurrency || "cUSD",
+            fee: response.settlement.onChainProof?.feeCurrency || "USDm",
           }
         }
       ]);

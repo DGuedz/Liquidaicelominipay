@@ -72,7 +72,7 @@ const SCENARIOS: Record<string, Scenario> = {
       "Verificando posições abertas nos protocolos...",
     ],
     text:
-      "Resumo do dia pronto. Se o backend estiver disponível, vou priorizar os eventos reais da sua carteira e o rendimento estimado com base no capital atual.",
+      "Daily summary ready. If the backend is available, I will prioritize the real events from your wallet and the estimated yield based on the current capital.",
     type: "text",
   },
   maximizar: {
@@ -84,7 +84,7 @@ const SCENARIOS: Record<string, Scenario> = {
       "Avaliando risco de protocolo Moola...",
     ],
     text:
-      "Encontrei **1 oportunidade** para aumentar seu rendimento com risco baixo. Preciso da sua autorização para executar:",
+      "I found **1 opportunity** to increase your yield with low risk. I need your authorization to execute:",
     type: "action",
     actionData: {
       id: "action-rebalance-1",
@@ -100,35 +100,35 @@ const SCENARIOS: Record<string, Scenario> = {
     thinkingTime: 1800,
     steps: ["Compilando métricas dos últimos 30 dias...", "Calculando retorno vs benchmark..."],
     text:
-      "Vou consolidar performance usando apenas o histórico real já registrado para esta wallet.",
+      "I will consolidate performance using only the real history already recorded for this wallet.",
     type: "insight",
   },
   protecao: {
     thinkingTime: 1600,
     steps: ["Verificando exposição cambial...", "Monitorando BRL/USD em tempo real..."],
     text:
-      "Proteção cambial ativa. Vou avaliar sua exposição atual e a parcela do saldo já preservada em stablecoins antes de sugerir qualquer ação.",
+      "Currency protection active. I will evaluate your current exposure and the portion of the balance already preserved in stablecoins before suggesting any action.",
     type: "text",
   },
   saldo: {
     thinkingTime: 800,
     steps: ["Consultando carteira..."],
     text:
-      "Vou ler o saldo real da carteira e dividir entre capital produtivo, liquidez imediata e projeção de yield com base no estado atual.",
+      "I will read the real balance of the wallet and divide it between productive capital, immediate liquidity, and yield projection based on the current state.",
     type: "text",
   },
   pix: {
     thinkingTime: 1200,
-    steps: ["Verificando liquidez disponível para pagamentos...", "Checando reserva do dia..."],
+    steps: ["Checking liquidity available for payments...", "Checking daily reserve..."],
     text:
-      "Vou verificar a liquidez imediata real da wallet antes de orientar um pagamento. O fluxo continua o mesmo: Enviar → selecionar destino → confirmar valor.",
+        "I will check the real immediate liquidity of the wallet before guiding a payment. The flow remains the same: Send → select destination → confirm amount.",
     type: "text",
   },
   default: {
     thinkingTime: 2000,
-    steps: ["Processando sua mensagem...", "Consultando contexto financeiro..."],
+    steps: ["Processing your message...", "Consulting financial context..."],
     text:
-      "Entendi sua mensagem! Sou o **LiquidAI Agent** — gerencio seu capital 24/7 de forma autônoma na rede Celo.\n\nPosso ajudar com:\n• **Otimização de rendimento** automática\n• **Proteção cambial** contra inflação\n• **Transferências e PIX** rápidos\n• **Relatórios** de performance\n\nO que você precisa?",
+      "Got it! I am the **LiquidAI Agent** — managing your capital 24/7 autonomously on the Celo network.\n\nI can help with:\n• **Yield optimization** (automated)\n• **FX Protection** against inflation\n• **Fast transfers and PIX**\n• **Performance reports**\n\nHow can I help you today?",
     type: "text",
   },
 };
@@ -285,7 +285,7 @@ function ActionCard({
         style={{ background: "var(--muted)" }}
       >
         <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-          Ação ignorada. Você pode reativar mais tarde.
+          Action ignored. You can reactivate later.
         </p>
       </div>
     );
@@ -509,7 +509,7 @@ const INITIAL_MESSAGES: Message[] = [
     id: 1,
     role: "agent",
     type: "text",
-    text: "Olá. Sou o **LiquidAI Agent**.\n\nAssim que a wallet estiver pronta em Celo Sepolia, vou responder usando apenas o saldo, a liquidez e o rendimento reais desta conta.\n\nComo posso ajudar?",
+    text: "Hello. I am the **LiquidAI Agent**.\n\nAs soon as the wallet is ready on Celo Sepolia, I will reply using only the real balance, liquidity, and yield of this account.\n\nHow can I help?",
     timestamp: "08:00",
     reasoningSteps: [],
   },
@@ -757,7 +757,7 @@ export function ChatPage() {
           id: nextId(),
           role: "agent",
           type: "success",
-          text: `✅ **Autorização registrada com sucesso.**\n\n${authorizedAction}\n\nVou refletir essa decisão no estado do agente assim que a operação ficar disponível no backend.`,
+          text: `✅ **Authorization successfully registered.**\n\n${authorizedAction}\n\nI will reflect this decision in the agent state as soon as the operation becomes available in the backend.`,
           timestamp: getTime(),
         };
         setMessages((prev) => [...prev, confirmMsg]);

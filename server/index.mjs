@@ -150,6 +150,29 @@ function walletAuthGuard(extractAddress) {
   };
 }
 
+function selfAuthGuard(extractAddress) {
+  return async (req, res, next) => {
+    if (!env.selfRequiredForAgent) {
+      next();
+      return;
+    }
+
+    const candidate = extractAddress(req);
+    if (!isAddress(candidate)) {
+      next();
+      return;
+    }
+
+    const verified = await isSelfVerified(candidate);
+    if (!verified) {
+      authError(res, 403, "Self verification required before executing agent actions.");
+      return;
+    }
+
+    next();
+  };
+}
+
 app.get(
   "/api/health",
   asyncRoute(async (_req, res) => {
@@ -313,13 +336,9 @@ app.post(
 app.post(
   "/api/agent/optimize",
   walletAuthGuard((req) => (typeof req.body?.address === "string" ? req.body.address : "")),
+  selfAuthGuard((req) => (typeof req.body?.address === "string" ? req.body.address : "")),
   asyncRoute(async (req, res) => {
     const { address = "", riskMode = "balanced" } = req.body || {};
-
-    if (env.selfRequiredForAgent && !isSelfVerified(address)) {
-      authError(res, 403, "Self verification required before optimizing liquidity.");
-      return;
-    }
 
     const dashboard = await getDashboardData({
       address,
@@ -468,14 +487,10 @@ app.post(
 app.post(
   "/api/agent/authorize",
   walletAuthGuard((req) => (typeof req.body?.address === "string" ? req.body.address : "")),
+  selfAuthGuard((req) => (req.body?.accepted ? (typeof req.body?.address === "string" ? req.body.address : "") : "")),
   asyncRoute(async (req, res) => {
     const { address = "", actionId = "", accepted = true } = req.body || {};
 
-    if (accepted && env.selfRequiredForAgent && !isSelfVerified(address)) {
-      authError(res, 403, "Self verification required before activating the agent.");
-      return;
-    }
-    
     if (accepted) {
       // Regra 2 - Não finalizamos aqui diretamente se envolver capital, mas para manter compatibilidade com o frontend atual, 
       // criamos o lock atômico e o finalizamos no mesmo endpoint para simular a atomicidade do backend

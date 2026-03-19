@@ -12,7 +12,7 @@ async function check() {
   const balance = await client.getBalance({ address });
   console.log('CELO Balance:', formatEther(balance));
   
-  // cUSD Alfajores
+  // USDm Alfajores
   const cusd = '0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1';
   try {
     const data = await client.readContract({
@@ -21,9 +21,9 @@ async function check() {
       functionName: 'balanceOf',
       args: [address]
     });
-    console.log('cUSD Balance:', formatEther(data));
+    console.log('USDm Balance:', formatEther(data));
   } catch (e) {
-    console.log('cUSD Check Failed:', e.message);
+    console.log('USDm Check Failed:', e.message);
   }
 }
 

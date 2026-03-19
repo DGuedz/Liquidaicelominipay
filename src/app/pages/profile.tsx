@@ -418,7 +418,7 @@ export function ProfilePage() {
           }}
         >
           <LogOut className="w-5 h-5" />
-          Sair da Conta
+          Sign Out
         </motion.button>
       </div>
 

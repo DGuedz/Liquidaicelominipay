@@ -52,7 +52,7 @@ const PROTOCOLS = [
     connected: false,
     risk: "Very Low",
     riskColor: "#A3D977",
-    desc: "Native liquidity cUSD↔cBRL↔cEUR. PIX conversion route with 40% lower spread than V2. Your liquidity buffer for fast withdrawals.",
+    desc: "Native liquidity USDm↔BRLm↔EURm. PIX conversion route with 40% lower spread than V2. Your liquidity buffer for fast withdrawals.",
     chain: "Waiting sync",
   },
   {
