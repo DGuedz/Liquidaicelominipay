@@ -1,5 +1,10 @@
 # LiquidAI: Agentic Treasury OS for MiniPay
 
+[![Built for Celo](https://img.shields.io/badge/Built_for-Celo-10B981?style=flat-square&logo=celo&logoColor=white)](https://celo.org/)
+[![MiniPay Compatible](https://img.shields.io/badge/MiniPay-Compatible-FFCC00?style=flat-square)](https://minipay.opera.com/)
+[![Self Protocol Identity](https://img.shields.io/badge/Identity-Self_Protocol-8B5CF6?style=flat-square)](https://self.xyz/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+
 **LiquidAI is an AI liquidity agent built for MiniPay users on Celo.** It acts as an autonomous treasury manager that protects value, routes FX on-chain via Mento V3, optimizes liquidity pools (LP), and maintains instant liquidity for everyday spending.
 
 By abstracting the complexity of AMMs, fee structures, and bridge routing, LiquidAI delivers a simple, natural-language experience: protecting idle balances against inflation while generating yield, all powered by Celo's fast, low-cost L2 architecture and fee abstraction.
