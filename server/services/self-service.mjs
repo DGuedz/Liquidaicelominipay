@@ -183,7 +183,7 @@ export async function startSelfRegistration(humanAddress) {
         return { 
             sessionToken,
             deepLink: data.deepLink,
-            qrData: data.qrData ? (typeof data.qrData === 'object' ? JSON.stringify(data.qrData) : data.qrData) : data.qrUrl,
+            qrData: data.deepLink, // Self App internal scanner expects the deepLink URL, not stringified JSON
             privateKeyHex: data.privateKeyHex,
             mode: "agent" 
         };

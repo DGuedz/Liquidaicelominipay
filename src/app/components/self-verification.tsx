@@ -201,15 +201,6 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
 
       setState("scanning");
       setShowQr(true);
-      await sleep(1200);
-
-      setShowQr(false);
-      setState("proving");
-
-      for (let idx = 0; idx < ZK_STEPS.length; idx += 1) {
-        setStepIdx(idx);
-        await sleep(800);
-      }
 
       let verified = false;
       let attempts = 0;
@@ -239,8 +230,16 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
         }
       }
 
+      setShowQr(false);
+
       if (!verified) {
         throw new Error("Tempo limite da verificacao Self. Tente novamente.");
+      }
+
+      setState("proving");
+      for (let idx = 0; idx < ZK_STEPS.length; idx += 1) {
+        setStepIdx(idx);
+        await sleep(800);
       }
 
       const nextStatus = await refreshStatus(walletAddress);
