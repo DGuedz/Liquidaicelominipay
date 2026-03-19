@@ -290,7 +290,7 @@ $0.00
 4. **Value**: text-base, font-medium, text-primary
 5. **Caption**: text-xs, text-muted
 
-## 📱 Responsive Breakpoints
+##  Responsive Breakpoints
 
 ```css
 sm: 640px   /* Small tablets */
@@ -385,4 +385,4 @@ xl: 1280px  /* Desktops */
 
 ---
 
-**Design with intention, build with precision.** ✨
+**Design with intention, build with precision.** 

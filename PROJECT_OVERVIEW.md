@@ -18,7 +18,7 @@ LiquidAI is a mobile-first financial application built for the "Build Agents for
 - People new to DeFi who need familiar interfaces
 - Anyone wanting automated liquidity optimization
 
-## 🏗️ Architecture
+## 🏗 Architecture
 
 ### Technology Stack
 
@@ -127,7 +127,7 @@ Home Dashboard
    - Receipt page with full details
    - Download receipt option
 
-## 💡 Feature Implementation
+##  Feature Implementation
 
 ### MVP Features (Implemented)
 
@@ -183,7 +183,7 @@ Home Dashboard
 - Protocol integration
 - Performance tracking
 
-## 📊 Performance Metrics
+##  Performance Metrics
 
 ### Target Metrics
 - **Bundle Size**: < 2MB (currently ~1.8MB)
@@ -214,7 +214,7 @@ Home Dashboard
 - Rate limiting
 - Fraud detection
 
-## 🚀 Deployment
+##  Deployment
 
 ### Build Process
 ```bash
@@ -233,7 +233,7 @@ npm run build
 - AWS Amplify
 - Any static hosting
 
-## 📱 Mobile Optimization
+##  Mobile Optimization
 
 ### Responsive Breakpoints
 - Mobile: 375px - 428px (primary target)
@@ -267,7 +267,7 @@ npm run build
 - E2E tests for critical paths
 - Visual regression testing
 
-## 📈 Analytics & Metrics
+##  Analytics & Metrics
 
 ### Key Performance Indicators (Future)
 - User engagement time

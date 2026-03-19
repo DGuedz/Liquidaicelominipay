@@ -36,7 +36,7 @@ Este roteiro foi desenhado para maximizar o impacto nos critérios: **Mobile-Fir
 
 ---
 
-## 🛠️ Checklist de Gravação
+##  Checklist de Gravação
 
 1.  [ ] **Limpar Cache:** Garanta que o Onboarding comece do zero.
 2.  **Modo Escuro:** O app fica mais bonito ("High Tech") no modo escuro.

@@ -108,7 +108,7 @@
 
 ---
 
-### 🚀 Landing Page
+###  Landing Page
 
 **Hero Section**
 - ✅ Animated logo (gradient circle with icon)
@@ -245,7 +245,7 @@
 
 ## 🔜 Planned Features (Future Releases)
 
-### 📊 Analytics Dashboard (`/analytics`)
+###  Analytics Dashboard (`/analytics`)
 - [ ] Detailed spending breakdown
 - [ ] Category-wise analysis
 - [ ] Income sources visualization
@@ -263,7 +263,7 @@
 - [ ] OCR for amounts
 - [ ] Camera integration
 
-### 💳 Card Management (`/card`)
+###  Card Management (`/card`)
 - [ ] Virtual card creation
 - [ ] Card controls (freeze/unfreeze)
 - [ ] Transaction limits
@@ -282,7 +282,7 @@
 - [ ] Theme toggle (future dark mode)
 - [ ] Logout functionality
 
-### 💰 Advanced Transfer Features
+###  Advanced Transfer Features
 - [ ] Contact selection
 - [ ] Recent recipients
 - [ ] Saved beneficiaries
@@ -292,7 +292,7 @@
 - [ ] Request money flow
 - [ ] Payment links
 
-### 🤖 AI/Automation Features
+###  AI/Automation Features
 - [ ] Smart yield suggestions
 - [ ] Automatic rebalancing
 - [ ] Liquidity optimization
@@ -301,7 +301,7 @@
 - [ ] Budget alerts
 - [ ] Anomaly detection
 
-### 🔗 Blockchain Integration
+###  Blockchain Integration
 - [ ] Wallet connection (MetaMask, WalletConnect)
 - [ ] Multi-chain support
 - [ ] Real transactions on-chain
@@ -319,7 +319,7 @@
 - [ ] Notification center
 - [ ] Read/unread states
 
-### 📱 PWA Features
+###  PWA Features
 - [ ] Install prompt
 - [ ] Offline mode
 - [ ] Background sync
@@ -343,7 +343,7 @@
 - [ ] Activity log
 - [ ] Fraud detection
 
-### 📈 Performance Optimizations
+###  Performance Optimizations
 - [ ] Code splitting by route
 - [ ] Lazy loading images
 - [ ] Virtual scrolling for lists
@@ -369,7 +369,7 @@ These features are intentionally excluded to maintain simplicity:
 
 ---
 
-## 📊 Feature Priority Matrix
+##  Feature Priority Matrix
 
 ### High Priority (Next 1-2 releases)
 1. **Wallet Integration** - Essential for real transactions

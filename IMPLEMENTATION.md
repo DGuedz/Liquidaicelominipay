@@ -1,6 +1,6 @@
 # LiquidAI - Implementation Guide
 
-## 🚀 Quick Start
+##  Quick Start
 
 This is a complete redesign of the LiquidAI dApp with a clean, financial-first aesthetic optimized for mobile experiences.
 
@@ -50,7 +50,7 @@ src/
 - **Financial Data**: Monospace fonts (SF Mono, Menlo)
 - **Weights**: Regular (400), Medium (500), Semibold (600)
 
-## 🔄 User Flows
+##  User Flows
 
 ### Primary Flow: Transfer
 
@@ -201,7 +201,7 @@ import { PageHeader } from "../components/page-header";
 - Feature highlights
 - Call-to-action
 
-## 📱 Mobile Optimization
+##  Mobile Optimization
 
 ### Touch Targets
 - Minimum size: 44x44px
@@ -291,7 +291,7 @@ export const router = createBrowserRouter([
 ]);
 ```
 
-## 📊 Data Flow
+##  Data Flow
 
 ### Mock Data Structure
 
@@ -352,7 +352,7 @@ All design tokens are defined in `theme.css` using CSS custom properties. Use th
 - Verify theme.css is imported
 - Use correct class names
 
-## 📈 Next Steps
+##  Next Steps
 
 To extend this implementation:
 

@@ -2,7 +2,7 @@
 
 Get up and running with LiquidAI in minutes.
 
-## 🚀 Overview
+##  Overview
 
 LiquidAI is a mobile-first financial application with a clean, professional design. This guide will help you understand the codebase and start developing quickly.
 
@@ -204,7 +204,7 @@ import { motion } from "motion/react";
 </motion.div>
 ```
 
-## 📱 Navigation Flow
+##  Navigation Flow
 
 ```
 User Journey:
@@ -276,7 +276,7 @@ import { IconName } from "lucide-react";
 
 Browse icons at [lucide.dev](https://lucide.dev)
 
-## 💡 Pro Tips
+##  Pro Tips
 
 ### 1. Use Design Tokens
 ```tsx
@@ -371,7 +371,7 @@ export function Footer() { ... }
 - 📋 See [PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md) for architecture
 - 🔍 Look at existing components for examples
 
-## ⚡ Speed Run (5 Minutes)
+##  Speed Run (5 Minutes)
 
 Want to understand the whole app fast?
 
@@ -384,7 +384,7 @@ That's it! You now understand 90% of the codebase.
 
 ---
 
-**Ready to build?** 🚀
+**Ready to build?** 
 
 Start with small changes, test frequently, and refer to the design guide. Welcome to LiquidAI!
 
