@@ -58,3 +58,4 @@ The agent's decision-making is logged following the ERC-8004 standard, and execu
 - **Vision (Deep Tech): ZK-Shielded Treasury.** Evolution towards a compliant "Private Computer" architecture inside the Celo EVM. By migrating from an account-based model to a ZK-encrypted UTXO state machine (inspired by protocols like Railgun), LiquidAI replaces public balances with opaque "notes". The EVM only sees commitments and nullifiers. This enables A2A Dark Pools and Proof of Innocence for seamless fiat on/off-ramps without compromising user privacy. 
   - 📖 **Read the Blueprint:** [ZK-Shielded Architecture](docs/ZK_SHIELD_ARCHITECTURE.md)
   - 🛠️ **Read the Execution Plan:** [ZK Implementation Plan](docs/ZK_IMPLEMENTATION_PLAN.md)
+  - 💰 **Read the Business Case:** [Revenue Model & Projections](docs/REVENUE_MODEL_PROJECTIONS.md)
