@@ -41,13 +41,43 @@ Technically, this is an encrypted UTXO (Unspent Transaction Output) state machin
 2. User generates a ZK-Proof destroying their Shielded Note (`Nullifier`) and instructing the contract to send the public tokens to the designated Off-Ramp address (e.g., the Fiat Gateway).
 3. **Result:** The Off-Ramp receives the funds and executes the PIX. The public network sees the withdrawal, but cannot link it to the user's historical shielded activity or total shielded balance.
 
-## 4. Compliance: Proof of Innocence
+## 4. Rules of Engagement: When to use and when NOT to use
+
+Understanding the boundaries of ZK-Privacy is crucial for positioning LiquidAI correctly. We do not sell "magical anonymity", we sell **architectural privacy**.
+
+### The Exposure Matrix (Unshielding)
+When a user executes an *Unshield* (e.g., sending funds from the Shielded Pool to a PIX gateway), the following metadata dynamics apply:
+- 👁️ **VISIBLE to the Public EVM:** Destination address, Value, Token type, Timestamp.
+- 🥷 **HIDDEN by ZK Proofs:** Who originated the transaction, which specific UTXO Note was consumed, and the internal transaction history of that capital.
+
+### ✅ When to USE the Shielded Engine:
+- **Untraceable Transfers:** When you need to move value between addresses without creating a public link.
+- **Protocol-Agnostic DeFi:** When you want to interact with AMMs (Mento) or lending pools without linking your personal wallet history to those protocols.
+- **Fund Separation:** When you want to separate new yields from your past on-chain history without leaving the EVM ecosystem.
+- **Auditable Custody:** When you need to provide audit access (via Viewing Keys) to regulators/accountants without giving up custody or keys.
+
+### 🚫 When NOT to use (The Limitations):
+- **Pre-existing Identity Links:** If the origin of the funds is already linked to your identity (e.g., a direct KYC'd exchange withdrawal), the protocol *does not erase the past*. It only protects what happens *after* the funds are shielded.
+- **Network-Level Anonymity:** ZK Proofs do not hide IP addresses. Users requiring total operational security must combine LiquidAI with network-level tools (VPNs/Tor).
+- **Poor Operational Hygiene:** Reusing the same public address for multiple unshields can create metadata correlations that break the privacy set.
+
+## 5. The "Digital Offshore" Thesis (GTM Strategy)
 To ensure LiquidAI remains compliant with global regulations while maintaining privacy:
 - The system integrates **Proof of Innocence**.
 - Users can mathematically prove (via ZK) that their shielded notes did *not* originate from a known list of sanctioned or hacked addresses.
 - Users can generate **Viewing Keys** to selectively reveal their transaction history to auditors or Off-Ramps, maintaining self-sovereignty over their financial data.
 
-## 5. The Alpha Secrets: Protecting DeFi Yield and Gas Metadata
+### The Validation Path: Retail to Institutional
+LiquidAI's architecture inherently creates a "Digital Offshore" environment. By shielding capital in a compliant manner, it mimics the privacy and asset protection of an offshore jurisdiction, but executed entirely via cryptography on Celo.
+
+1. **Step 1: Retail Validation (The Trojan Horse)**
+   - We deploy first to the MiniPay ecosystem. 
+   - **Why?** Retail users need protection from local inflation and predatory banking fees. We use the narrative of "Yield-Backed Banking" to acquire users. The privacy layer acts as a silent guardian, protecting them from MEV bots and local surveillance without friction.
+2. **Step 2: Institutional Scaling (The True Endgame)**
+   - Once the Shielded Pool achieves deep liquidity and the Proof of Innocence pipeline is battle-tested by retail, we open the API to Family Offices and Corporate Treasuries.
+   - **Why?** Institutions *cannot* deploy capital on public blockchains if their competitors can track their every move. LiquidAI becomes the B2B infrastructure for institutional DeFi on Celo, offering Dark Pool swaps and compliant privacy.
+
+## 6. The Alpha Secrets: Protecting DeFi Yield and Gas Metadata
 
 ### A. The "Relayer Network" (Broadcasters)
 If a user pays for gas using their own public Celo wallet to execute a shielded transaction, the privacy is instantly broken by correlation. 
