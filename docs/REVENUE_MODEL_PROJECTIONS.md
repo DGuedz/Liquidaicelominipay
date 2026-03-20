@@ -61,7 +61,45 @@ LiquidAI is designed to be free for the end-user. We do not charge subscription 
 
 ---
 
-## 3. Impact on the MiniPay & Celo Ecosystem
+## 3. Operational Expenses (OpEx) & Net Profit
+
+To operate a 100% on-chain, compliant, and AI-driven protocol, LiquidAI will incur specific infrastructure and legal costs. The beauty of the EVM + Celo architecture is that variable costs scale sub-linearly with revenue.
+
+### The Cost Structure (Annualized run-rate by Year 2/3)
+1. **Blockchain Infrastructure (RPCs & Relayers):**
+   - High-throughput dedicated RPC nodes (Alchemy/Infura Enterprise): ~$25,000/year.
+   - Celo Gas for Relayer Network (paid by us, but reimbursed by users via premium): *Net Zero cost*.
+2. **AI & Agent Infrastructure:**
+   - LLM Inference API (Claude/OpenAI for natural language routing): ~$40,000/year.
+   - Cloud Hosting for off-chain Relayer Nodes and indexing (AWS/GCP): ~$35,000/year.
+3. **Security & Smart Contract Audits:**
+   - 2x Tier-1 ZK and Solidity Audits per year (e.g., Trail of Bits, Zellic): ~$250,000/year.
+   - Bug Bounty Program (Immunefi): ~$100,000/year (funded from treasury).
+4. **Legal & Compliance (The "Digital Offshore" Shield):**
+   - VASP (Virtual Asset Service Provider) / Offshore Entity setup and maintenance (BVI/Cayman): ~$80,000/year.
+   - On-chain Compliance/AML API (Chainalysis / Elliptic for Proof of Innocence fallback): ~$60,000/year.
+5. **Core Team (Lean Protocol Team):**
+   - 4 Senior Protocol/ZK Engineers + 2 BD/Legal: ~$900,000/year.
+
+**Total Estimated OpEx (Scale Phase):** ~$1.49 Million / year.
+
+### Net Profit Projections (EBITDA)
+
+*Because smart contracts don't sleep and require no HR, the profit margins expand massively as TVL grows.*
+
+- **Year 1:**
+  - Revenue: $211,000 | OpEx: $450,000 (Subsidized by Seed Funding / Hackathon Grants).
+  - **Net:** -$239,000 (Burn phase for market capture).
+- **Year 2:**
+  - Revenue: $2.36M | OpEx: $1.1M.
+  - **Net Profit:** **$1.26 Million** (53% Margin).
+- **Year 3:**
+  - Revenue: $8.9M | OpEx: $1.5M.
+  - **Net Profit:** **$7.4 Million** (83% Margin).
+
+---
+
+## 4. Impact on the MiniPay & Celo Ecosystem
 
 LiquidAI is not just a DApp; it is an **Ecosystem Catalyst**.
 
