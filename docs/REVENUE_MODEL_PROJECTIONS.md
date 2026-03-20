@@ -89,26 +89,27 @@ By cutting out legacy providers, we reduce our OpEx from a traditional ~$1.5M to
    - *The Web3 Way:* Lean BVI entity setup (~$30k). For compliance, instead of paying expensive API licenses, we use *Zero-Knowledge Proof of Innocence* (PoI). The math proves compliance locally, eliminating the need for constant third-party chain-analysis SaaS.
    - **Cost:** ~$45k/year.
 
-5. **Core Team (The 80/20 Elite): ~$300,000/year**
+5. **Core Team (The Agentic Workforce): ~$50,000/year**
    - *The Web2 Way:* 10+ devs, managers, and BDs ($1M+ payroll).
-   - *The Web3 Way:* A squad of 2 Senior 10x Engineers (Protocol/ZK + AI/Frontend) working asynchronously. Community handles growth.
-   - **Cost:** ~$300k/year (Base salary + heavy equity/token upside).
+   - *The Web3 Way:* Double Green (Architect) orchestrating a swarm of **Autonomous AI Agents** (Claude 3.7 / specialized coding and QA agents). 
+   - **The Atomic A2A Logic:** Just as our protocol uses A2A (Agent-to-Agent) Dark Pools for financial resilience, our operational company uses A2A reasoning for code deployment, security testing, and BD outreach. AI agents don't sleep, don't demand equity, and scale instantly.
+   - **Cost:** ~$50k/year (Founder stipends + Advanced AI API limits).
 
-**Total Optimized OpEx (Scale Phase):** ~$485,000 / year.
+**Total Optimized OpEx (Scale Phase):** ~$235,000 / year.
 
-### Net Profit Projections (The Lean Web3 Multiplier)
+### Net Profit Projections (The Autonomous Protocol Multiplier)
 
-*By eliminating middlemen, our profit margins reach software-utopia levels.*
+*By replacing human operational bloat with an Agentic Workforce, our profit margins hit theoretical maximums.*
 
 - **Year 1 (The Build & Launch Phase):**
-  - Revenue: $211,000 | OpEx: $150,000 (Founders working lean, grant-funded infra).
-  - **Net Profit:** **+$61,000** (Profitable from Year 1).
+  - Revenue: $211,000 | OpEx: $50,000 (DG + AI Agents).
+  - **Net Profit:** **+$161,000** (Instantly profitable, no VC reliance needed).
 - **Year 2 (The Dark Pool Scale):**
-  - Revenue: $2.36M | OpEx: $350,000.
-  - **Net Profit:** **$2.01 Million** (85% Margin).
+  - Revenue: $2.36M | OpEx: $150,000 (Scaling AI infrastructure and bounties).
+  - **Net Profit:** **$2.21 Million** (93% Margin).
 - **Year 3 (The Digital Offshore):**
-  - Revenue: $8.9M | OpEx: $485,000.
-  - **Net Profit:** **$8.4 Million** (94% Margin).
+  - Revenue: $8.9M | OpEx: $235,000.
+  - **Net Profit:** **$8.66 Million** (97.3% Margin).
 
 ---
 
