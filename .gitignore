@@ -37,3 +37,18 @@ blob-report/
 # Output Artifacts
 output/playwright/
 .vercel
+
+# Development & Test Artifacts
+.self/
+.trae/
+commands/
+check-*.mjs
+check_*.js
+test-*.mjs
+context.md
+*.jpeg
+
+# Admin & Funding Scripts (Local only)
+scripts/fund-*.mjs
+scripts/generate-wallet.mjs
+scripts/replace-stables.mjs
