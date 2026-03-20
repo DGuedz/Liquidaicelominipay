@@ -61,33 +61,33 @@ LiquidAI is designed to be free for the end-user. We do not charge subscription 
 
 ---
 
-## 3. Operational Expenses (OpEx) & Net Profit (The Web3 80/20 Model)
+## 3. Operational Expenses (OpEx) & Net Profit (The "Zero-Friction" Web3 Model)
 
-To operate a 100% on-chain, compliant, and AI-driven protocol, LiquidAI adopts a **radical Web3 80/20 mindset**. Instead of building bloated Web2 infrastructure (heavy cloud, massive payrolls, expensive enterprise SaaS), we leverage decentralized networks and open-source intelligence to eliminate middlemen and drastically cut costs.
+To operate a 100% on-chain, compliant, and AI-driven protocol, LiquidAI adopts a **radical "Self-Made Founder + Agentic Swarm" mindset**. By eliminating legacy intermediaries, we drive our operational costs to near-zero, ensuring infinite runway and massive resilience.
 
-### The Lean & Decentralized Cost Structure (Annualized run-rate by Year 2/3)
+### The Ultra-Lean Cost Structure (Annualized run-rate by Year 2/3)
 
-By cutting out legacy providers, we reduce our OpEx from a traditional ~$1.5M to a highly optimized **~$485k/year**, while maintaining institutional security.
+By cutting out legacy providers, we reduce our OpEx from a traditional ~$1.5M to a highly optimized **~$65k/year**.
 
-1. **Blockchain Infrastructure (Decentralized RPCs & Relayers): ~$5,000/year**
+1. **Blockchain Infrastructure (Decentralized RPCs & Relayers): ~$0/year**
    - *The Web2 Way:* Pay $25k/yr to Alchemy/Infura.
    - *The Web3 Way:* Use decentralized RPC networks (like Pocket Network / POKT or local Celo light clients). Gas for the Relayer Network is 100% reimbursed by the user premium.
-   - **Cost:** ~$5k/year (Subsidized by Celo ecosystem grants initially).
+   - **Cost:** **$0** (Paid entirely by protocol spread and user premium).
 
-2. **AI & Agent Infrastructure (Edge & Open Source): ~$15,000/year**
+2. **AI & Agent Infrastructure (Edge & Open Source): ~$5,000/year**
    - *The Web2 Way:* Pay $75k/yr to OpenAI/AWS.
-   - *The Web3 Way:* Run open-source LLMs (Llama 3 / DeepSeek) via decentralized compute networks (Akash, Render) or local WASM inference directly on the user's device. 
-   - **Cost:** ~$15k/year (Compute only when absolutely necessary off-chain).
+   - *The Web3 Way:* Run open-source LLMs via decentralized compute networks (Akash) or local WASM inference directly on the user's device (MiniPay browser). 
+   - **Cost:** ~$5k/year (Only for the core Broadcaster AI orchestration).
 
-3. **Security & Smart Contract Audits (Community-Driven): ~$120,000/year**
+3. **Security & Smart Contract Audits (A2A QA + Community): ~$10,000/year**
    - *The Web2 Way:* Pay $250k+ to Tier-1 legacy auditors.
-   - *The Web3 Way:* 1x focused Audit by a specialized ZK firm (~$70k) + Code4rena/Immunefi crowdsourced bug bounties paid dynamically in protocol tokens (LiquidAI native token) instead of stablecoin treasury.
-   - **Cost:** ~$120k/year (Cash cost. Bounties leverage tokenomics).
+   - *The Web3 Way:* Double Green deploys **Specialized QA Agents** for continuous automated fuzzing, formal verification, and invariant testing. Human audits are replaced by Code4rena/Immunefi crowdsourced bug bounties paid dynamically in protocol tokens (LiquidAI native token) instead of stablecoin treasury.
+   - **Cost:** ~$10k/year (Cash cost for specialized AI APIs. Bounties leverage tokenomics).
 
-4. **Legal & Compliance (Automated "Digital Offshore"): ~$45,000/year**
+4. **Legal & Compliance (Automated "Digital Offshore"): ~$0/year (Sustained by B2B)**
    - *The Web2 Way:* $140k+ for offshore lawyers and Chainalysis APIs.
-   - *The Web3 Way:* Lean BVI entity setup (~$30k). For compliance, instead of paying expensive API licenses, we use *Zero-Knowledge Proof of Innocence* (PoI). The math proves compliance locally, eliminating the need for constant third-party chain-analysis SaaS.
-   - **Cost:** ~$45k/year.
+   - *The Web3 Way:* Zero-Knowledge Proof of Innocence (PoI). The math proves compliance locally, eliminating the need for constant third-party chain-analysis SaaS. Any legal setup is paid dynamically by the B2B API Licensing revenue.
+   - **Cost:** **$0** (Absorbed by the architecture).
 
 5. **Core Team (The Agentic Workforce): ~$50,000/year**
    - *The Web2 Way:* 10+ devs, managers, and BDs ($1M+ payroll).
@@ -95,21 +95,21 @@ By cutting out legacy providers, we reduce our OpEx from a traditional ~$1.5M to
    - **The Atomic A2A Logic:** Just as our protocol uses A2A (Agent-to-Agent) Dark Pools for financial resilience, our operational company uses A2A reasoning for code deployment, security testing, and BD outreach. AI agents don't sleep, don't demand equity, and scale instantly.
    - **Cost:** ~$50k/year (Founder stipends + Advanced AI API limits).
 
-**Total Optimized OpEx (Scale Phase):** ~$235,000 / year.
+**Total Ultra-Lean OpEx (Scale Phase):** ~$65,000 / year.
 
 ### Net Profit Projections (The Autonomous Protocol Multiplier)
 
-*By replacing human operational bloat with an Agentic Workforce, our profit margins hit theoretical maximums.*
+*By replacing human operational bloat with an Agentic Workforce and zero-cost infrastructure, our profit margins hit theoretical maximums.*
 
 - **Year 1 (The Build & Launch Phase):**
-  - Revenue: $211,000 | OpEx: $50,000 (DG + AI Agents).
-  - **Net Profit:** **+$161,000** (Instantly profitable, no VC reliance needed).
+  - Revenue: $211,000 | OpEx: $65,000.
+  - **Net Profit:** **+$146,000** (Instantly profitable, no VC reliance needed).
 - **Year 2 (The Dark Pool Scale):**
-  - Revenue: $2.36M | OpEx: $150,000 (Scaling AI infrastructure and bounties).
-  - **Net Profit:** **$2.21 Million** (93% Margin).
+  - Revenue: $2.36M | OpEx: $65,000.
+  - **Net Profit:** **$2.29 Million** (97% Margin).
 - **Year 3 (The Digital Offshore):**
-  - Revenue: $8.9M | OpEx: $235,000.
-  - **Net Profit:** **$8.66 Million** (97.3% Margin).
+  - Revenue: $8.9M | OpEx: $65,000 (Costs remain flat as AI/Smart Contracts scale infinitely).
+  - **Net Profit:** **$8.83 Million** (99.2% Margin).
 
 ---
 
