@@ -124,9 +124,9 @@ const ROADMAP_QUARTERS = [
     status: "planned",
     items: [
       "Pismo (Visa) — Brazil integration",
-      "Metal Card for Premium tier",
-      "Gas-Optimized Yield Batching",
       "Self-Repaying Micro-Credit",
+      "ZK-Shielded Treasury (UTXO Notes)",
+      "Proof of Innocence Compliance",
     ],
   },
 ];

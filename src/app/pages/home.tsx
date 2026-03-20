@@ -22,6 +22,7 @@ import {
   MessageSquare,
   Target,
   X,
+  Fingerprint,
 } from "lucide-react";
 import {
   EmergencyFundIcon,
@@ -787,6 +788,11 @@ export function HomePage() {
                 icon: <Sparkles className="w-3.5 h-3.5" style={{ color: "#F59E0B" }} />,
                 title: "Gas-Optimized Batching",
                 desc: "Institutional Yield Access",
+              },
+              {
+                icon: <Fingerprint className="w-3.5 h-3.5" style={{ color: "#8B5CF6" }} />,
+                title: "Proof of Innocence",
+                desc: "Compliant ZK Privacy (Q4 Vision)",
               },
             ].map((m, i) => (
               <div key={m.title} className="flex items-center gap-3 px-4 py-3">
