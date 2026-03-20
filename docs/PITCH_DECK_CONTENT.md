@@ -22,9 +22,9 @@ We transform idle stablecoins into an autonomous, yield-generating "Digital Offs
 ---
 
 ## Slide 3: Market Vision
-**Title:** A Perfect Storm: Celo + MiniPay
+**Title:** A Perfect Storm: Celo + Opera MiniPay
 **Body:** 
-Stablecoins are the killer app of crypto. Celo provides sub-cent EVM rails. Opera MiniPay offers 14M+ captive users in LATAM and Africa. The market is ready for a "Set-and-Forget" financial autopilot. We are bridging the gap between high-yield DeFi and instant, everyday local payments (like PIX), all optimized for mobile-first adoption.
+Opera just proposed acquiring 27% of the CELO supply (160M tokens). Opera *is* Celo now. By building natively for MiniPay, we are building for the largest institutional stakeholder. The market is ready for a "Set-and-Forget" financial autopilot bridging high-yield DeFi and instant local payments (PIX) for 14M+ captive users in LATAM and Africa.
 
 ---
 
