@@ -80,7 +80,7 @@ export function generateChatReply({ message, dashboard }) {
     return {
       type: "text",
       thinkingSteps: ["Checking protocol roadmap...", "Retrieving Shielded Mode specs..."],
-      text: `In Phase 3, we are upgrading the treasury to a **ZK-Shielded architecture**. Your capital will be managed via encrypted UTXO notes, making your balance and transfers invisible on the public Celo network while maintaining strict compliance (Proof of Innocence) for fiat on/off-ramps.`,
+      text: `In Phase 3, we are upgrading the treasury to a **ZK-Shielded architecture**. Operating as a 'Private Computer' inside the Celo EVM, your capital will be converted from public balances into encrypted UTXO notes. The network will only see opaque commitments and nullifiers, keeping your transfers completely invisible while maintaining strict compliance (Proof of Innocence) for fiat on/off-ramps.`,
     };
   }
 
