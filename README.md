@@ -55,4 +55,6 @@ The agent's decision-making is logged following the ERC-8004 standard, and execu
 - **Q2:** Deep Mento V3 routing, BRLm/USDm/EURm intelligence, route scoring and FPMM dynamic spreads.
 - **Q3:** LP management with reward overlay (Merkl/Steer) and slippage-aware routing.
 - **Q4:** Card/PIX off-ramp integration, buffer manager, and collateralized credit lines.
-- **Vision (Deep Tech): ZK-Shielded Treasury.** Evolution towards a compliant "Private Computer" architecture inside the Celo EVM. By migrating from an account-based model to a ZK-encrypted UTXO state machine (inspired by protocols like Railgun), LiquidAI replaces public balances with opaque "notes". The EVM only sees commitments and nullifiers. This enables A2A Dark Pools and Proof of Innocence for seamless fiat on/off-ramps without compromising user privacy.
+- **Vision (Deep Tech): ZK-Shielded Treasury.** Evolution towards a compliant "Private Computer" architecture inside the Celo EVM. By migrating from an account-based model to a ZK-encrypted UTXO state machine (inspired by protocols like Railgun), LiquidAI replaces public balances with opaque "notes". The EVM only sees commitments and nullifiers. This enables A2A Dark Pools and Proof of Innocence for seamless fiat on/off-ramps without compromising user privacy. 
+  - 📖 **Read the Blueprint:** [ZK-Shielded Architecture](docs/ZK_SHIELD_ARCHITECTURE.md)
+  - 🛠️ **Read the Execution Plan:** [ZK Implementation Plan](docs/ZK_IMPLEMENTATION_PLAN.md)
