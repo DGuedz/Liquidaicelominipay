@@ -76,6 +76,14 @@ export function generateChatReply({ message, dashboard }) {
     };
   }
 
+  if (includesAny(text, ["privacy", "private", "railgun", "zk", "shield", "privacidade", "invisível"])) {
+    return {
+      type: "text",
+      thinkingSteps: ["Checking protocol roadmap...", "Retrieving Shielded Mode specs..."],
+      text: `In Phase 3, we are upgrading the treasury to a **ZK-Shielded architecture**. Your capital will be managed via encrypted UTXO notes, making your balance and transfers invisible on the public Celo network while maintaining strict compliance (Proof of Innocence) for fiat on/off-ramps.`,
+    };
+  }
+
   return {
     type: "text",
     thinkingSteps: ["Evaluating intent...", "Analyzing liquidity and unfair advantages..."],

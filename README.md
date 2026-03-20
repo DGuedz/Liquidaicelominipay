@@ -55,3 +55,4 @@ The agent's decision-making is logged following the ERC-8004 standard, and execu
 - **Q2:** Deep Mento V3 routing, BRLm/USDm/EURm intelligence, route scoring and FPMM dynamic spreads.
 - **Q3:** LP management with reward overlay (Merkl/Steer) and slippage-aware routing.
 - **Q4:** Card/PIX off-ramp integration, buffer manager, and collateralized credit lines.
+- **Vision (Deep Tech): ZK-Shielded Treasury.** Evolution towards a compliant "Private Computer" architecture. Future iterations aim to shield capital using UTXO models and Zero-Knowledge Proofs (inspired by protocols like Railgun), enabling A2A Dark Pools and Proof of Innocence for seamless fiat on/off-ramps without compromising user privacy.

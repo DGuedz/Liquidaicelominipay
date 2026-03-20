@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import {
   ArrowLeft, Shield, Fingerprint, Key, Smartphone, Eye, EyeOff,
-  CheckCircle2, AlertTriangle, Lock, ChevronRight,
+  CheckCircle2, AlertTriangle, Lock, ChevronRight, ZapOff
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useTheme } from "../hooks/useTheme";
@@ -174,7 +174,7 @@ export function ProfileSegurancaPage() {
               </div>
             <Toggle enabled={agentLimit} onToggle={() => setAgentLimit((v) => !v)} color="#F59E0B" />
           </div>
-          <div className="flex items-center gap-3 px-4 py-3.5">
+          <div className="flex items-center gap-3 px-4 py-3.5" style={{ borderBottom: "1px solid var(--border-light)" }}>
             <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(139,92,246,0.1)" }}>
               <Eye className="w-4.5 h-4.5" style={{ color: "#8B5CF6" }} />
             </div>
@@ -183,6 +183,22 @@ export function ProfileSegurancaPage() {
               <p className="text-xs text-text-muted mt-0.5">Hides values across the interface</p>
             </div>
             <Toggle enabled={hideBalance} onToggle={() => setHideBalance((v) => !v)} color="#8B5CF6" />
+          </div>
+          
+          {/* ZK Shielded Teaser */}
+          <div className="flex items-center gap-3 px-4 py-3.5 relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[rgba(16,185,129,0.03)] to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(16,185,129,0.1)", border: "1px dashed rgba(16,185,129,0.3)" }}>
+              <ZapOff className="w-4.5 h-4.5" style={{ color: "#10B981" }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium text-text-primary">Shielded Mode</p>
+                <span className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded" style={{ background: "rgba(16,185,129,0.15)", color: "#10B981" }}>Q4 Vision</span>
+              </div>
+              <p className="text-xs text-text-muted mt-0.5">Invisible UTXO balances and compliant ZK routing.</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-text-muted" />
           </div>
         </div>
       </div>
