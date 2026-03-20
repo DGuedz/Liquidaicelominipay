@@ -47,7 +47,26 @@ To ensure LiquidAI remains compliant with global regulations while maintaining p
 - Users can mathematically prove (via ZK) that their shielded notes did *not* originate from a known list of sanctioned or hacked addresses.
 - Users can generate **Viewing Keys** to selectively reveal their transaction history to auditors or Off-Ramps, maintaining self-sovereignty over their financial data.
 
-## 5. Required Technical Stack (Future Implementation)
+## 5. The Alpha Secrets: Protecting DeFi Yield and Gas Metadata
+
+### A. The "Relayer Network" (Broadcasters)
+If a user pays for gas using their own public Celo wallet to execute a shielded transaction, the privacy is instantly broken by correlation. 
+LiquidAI will use a **Relayer Network (Broadcasters)**. 
+- The user's device creates a Zero-Knowledge Proof and signs an intent.
+- This intent is sent to a decentralized Relayer.
+- The Relayer pays the CELO gas fee to submit the transaction to the EVM.
+- The smart contract verifies the proof and automatically compensates the Relayer from the user's shielded balance (e.g., deducting 0.01 cUSD from the shielded note). 
+- **Result:** The user never needs public CELO to transact, and their public address is never exposed on block explorers.
+
+### B. The "DeFi Adaptor" Architecture
+How do you interact with a public Yield Pool (like Aave or Mento) while keeping your capital shielded?
+Railgun solved this with "Adaptors", and LiquidAI will implement **Yield Shields**:
+1. The user creates a ZK-Proof to Unshield 1,000 USDm and instantly call a `DeFi Adaptor` contract in the same atomic transaction.
+2. The `DeFi Adaptor` takes the 1,000 USDm, deposits it into the public yield pool (e.g., Aave or Mento), and receives the yield-bearing token (e.g., aUSDm).
+3. Still in the same transaction, the Adaptor instantly **Shields** the aUSDm back into the user's private UTXO state.
+4. **Result:** The public EVM sees a generic "LiquidAI Adaptor" contract depositing money into a pool. It has no idea *which* user initiated it, because the funds were unshielded and reshielded atomically.
+
+## 6. Required Technical Stack (Future Implementation)
 - **Circuits:** circom or Noir for generating the ZK-SNARK proofs (UTXO transition, Merkle Tree inclusion).
 - **Prover:** Local client-side proving (WASM) optimized for mobile (Opera MiniPay).
 - **Contracts:** Solidity verifier contracts deployed on Celo.
