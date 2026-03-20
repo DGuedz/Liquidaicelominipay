@@ -61,41 +61,54 @@ LiquidAI is designed to be free for the end-user. We do not charge subscription 
 
 ---
 
-## 3. Operational Expenses (OpEx) & Net Profit
+## 3. Operational Expenses (OpEx) & Net Profit (The Web3 80/20 Model)
 
-To operate a 100% on-chain, compliant, and AI-driven protocol, LiquidAI will incur specific infrastructure and legal costs. The beauty of the EVM + Celo architecture is that variable costs scale sub-linearly with revenue.
+To operate a 100% on-chain, compliant, and AI-driven protocol, LiquidAI adopts a **radical Web3 80/20 mindset**. Instead of building bloated Web2 infrastructure (heavy cloud, massive payrolls, expensive enterprise SaaS), we leverage decentralized networks and open-source intelligence to eliminate middlemen and drastically cut costs.
 
-### The Cost Structure (Annualized run-rate by Year 2/3)
-1. **Blockchain Infrastructure (RPCs & Relayers):**
-   - High-throughput dedicated RPC nodes (Alchemy/Infura Enterprise): ~$25,000/year.
-   - Celo Gas for Relayer Network (paid by us, but reimbursed by users via premium): *Net Zero cost*.
-2. **AI & Agent Infrastructure:**
-   - LLM Inference API (Claude/OpenAI for natural language routing): ~$40,000/year.
-   - Cloud Hosting for off-chain Relayer Nodes and indexing (AWS/GCP): ~$35,000/year.
-3. **Security & Smart Contract Audits:**
-   - 2x Tier-1 ZK and Solidity Audits per year (e.g., Trail of Bits, Zellic): ~$250,000/year.
-   - Bug Bounty Program (Immunefi): ~$100,000/year (funded from treasury).
-4. **Legal & Compliance (The "Digital Offshore" Shield):**
-   - VASP (Virtual Asset Service Provider) / Offshore Entity setup and maintenance (BVI/Cayman): ~$80,000/year.
-   - On-chain Compliance/AML API (Chainalysis / Elliptic for Proof of Innocence fallback): ~$60,000/year.
-5. **Core Team (Lean Protocol Team):**
-   - 4 Senior Protocol/ZK Engineers + 2 BD/Legal: ~$900,000/year.
+### The Lean & Decentralized Cost Structure (Annualized run-rate by Year 2/3)
 
-**Total Estimated OpEx (Scale Phase):** ~$1.49 Million / year.
+By cutting out legacy providers, we reduce our OpEx from a traditional ~$1.5M to a highly optimized **~$485k/year**, while maintaining institutional security.
 
-### Net Profit Projections (EBITDA)
+1. **Blockchain Infrastructure (Decentralized RPCs & Relayers): ~$5,000/year**
+   - *The Web2 Way:* Pay $25k/yr to Alchemy/Infura.
+   - *The Web3 Way:* Use decentralized RPC networks (like Pocket Network / POKT or local Celo light clients). Gas for the Relayer Network is 100% reimbursed by the user premium.
+   - **Cost:** ~$5k/year (Subsidized by Celo ecosystem grants initially).
 
-*Because smart contracts don't sleep and require no HR, the profit margins expand massively as TVL grows.*
+2. **AI & Agent Infrastructure (Edge & Open Source): ~$15,000/year**
+   - *The Web2 Way:* Pay $75k/yr to OpenAI/AWS.
+   - *The Web3 Way:* Run open-source LLMs (Llama 3 / DeepSeek) via decentralized compute networks (Akash, Render) or local WASM inference directly on the user's device. 
+   - **Cost:** ~$15k/year (Compute only when absolutely necessary off-chain).
 
-- **Year 1:**
-  - Revenue: $211,000 | OpEx: $450,000 (Subsidized by Seed Funding / Hackathon Grants).
-  - **Net:** -$239,000 (Burn phase for market capture).
-- **Year 2:**
-  - Revenue: $2.36M | OpEx: $1.1M.
-  - **Net Profit:** **$1.26 Million** (53% Margin).
-- **Year 3:**
-  - Revenue: $8.9M | OpEx: $1.5M.
-  - **Net Profit:** **$7.4 Million** (83% Margin).
+3. **Security & Smart Contract Audits (Community-Driven): ~$120,000/year**
+   - *The Web2 Way:* Pay $250k+ to Tier-1 legacy auditors.
+   - *The Web3 Way:* 1x focused Audit by a specialized ZK firm (~$70k) + Code4rena/Immunefi crowdsourced bug bounties paid dynamically in protocol tokens (LiquidAI native token) instead of stablecoin treasury.
+   - **Cost:** ~$120k/year (Cash cost. Bounties leverage tokenomics).
+
+4. **Legal & Compliance (Automated "Digital Offshore"): ~$45,000/year**
+   - *The Web2 Way:* $140k+ for offshore lawyers and Chainalysis APIs.
+   - *The Web3 Way:* Lean BVI entity setup (~$30k). For compliance, instead of paying expensive API licenses, we use *Zero-Knowledge Proof of Innocence* (PoI). The math proves compliance locally, eliminating the need for constant third-party chain-analysis SaaS.
+   - **Cost:** ~$45k/year.
+
+5. **Core Team (The 80/20 Elite): ~$300,000/year**
+   - *The Web2 Way:* 10+ devs, managers, and BDs ($1M+ payroll).
+   - *The Web3 Way:* A squad of 2 Senior 10x Engineers (Protocol/ZK + AI/Frontend) working asynchronously. Community handles growth.
+   - **Cost:** ~$300k/year (Base salary + heavy equity/token upside).
+
+**Total Optimized OpEx (Scale Phase):** ~$485,000 / year.
+
+### Net Profit Projections (The Lean Web3 Multiplier)
+
+*By eliminating middlemen, our profit margins reach software-utopia levels.*
+
+- **Year 1 (The Build & Launch Phase):**
+  - Revenue: $211,000 | OpEx: $150,000 (Founders working lean, grant-funded infra).
+  - **Net Profit:** **+$61,000** (Profitable from Year 1).
+- **Year 2 (The Dark Pool Scale):**
+  - Revenue: $2.36M | OpEx: $350,000.
+  - **Net Profit:** **$2.01 Million** (85% Margin).
+- **Year 3 (The Digital Offshore):**
+  - Revenue: $8.9M | OpEx: $485,000.
+  - **Net Profit:** **$8.4 Million** (94% Margin).
 
 ---
 
