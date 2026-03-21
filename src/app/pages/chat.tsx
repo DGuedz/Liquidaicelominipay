@@ -18,7 +18,7 @@ import {
   Activity,
   DollarSign,
 } from "lucide-react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { useTheme } from "../hooks/useTheme";
 import { apiGet, apiPost, ChatReplyPayload, DashboardPayload, hasApiAuthSession } from "../lib/api";
 import { CELO_CHAIN_ID } from "../lib/celo-wallet";
@@ -518,6 +518,7 @@ const INITIAL_MESSAGES: Message[] = [
 
 export function ChatPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isDark } = useTheme();
   const {
     address,
@@ -601,6 +602,37 @@ export function ChatPage() {
       ];
     });
   }, [dashboard]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const issue = String(params.get("issue") || "").trim().toLowerCase();
+    if (issue !== "self-timeout") return;
+
+    const walletAddress = String(params.get("address") || "").trim();
+    const occurredAt = String(params.get("at") || "").trim();
+    const supportMsg: Message = {
+      id: nextId(),
+      role: "agent",
+      type: "insight",
+      text: [
+        "Self verification timeout support activated.",
+        walletAddress ? `Wallet: ${walletAddress}` : "Wallet: not provided",
+        occurredAt ? `Occurred at: ${occurredAt}` : `Occurred at: ${new Date().toISOString()}`,
+        "Action plan: 1) restart verification from onboarding, 2) keep Self app open during polling, 3) retry if provider latency is high.",
+      ].join("\n"),
+      timestamp: getTime(),
+      reasoningSteps: [
+        "Incident context parsed from URL.",
+        "Guided recovery actions prepared.",
+      ],
+      showReasoning: false,
+    };
+
+    setMessages((prev) => {
+      const alreadyInjected = prev.some((item) => item.text.includes("Self verification timeout support activated."));
+      return alreadyInjected ? prev : [...prev, supportMsg];
+    });
+  }, [location.search]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {

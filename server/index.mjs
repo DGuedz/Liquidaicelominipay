@@ -37,6 +37,7 @@ import {
   startSelfRegistration,
   verifySelfProofPayload,
 } from "./services/self-service.mjs";
+import { Sentinel, Vault, Operator } from "./services/agent-squad.mjs";
 import {
   createConditionalLock,
   finalizeSettlement,
@@ -728,6 +729,30 @@ app.post(
 );
 
 app.post(
+  "/api/agent/squad/support",
+  walletAuthGuard((req) => req.body?.address),
+  asyncRoute(async (req, res) => {
+    const { address, issueType, txHash, errorCode } = req.body;
+    
+    if (!isAddress(address)) {
+      return authError(res, 400, "Invalid address");
+    }
+
+    let squadResponse;
+
+    if (issueType === "identity_timeout" || issueType === "self_error") {
+      squadResponse = await Sentinel.triggerIdentitySupport(address, errorCode);
+    } else if (issueType === "yield_query" || issueType === "rpc_latency") {
+      squadResponse = await Vault.triggerYieldSupport(address, txHash);
+    } else {
+      return authError(res, 400, "Unknown issueType for support squad");
+    }
+
+    success(res, squadResponse);
+  })
+);
+
+app.post(
   "/api/agent/authorize",
   agentAuthorizeRateLimit,
   walletAuthGuard((req) => (typeof req.body?.address === "string" ? req.body.address : "")),
@@ -742,55 +767,30 @@ app.post(
     const normalizedActionId = parseSafeActionId(actionId);
 
     if (acceptedFlag) {
-      // Regra 2 - Não finalizamos aqui diretamente se envolver capital, mas para manter compatibilidade com o frontend atual, 
-      // criamos o lock atômico e o finalizamos no mesmo endpoint para simular a atomicidade do backend
-      // Em uma V2 de frontend, isso seria separado.
-      const lock = createConditionalLock({
-        address,
-        amount: 1, // Placeholder amount for generic agent actions
-        protocol: "agent",
-        actionType: "authorize_action"
-      });
-      
-      const settlement = await finalizeSettlement({
-        address,
-        settlementId: lock.settlementId
-      });
-
-      markActionAuthorized(address, normalizedActionId);
-      incrementOps(address, 1);
-      const dashboard = await getDashboardData({
-        address,
-        riskMode: "balanced",
-        capitalUsd: env.defaultUserCapitalUsd,
-        liquidityBufferUsd: env.defaultLiquidityBufferUsd,
-      });
-      const network = optimizeLiquidityNetwork(
-        address,
-        dashboard.agentState,
-        { balanceUsd: dashboard.summary.balanceUsd },
-        { proofTxHash: settlement.txHash || null },
-      );
-      
-      success(res, {
-        actionId: normalizedActionId,
-        accepted: acceptedFlag,
-        opsCount: getOps(address),
-        network,
-        settlement: {
-          id: settlement.settlementId,
-          hash: settlement.hash,
-          status: settlement.status,
-          txHash: settlement.txHash,
-          onChainProof: settlement.onChainProof,
-        }
-      });
+      try {
+        const executionReceipt = await Operator.triggerAtomicExecution(address, { actionId: normalizedActionId });
+        markActionAuthorized(address, normalizedActionId);
+        incrementOps(address, 1);
+        
+        success(res, {
+          actionId: normalizedActionId,
+          accepted: acceptedFlag,
+          opsCount: getOps(address),
+          status: "settled",
+          receipt: executionReceipt,
+          message: "Action authorized and settled on-chain by operator.",
+        });
+      } catch (error) {
+        authError(res, 403, error.message);
+      }
     } else {
       markActionDismissed(address, normalizedActionId);
       success(res, {
         actionId: normalizedActionId,
         accepted: acceptedFlag,
         opsCount: getOps(address),
+        status: "dismissed",
+        message: "Action dismissed by user.",
       });
     }
   }),

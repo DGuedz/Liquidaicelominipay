@@ -36,6 +36,13 @@ import { resolveSelfSessionLinks } from "../lib/self-flow";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type RiskId = "conservative" | "balanced" | "aggressive";
+type SelfTimeoutIncident = {
+  at: string;
+  address: string;
+  reason: string;
+};
+
+const SELF_TIMEOUT_INCIDENT_KEY = "liquidai.self-timeout-incident";
 
 const RISK_OPTS = [
   {
@@ -249,6 +256,7 @@ function StepWelcome({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
 
 // ─── Step 1: Connect MiniPay + Self (unified, <8s) ────────────────────────────
 function StepConnect({ onNext }: { onNext: () => void }) {
+  const navigate = useNavigate();
   const [phase, setPhase] = useState<"idle" | "connecting" | "connected" | "verifying" | "done">("idle");
   const [selfEnabled, setSelfEnabled] = useState(true);
   const [inlineError, setInlineError] = useState("");
@@ -262,6 +270,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
   const [selfActionUrl, setSelfActionUrl] = useState("");
   const [selfQrDataUrl, setSelfQrDataUrl] = useState("");
   const [selectedConnectorId, setSelectedConnectorId] = useState("");
+  const [selfTimeoutIncident, setSelfTimeoutIncident] = useState<SelfTimeoutIncident | null>(null);
   const timersRef = useRef<number[]>([]);
   const {
     address,
@@ -334,6 +343,49 @@ function StepConnect({ onNext }: { onNext: () => void }) {
   useEffect(() => {
     return () => clearTimers();
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.sessionStorage.getItem(SELF_TIMEOUT_INCIDENT_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as SelfTimeoutIncident;
+      if (!parsed || typeof parsed !== "object") return;
+      if (!parsed.at || !parsed.reason) return;
+      setSelfTimeoutIncident(parsed);
+    } catch {
+      // no-op
+    }
+  }, []);
+
+  const persistSelfTimeoutIncident = (incident: SelfTimeoutIncident | null) => {
+    setSelfTimeoutIncident(incident);
+    if (typeof window === "undefined") return;
+    if (!incident) {
+      window.sessionStorage.removeItem(SELF_TIMEOUT_INCIDENT_KEY);
+      return;
+    }
+    window.sessionStorage.setItem(SELF_TIMEOUT_INCIDENT_KEY, JSON.stringify(incident));
+  };
+
+  const clearSelfTimeoutIncident = () => {
+    persistSelfTimeoutIncident(null);
+  };
+
+  const resetSelfFlow = (message = "Self flow restarted. Start verification again.") => {
+    setPhase("connected");
+    setIsVerifyingSelf(false);
+    setSelfActionUrl("");
+    setSelfQrDataUrl("");
+    setInlineError("");
+    setInlineSuccess(message);
+    clearSelfTimeoutIncident();
+  };
+
+  useEffect(() => {
+    if (!selfStatus?.verified) return;
+    clearSelfTimeoutIncident();
+  }, [selfStatus?.verified]);
 
   useEffect(() => {
     if (isConnected && phase === "idle") {
@@ -560,6 +612,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     setSelfQrDataUrl("");
     setIsVerifyingSelf(true);
     setPhase("verifying");
+    clearSelfTimeoutIncident();
     
     const formatSelfError = (error: unknown) => {
       const message = error instanceof Error ? error.message : "Failed to verify with Self.";
@@ -667,7 +720,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
         );
       };
       
-      while (!verified && attempts < 12) { // 12 tentativas de 5s = 1 minuto
+      while (!verified && attempts < 36) { // 36 tentativas de 5s = 3 minutos
         attempts++;
         await new Promise(r => setTimeout(r, 5000));
         
@@ -699,6 +752,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       
       if (nextRoute) setActivationRoute(nextRoute);
       setInlineSuccess("Self verification recorded. Agent activation is now unlocked.");
+      clearSelfTimeoutIncident();
       setPhase("connected");
 
     } catch (error) {
@@ -706,10 +760,29 @@ function StepConnect({ onNext }: { onNext: () => void }) {
         preOpenedPopup.close();
       }
       setPhase("connected");
-      setInlineError(formatSelfError(error));
+      const formattedError = formatSelfError(error);
+      setInlineError(formattedError);
+      if (/tempo limite|timeout|time out/i.test(formattedError)) {
+        const incident: SelfTimeoutIncident = {
+          at: new Date().toISOString(),
+          address: String(address || ""),
+          reason: formattedError,
+        };
+        persistSelfTimeoutIncident(incident);
+      }
     } finally {
       setIsVerifyingSelf(false);
     }
+  };
+
+  const openSelfTimeoutSupport = () => {
+    const currentAddress = String(address || "");
+    const query = new URLSearchParams({
+      issue: "self-timeout",
+      address: currentAddress,
+      at: selfTimeoutIncident?.at || new Date().toISOString(),
+    });
+    navigate(`/chat?${query.toString()}`);
   };
 
   const isBusy =
@@ -748,6 +821,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     setFaucetStatus(null);
     setSelfStatus(null);
     setActivationRoute(null);
+    clearSelfTimeoutIncident();
     await disconnectWallet();
   };
 
@@ -1099,6 +1173,52 @@ function StepConnect({ onNext }: { onNext: () => void }) {
             }}
           >
             {inlineError}
+          </div>
+        )}
+
+        {selfTimeoutIncident && (
+          <div
+            className="w-full rounded-2xl p-4"
+            style={{
+              background: "rgba(245,158,11,0.08)",
+              border: "1px solid rgba(245,158,11,0.24)",
+            }}
+          >
+            <p className="text-sm font-semibold" style={{ color: "#F59E0B" }}>
+              Self verification timed out
+            </p>
+            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+              If this happens again, restart the flow or open Support with the incident context.
+            </p>
+            <div className="grid grid-cols-3 gap-2 mt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  clearSelfTimeoutIncident();
+                  void handleVerifySelf();
+                }}
+                className="rounded-xl px-2 py-2 text-[11px] font-semibold"
+                style={{ background: "rgba(13,75,46,0.18)", color: "#A3D977", border: "1px solid rgba(163,217,119,0.25)" }}
+              >
+                Tentar novamente
+              </button>
+              <button
+                type="button"
+                onClick={openSelfTimeoutSupport}
+                className="rounded-xl px-2 py-2 text-[11px] font-semibold"
+                style={{ background: "rgba(59,130,246,0.12)", color: "#3B82F6", border: "1px solid rgba(59,130,246,0.24)" }}
+              >
+                Abrir suporte
+              </button>
+              <button
+                type="button"
+                onClick={() => resetSelfFlow("Flow restarted. Tap Unlock with Self ID to begin again.")}
+                className="rounded-xl px-2 py-2 text-[11px] font-semibold"
+                style={{ background: "rgba(255,255,255,0.04)", color: "var(--text-secondary)", border: "1px solid rgba(255,255,255,0.12)" }}
+              >
+                Reiniciar
+              </button>
+            </div>
           </div>
         )}
 

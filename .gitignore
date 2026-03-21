@@ -53,3 +53,8 @@ context.md
 scripts/fund-*.mjs
 scripts/generate-wallet.mjs
 scripts/replace-stables.mjs
+
+# Internal strategy docs (never publish)
+docs/internal/
+docs/*_INTERNAL*.md
+docs/BLCK_*.md

@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowLeft, HelpCircle, MessageSquare, ChevronDown, ChevronUp,
-  Send, ExternalLink, Zap, Shield, DollarSign, RotateCcw,
+  Send, ExternalLink, Zap, Shield, DollarSign, RotateCcw, CheckCircle2,
 } from "lucide-react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { useTheme } from "../hooks/useTheme";
 
 const FAQS = [
@@ -49,10 +49,30 @@ const QUICK_LINKS = [
 
 export function ProfileSuportePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isDark } = useTheme();
   const [expanded, setExpanded] = useState<number | null>(0);
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
+  const [supportIssue, setSupportIssue] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const issue = String(params.get("issue") || "").trim().toLowerCase();
+    const walletAddress = String(params.get("address") || "").trim();
+    const at = String(params.get("at") || "").trim();
+    if (issue !== "self-timeout") return;
+
+    setSupportIssue("self-timeout");
+    const incidentText = [
+      "[Self Timeout Incident]",
+      walletAddress ? `Wallet: ${walletAddress}` : "Wallet: not provided",
+      at ? `Occurred at: ${at}` : `Occurred at: ${new Date().toISOString()}`,
+      "Description: Self verification timed out during onboarding.",
+      "Action requested: Please assist with verification recovery.",
+    ].join("\n");
+    setMessage(incidentText);
+  }, [location.search]);
 
   const handleSend = () => {
     if (!message.trim()) return;
@@ -92,6 +112,22 @@ export function ProfileSuportePage() {
           </div>
         </motion.div>
       </div>
+
+      {supportIssue === "self-timeout" && (
+        <div className="px-5 mb-5">
+          <div
+            className="rounded-2xl p-4"
+            style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.22)" }}
+          >
+            <p className="text-sm font-semibold" style={{ color: "#F59E0B" }}>
+              Self timeout incident received
+            </p>
+            <p className="text-xs mt-1 text-text-muted">
+              We prefilled your message with context. Review and send to Support.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* FAQ */}
       <div className="px-5 mb-5">
