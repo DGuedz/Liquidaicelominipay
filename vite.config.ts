@@ -25,47 +25,6 @@ export default defineConfig({
   build: {
     outDir: "dist",
     chunkSizeWarningLimit: 1500, // Ensuring we stay well under the 2MB MiniPay limit
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (!id.includes('node_modules')) return undefined
-
-          if (id.includes('@metamask') || id.includes('metaMask') || id.includes('wagmi') || id.includes('viem')) {
-            return 'web3'
-          }
-
-          if (id.includes('@tanstack/react-query')) {
-            return 'react-query'
-          }
-
-          if (id.includes('lucide-react')) {
-            return 'icons'
-          }
-
-          if (id.includes('sonner')) {
-            return 'toast'
-          }
-
-          if (id.includes('recharts')) {
-            return 'charts'
-          }
-
-          if (id.includes('@mui/')) {
-            return 'mui'
-          }
-
-          if (id.includes('@radix-ui/')) {
-            return 'radix'
-          }
-
-          if (id.includes('motion') || id.includes('framer-motion')) {
-            return 'motion'
-          }
-
-          return 'vendor'
-        },
-      },
-    },
   },
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
