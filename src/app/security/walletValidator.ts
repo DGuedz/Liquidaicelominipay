@@ -17,6 +17,8 @@ const DEFAULT_ALLOWED_CONNECTOR_PATTERNS = [
   /trust/i,
   /coinbase/i,
   /walletconnect/i,
+  // Keep generic injected wallets available (EIP-1193 / EIP-6963 providers).
+  /injected/i,
 ];
 
 const DEFAULT_ALLOWED_HOSTS = [
@@ -25,6 +27,11 @@ const DEFAULT_ALLOWED_HOSTS = [
   "app.liquidai.ai",
   "liquidai.ai",
 ];
+
+function parseBooleanFlag(rawValue: string) {
+  const normalized = String(rawValue || "").trim().toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
+}
 
 function parseAllowedHosts(rawValue: string) {
   return rawValue
@@ -50,8 +57,10 @@ function normalizeConnectorFingerprint(connector?: ConnectorLike) {
 export function getRuntimeWalletSecurityPolicy(expectedChainId: number): WalletSecurityPolicy {
   const envHosts = parseAllowedHosts(String(import.meta.env.VITE_ALLOWED_APP_HOSTS || ""));
   const allowedHosts = envHosts.length ? envHosts : [...DEFAULT_ALLOWED_HOSTS];
+  const allowVercelPreview =
+    import.meta.env.DEV || parseBooleanFlag(String(import.meta.env.VITE_ALLOW_VERCEL_PREVIEW || ""));
 
-  if (import.meta.env.DEV && !allowedHosts.includes("*.vercel.app")) {
+  if (allowVercelPreview && !allowedHosts.includes("*.vercel.app")) {
     allowedHosts.push("*.vercel.app");
   }
 
@@ -70,8 +79,9 @@ export function assertTrustedOrigin(hostname: string, allowedHosts: string[]) {
 
   const trusted = allowedHosts.some((pattern) => matchesHostPattern(normalized, pattern.toLowerCase()));
   if (!trusted) {
+    const compactAllowList = allowedHosts.slice(0, 8).join(", ");
     throw new Error(
-      `Blocked wallet connection on untrusted domain "${normalized}". Use an approved LiquidAI domain.`,
+      `Blocked wallet connection on untrusted domain "${normalized}". Allowed hosts: ${compactAllowList}.`,
     );
   }
 }
@@ -80,8 +90,14 @@ export function isAllowedConnector(
   connector: ConnectorLike | undefined,
   allowedConnectorPatterns: RegExp[] = DEFAULT_ALLOWED_CONNECTOR_PATTERNS,
 ) {
+  if (!connector) return false;
   const fingerprint = normalizeConnectorFingerprint(connector);
-  return allowedConnectorPatterns.some((pattern) => pattern.test(fingerprint));
+  if (allowedConnectorPatterns.some((pattern) => pattern.test(fingerprint))) {
+    return true;
+  }
+
+  // Fallback: allow injected providers discovered at runtime.
+  return String(connector.type || "").toLowerCase().trim() === "injected";
 }
 
 export function assertExpectedChainId(actualChainId: number | undefined, expectedChainId: number) {

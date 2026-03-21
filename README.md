@@ -29,6 +29,11 @@ By abstracting the complexity of AMMs, fee structures, and bridge routing, Liqui
   - **AgentScan Profile:** [LiquidAI (Agent #2729)](https://agentscan.info/agents/celo/2729)
 - **Karma Telemetry:** Execution intents are logged via Karma API for reputation building.
 
+### Hackathon Compliance (Build Agents for the Real World V2)
+- **Karma Project:** [LiquidAI (ODL Agent)](https://www.karmahq.xyz/project/liquidai-odl-agent) (Active & Endorsed)
+- **AgentScan ID:** [Agent #2729](https://agentscan.info/agents/celo/2729) (Awaiting indexing on public explorer, validated locally)
+- **Self Protocol:** Integrated and passing all zero-knowledge sybil-resistance checks.
+
 ---
 
 ## Wallet Connectivity (EVM L2)
@@ -59,6 +64,12 @@ VITE_WALLETCONNECT_PROJECT_ID=your_project_id_here
 
 ```bash
 VITE_ALLOWED_APP_HOSTS=localhost,127.0.0.1,app.liquidai.ai,liquidai.ai
+```
+
+- For Vercel preview domains (`*.vercel.app`), set:
+
+```bash
+VITE_ALLOW_VERCEL_PREVIEW=true
 ```
 
 ---

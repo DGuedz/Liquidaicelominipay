@@ -332,7 +332,8 @@ if (WALLETCONNECT_PROJECT_ID) {
 }
 
 export const wagmiConfig = createConfig({
-  multiInjectedProviderDiscovery: false,
+  // Enable EIP-6963 discovery so multiple injected wallets can coexist in the UI.
+  multiInjectedProviderDiscovery: true,
   chains: [CELO_CHAIN],
   connectors: baseConnectors,
   transports: {

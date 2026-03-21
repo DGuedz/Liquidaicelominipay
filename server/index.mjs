@@ -919,7 +919,11 @@ app.post(
 
 app.use((error, _req, res, _next) => {
   const message = error instanceof Error ? error.message : "Unexpected error";
-  res.status(500).json({
+  const requestedStatus = Number(error?.statusCode ?? error?.status ?? 500);
+  const status = Number.isInteger(requestedStatus) && requestedStatus >= 400 && requestedStatus <= 599
+    ? requestedStatus
+    : 500;
+  res.status(status).json({
     ok: false,
     error: message,
     timestamp: new Date().toISOString(),

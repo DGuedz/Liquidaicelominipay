@@ -50,6 +50,8 @@ export function ProfileCarteirasPage() {
     isConnecting,
     isSwitchingChain,
     isSigningMessage,
+    connectorDiagnostics,
+    lastBlockedConnector,
     connectWallet,
     switchToCelo,
     signWalletMessage,
@@ -214,6 +216,73 @@ export function ProfileCarteirasPage() {
             }}
           >
             {inlineError}
+          </div>
+        )}
+
+        {connectorDiagnostics.length > 0 && (
+          <div
+            className="rounded-2xl p-3 mb-4"
+            style={{
+              background: "var(--surface-solid)",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            <p className="text-[11px] uppercase tracking-wide mb-2" style={{ color: "var(--text-muted)" }}>
+              Wallet debug
+            </p>
+            <div className="space-y-2">
+              {connectorDiagnostics.map((item) => {
+                const statusLabel =
+                  item.status === "ready"
+                    ? "READY"
+                    : item.status === "blocked"
+                    ? "BLOCKED"
+                    : "MISSING";
+                const statusColor =
+                  item.status === "ready"
+                    ? "#A3D977"
+                    : item.status === "blocked"
+                    ? "#EF4444"
+                    : "#F59E0B";
+                return (
+                  <div
+                    key={`${item.id}:${item.name}`}
+                    className="rounded-xl px-3 py-2"
+                    style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)" }}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-semibold text-text-primary">
+                        {item.name}
+                        {item.isPrimary ? " (primary)" : ""}
+                      </p>
+                      <span className="text-[10px] font-bold" style={{ color: statusColor }}>
+                        {statusLabel}
+                      </span>
+                    </div>
+                    <p className="text-[10px] mt-0.5 text-text-muted">
+                      id: {item.id} · type: {item.type || "unknown"}
+                    </p>
+                    {item.reason && (
+                      <p className="text-[10px] mt-1" style={{ color: statusColor }}>
+                        {item.reason}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {lastBlockedConnector && (
+              <div
+                className="rounded-xl px-3 py-2 text-[10px] mt-2"
+                style={{
+                  color: "#EF4444",
+                  background: "rgba(239,68,68,0.08)",
+                  border: "1px solid rgba(239,68,68,0.2)",
+                }}
+              >
+                Last blocked: {lastBlockedConnector.name} ({lastBlockedConnector.id}) · {lastBlockedConnector.reason}
+              </div>
+            )}
           </div>
         )}
 

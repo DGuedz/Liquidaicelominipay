@@ -15,6 +15,7 @@
     "security:audit:raw": "pnpm audit --prod --json",
     "security:check": "pnpm run security:deps && pnpm run security:audit",
     "simulate:wallets": "node scripts/simulate-managed-wallet-connections.mjs",
+    "reset:wallet-security-wall": "node scripts/reset-wallet-security-wall.mjs",
     "release:wallet-self:gate": "node scripts/release-wallet-self-gate.mjs",
     "preview:stack": "sh commands/preview-stack.sh",
     "preview:stack:stop": "sh commands/preview-stack-stop.sh"

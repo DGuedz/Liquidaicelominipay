@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatUnits } from "viem";
 import {
   useAccount,
@@ -48,6 +48,17 @@ function writePreferredConnectorId(connectorId: string) {
   window.localStorage.setItem(PREFERRED_CONNECTOR_KEY, connectorId);
 }
 
+export type WalletConnectorDiagnostic = {
+  id: string;
+  name: string;
+  type: string;
+  available: boolean;
+  allowed: boolean;
+  status: "ready" | "blocked" | "missing";
+  reason: string;
+  isPrimary: boolean;
+};
+
 export function useCeloWallet() {
   const { address, chainId, isConnected, connector } = useAccount();
   const { connectors, connectAsync, isPending: isConnecting, error: connectError } = useConnect();
@@ -70,7 +81,17 @@ export function useCeloWallet() {
   const connectInFlightRef = useRef(false);
   const pendingWalletApprovalRef = useRef(false);
   const miniPayAutoConnectAttemptedRef = useRef(false);
+  const [connectorDiagnostics, setConnectorDiagnostics] = useState<WalletConnectorDiagnostic[]>([]);
+  const [lastBlockedConnector, setLastBlockedConnector] = useState<{
+    id: string;
+    name: string;
+    reason: string;
+  } | null>(null);
   const walletConnectEnabled = Boolean(WALLETCONNECT_PROJECT_ID);
+  const walletSecurityPolicy = useMemo(
+    () => getRuntimeWalletSecurityPolicy(CELO_CHAIN_ID),
+    [],
+  );
   const walletSupportLabelPt = walletConnectEnabled
     ? "MiniPay, MetaMask, Rabby, Trust, Coinbase Wallet ou WalletConnect"
     : "MiniPay, MetaMask, Rabby, Trust ou Coinbase Wallet";
@@ -188,16 +209,18 @@ export function useCeloWallet() {
 
   const resolveUsableConnector = useCallback(
     async (requestedConnectorId?: string) => {
+      if (requestedConnectorId) {
+        const requestedConnector = supportedConnectors.find((item: any) => item.id === requestedConnectorId);
+        if (!requestedConnector) return null;
+        return (await isConnectorAvailable(requestedConnector)) ? requestedConnector : null;
+      }
+
       const ordered: any[] = [];
       const pushUnique = (item: any) => {
         if (!item) return;
         if (ordered.some((existing) => existing.id === item.id)) return;
         ordered.push(item);
       };
-
-      if (requestedConnectorId) {
-        pushUnique(supportedConnectors.find((item: any) => item.id === requestedConnectorId));
-      }
 
       pushUnique(primaryConnector);
       supportedConnectors.forEach((item) => pushUnique(item));
@@ -212,6 +235,76 @@ export function useCeloWallet() {
     },
     [isConnectorAvailable, primaryConnector, supportedConnectors],
   );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const refreshDiagnostics = async () => {
+      const nextRows = await Promise.all(
+        supportedConnectors.map(async (item: any) => {
+          const connectorId = String(item?.id || "unknown");
+          const connectorName = String(item?.name || "Unnamed Wallet");
+          const connectorType = String(item?.type || "unknown");
+          const isWalletConnect = isWalletConnectConnector(item);
+          const allowed = isAllowedConnector(item, walletSecurityPolicy.allowedConnectorPatterns);
+
+          let available = false;
+          let unavailableReason = "";
+
+          if (isWalletConnect) {
+            available = walletConnectEnabled;
+            if (!walletConnectEnabled) {
+              unavailableReason = "WalletConnect disabled: configure VITE_WALLETCONNECT_PROJECT_ID.";
+            }
+          } else {
+            try {
+              const provider = await (item as { getProvider?: () => Promise<unknown> | unknown }).getProvider?.();
+              available = Boolean(provider);
+              if (!available) {
+                unavailableReason = "Provider not detected in this browser context.";
+              }
+            } catch (error) {
+              available = false;
+              unavailableReason = error instanceof Error
+                ? error.message
+                : "Provider is unavailable.";
+            }
+          }
+
+          let status: WalletConnectorDiagnostic["status"] = "ready";
+          let reason = "";
+
+          if (!allowed) {
+            status = "blocked";
+            reason = "Blocked by wallet allow-list policy.";
+          } else if (!available) {
+            status = "missing";
+            reason = unavailableReason || "Provider unavailable.";
+          }
+
+          return {
+            id: connectorId,
+            name: connectorName,
+            type: connectorType,
+            available,
+            allowed,
+            status,
+            reason,
+            isPrimary: connectorId === String(primaryConnector?.id || ""),
+          } as WalletConnectorDiagnostic;
+        }),
+      );
+
+      if (cancelled) return;
+      setConnectorDiagnostics(nextRows);
+    };
+
+    void refreshDiagnostics();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [primaryConnector?.id, supportedConnectors, walletConnectEnabled, walletSecurityPolicy.allowedConnectorPatterns]);
 
   const requestConnectorAccounts = useCallback(
     async (connectorId: string, method: "eth_accounts" | "eth_requestAccounts") => {
@@ -334,6 +427,27 @@ export function useCeloWallet() {
     try {
       const selectedConnector = await resolveUsableConnector(connectorId);
       if (!selectedConnector) {
+        if (connectorId) {
+          const selectedOption = connectorOptions.find((item) => item.id === connectorId);
+          const selectedDiagnostic = connectorDiagnostics.find((item) => item.id === connectorId);
+          const selectedName = selectedOption?.name || selectedDiagnostic?.name || connectorId;
+          if (selectedDiagnostic?.status === "blocked") {
+            setLastBlockedConnector({
+              id: connectorId,
+              name: selectedName,
+              reason: selectedDiagnostic.reason || "Blocked by wallet allow-list policy.",
+            });
+            throw new Error(`Connector "${selectedName}" blocked. ${selectedDiagnostic.reason || "Use an allow-listed wallet provider."}`);
+          }
+          if (selectedDiagnostic?.status === "missing") {
+            setLastBlockedConnector(null);
+            throw new Error(`Connector "${selectedName}" is unavailable. ${selectedDiagnostic.reason || "Open this wallet and try again."}`);
+          }
+          setLastBlockedConnector(null);
+          throw new Error(`Connector "${selectedName}" was not detected in this browser context.`);
+        }
+
+        setLastBlockedConnector(null);
         throw new Error(
           walletConnectEnabled
             ? "Nenhuma carteira EVM pronta para conexão foi detectada. Abra MiniPay/MetaMask/Rabby/Trust/Coinbase ou use WalletConnect."
@@ -341,15 +455,29 @@ export function useCeloWallet() {
         );
       }
 
-      const walletSecurityPolicy = getRuntimeWalletSecurityPolicy(CELO_CHAIN_ID);
       const hostname = typeof window !== "undefined" ? window.location.hostname : "";
-      assertTrustedOrigin(hostname, walletSecurityPolicy.allowedHosts);
+      try {
+        assertTrustedOrigin(hostname, walletSecurityPolicy.allowedHosts);
+      } catch (error) {
+        setLastBlockedConnector({
+          id: String(selectedConnector.id || "unknown"),
+          name: String(selectedConnector.name || "Unknown Wallet"),
+          reason: error instanceof Error ? error.message : "Blocked by trusted-origin policy.",
+        });
+        throw error;
+      }
       if (!isAllowedConnector(selectedConnector, walletSecurityPolicy.allowedConnectorPatterns)) {
+        setLastBlockedConnector({
+          id: String(selectedConnector.id || "unknown"),
+          name: String(selectedConnector.name || "Unknown Wallet"),
+          reason: "Blocked by wallet allow-list policy.",
+        });
         throw new Error(
           `Blocked connector "${selectedConnector.name || selectedConnector.id || "unknown"}". Use an allow-listed wallet provider.`,
         );
       }
 
+      setLastBlockedConnector(null);
       writePreferredConnectorId(selectedConnector.id);
       pendingWalletApprovalRef.current = true;
       const session = await connectAsync({
@@ -427,6 +555,8 @@ export function useCeloWallet() {
     walletSupportLabelEn,
     hasConnector: Boolean(primaryConnector),
     connectorOptions,
+    connectorDiagnostics,
+    lastBlockedConnector,
     wrongNetwork: effectiveWrongNetwork,
     isConnecting,
     isSwitchingChain,

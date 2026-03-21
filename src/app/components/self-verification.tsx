@@ -172,9 +172,27 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
 
       await ensureWalletAuthSession(walletAddress, signWalletMessage);
 
-      const session = await apiPost<SelfRegistrationPayload>("/api/self/start-registration", {
-        address: walletAddress,
-      });
+      let session: SelfRegistrationPayload | null = null;
+      for (let attempt = 1; attempt <= 3; attempt += 1) {
+        try {
+          session = await apiPost<SelfRegistrationPayload>("/api/self/start-registration", {
+            address: walletAddress,
+          });
+          break;
+        } catch (startError) {
+          const message = startError instanceof Error ? startError.message : String(startError ?? "");
+          const retryable = /429|503|rate-limited|temporarily/i.test(message);
+          if (!retryable || attempt === 3) {
+            throw startError;
+          }
+          setInlineSuccess("Self is busy right now. Retrying secure session...");
+          await sleep(900 * attempt);
+        }
+      }
+
+      if (!session) {
+        throw new Error("Failed to start Self registration session.");
+      }
 
       if (!session.sessionToken) {
         throw new Error("Self registration session missing token.");

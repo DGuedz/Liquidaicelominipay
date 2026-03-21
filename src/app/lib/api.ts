@@ -382,10 +382,22 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     headers,
     credentials: "include",
   });
-  if (!response.ok) {
-    throw new Error(`API ${response.status}: ${response.statusText}`);
+  const raw = await response.text();
+  let payload: ApiEnvelope<T> | null = null;
+  try {
+    payload = raw ? (JSON.parse(raw) as ApiEnvelope<T>) : null;
+  } catch {
+    payload = null;
   }
-  const payload = (await response.json()) as ApiEnvelope<T>;
+
+  if (!response.ok) {
+    const backendError = payload && typeof payload.error === "string" ? payload.error : "";
+    throw new Error(backendError || `API ${response.status}: ${response.statusText}`);
+  }
+
+  if (!payload) {
+    throw new Error("API response could not be parsed.");
+  }
   if (!payload.ok) {
     throw new Error(payload.error || "API request failed.");
   }

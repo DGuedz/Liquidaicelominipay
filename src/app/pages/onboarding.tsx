@@ -278,6 +278,8 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     isSwitchingChain,
     isSigningMessage,
     connectorOptions,
+    connectorDiagnostics,
+    lastBlockedConnector,
     connectWallet,
     switchToCelo,
     signWalletMessage,
@@ -291,16 +293,25 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     if (connectorName) return connectorName;
     return isMiniPay ? "MiniPay" : "wallet";
   }, [connectorName, connectorOptions, isMiniPay, selectedConnectorId]);
+  const connectorDiagnosticById = useMemo(
+    () => new Map(connectorDiagnostics.map((item) => [item.id, item])),
+    [connectorDiagnostics],
+  );
 
   useEffect(() => {
     if (!connectorOptions.length) {
       setSelectedConnectorId("");
       return;
     }
+    const preferredReadyConnector = connectorOptions.find((item) => {
+      const diagnostic = connectorDiagnosticById.get(item.id);
+      return !diagnostic || diagnostic.status === "ready";
+    });
+    const fallbackConnector = preferredReadyConnector ?? connectorOptions[0];
     if (!selectedConnectorId || !connectorOptions.some((item) => item.id === selectedConnectorId)) {
-      setSelectedConnectorId(connectorOptions[0].id);
+      setSelectedConnectorId(fallbackConnector.id);
     }
-  }, [connectorOptions, selectedConnectorId]);
+  }, [connectorDiagnosticById, connectorOptions, selectedConnectorId]);
 
   const refreshActivationRoute = async (targetAddress = address, networkOkay = !wrongNetwork) => {
     if (!targetAddress) {
@@ -436,9 +447,20 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       return;
     }
 
+    const targetConnectorId = connectorId || selectedConnectorId || "";
+    if (targetConnectorId) {
+      const selectedDiagnostic = connectorDiagnosticById.get(targetConnectorId);
+      if (selectedDiagnostic && selectedDiagnostic.status !== "ready") {
+        setInlineError(
+          `Connector "${selectedDiagnostic.name}" indisponível: ${selectedDiagnostic.reason || "não está pronto para conexão."}`,
+        );
+        return;
+      }
+    }
+
     try {
       setPhase("connecting");
-      const session = await connectWallet(connectorId || selectedConnectorId || undefined);
+      const session = await connectWallet(targetConnectorId || undefined);
       if (session.chainId !== CELO_CHAIN_ID) {
         await switchToCelo();
       }
@@ -527,7 +549,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
   };
 
   const handleVerifySelf = async () => {
-    if (!address) {
+    if (!address && !isConnected) {
       setInlineError("Connect a wallet before verifying with Self.");
       return;
     }
@@ -552,12 +574,39 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       : null;
 
     try {
-      await ensureWalletAuthSession(address, signWalletMessage);
+      let connectedAddress = address;
+      if (!connectedAddress) {
+        const session = await connectWallet(selectedConnectorId || undefined);
+        connectedAddress = session.accounts?.[0] || "";
+      }
+      if (!connectedAddress) {
+        throw new Error("Wallet address unavailable for Self verification.");
+      }
+
+      await ensureWalletAuthSession(connectedAddress, signWalletMessage);
       
       // 1. Start Registration Session
-      const session = await apiPost<SelfRegistrationPayload>("/api/self/start-registration", {
-        address,
-      });
+      let session: SelfRegistrationPayload | null = null;
+      for (let attempt = 1; attempt <= 3; attempt += 1) {
+        try {
+          session = await apiPost<SelfRegistrationPayload>("/api/self/start-registration", {
+            address: connectedAddress,
+          });
+          break;
+        } catch (startError) {
+          const message = startError instanceof Error ? startError.message : String(startError ?? "");
+          const retryable = /429|503|rate-limited|temporarily/i.test(message);
+          if (!retryable || attempt === 3) {
+            throw startError;
+          }
+          setInlineSuccess("Self is busy right now. Retrying secure session...");
+          await new Promise((resolve) => setTimeout(resolve, 900 * attempt));
+        }
+      }
+
+      if (!session) {
+        throw new Error("Failed to start Self registration session.");
+      }
 
       console.log("Self Session Started:", session);
       
@@ -624,7 +673,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
         
         try {
           const pollResult = await apiGet<SelfPollPayload>("/api/self/poll-registration", {
-            address,
+            address: connectedAddress,
             sessionToken: session.sessionToken
           });
           if (pollResult.verified) {
@@ -643,9 +692,9 @@ function StepConnect({ onNext }: { onNext: () => void }) {
          throw new Error("Tempo limite de verificação excedido. Tente novamente.");
       }
 
-      const nextRoute = await refreshActivationRoute(address, !wrongNetwork);
+      const nextRoute = await refreshActivationRoute(connectedAddress, !wrongNetwork);
       // Refresh status to confirm backend sees it as verified
-      const finalStatus = await apiGet<SelfStatusPayload>("/api/self/status", { address });
+      const finalStatus = await apiGet<SelfStatusPayload>("/api/self/status", { address: connectedAddress });
       setSelfStatus(finalStatus);
       
       if (nextRoute) setActivationRoute(nextRoute);
@@ -887,6 +936,11 @@ function StepConnect({ onNext }: { onNext: () => void }) {
                     ? `Connection active via ${connectorName}. Sign the LiquidAI session to continue.`
                     : `Connection active via ${connectorName}.`}
                 </p>
+                {selfStatus?.message && (
+                  <p className="text-[11px] mt-2" style={{ color: "var(--text-muted)" }}>
+                    Self status: {selfStatus.message}
+                  </p>
+                )}
               </>
             )}
             {phase === "verifying" && (
@@ -1152,16 +1206,33 @@ function StepConnect({ onNext }: { onNext: () => void }) {
           <div className="grid grid-cols-2 gap-2">
             {connectorOptions.map((item) => {
               const isSelected = selectedConnectorId === item.id;
+              const diagnostic = connectorDiagnosticById.get(item.id);
+              const isUnavailable = Boolean(diagnostic && diagnostic.status !== "ready");
               return (
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setSelectedConnectorId(item.id)}
+                  onClick={() => {
+                    if (!isUnavailable) setSelectedConnectorId(item.id);
+                  }}
+                  disabled={isUnavailable}
                   className="rounded-xl px-3 py-2 text-xs font-medium text-left"
                   style={{
-                    color: isSelected ? "#fff" : "var(--text-muted)",
-                    background: isSelected ? "rgba(13,75,46,0.4)" : "rgba(255,255,255,0.03)",
-                    border: `1px solid ${isSelected ? "rgba(13,75,46,0.75)" : "rgba(255,255,255,0.09)"}`,
+                    color: isUnavailable ? "rgba(255,255,255,0.45)" : isSelected ? "#fff" : "var(--text-muted)",
+                    background: isUnavailable
+                      ? "rgba(255,255,255,0.015)"
+                      : isSelected
+                        ? "rgba(13,75,46,0.4)"
+                        : "rgba(255,255,255,0.03)",
+                    border: `1px solid ${
+                      isUnavailable
+                        ? "rgba(255,255,255,0.06)"
+                        : isSelected
+                          ? "rgba(13,75,46,0.75)"
+                          : "rgba(255,255,255,0.09)"
+                    }`,
+                    opacity: isUnavailable ? 0.72 : 1,
+                    cursor: isUnavailable ? "not-allowed" : "pointer",
                   }}
                 >
                   {item.name}
@@ -1169,6 +1240,72 @@ function StepConnect({ onNext }: { onNext: () => void }) {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {phase === "idle" && walletMode === "browser" && connectorDiagnostics.length > 0 && (
+        <div
+          className="w-full rounded-2xl p-3 flex flex-col gap-2"
+          style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)" }}
+        >
+          <p className="text-[11px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+            Wallet debug
+          </p>
+          <div className="space-y-1.5">
+            {connectorDiagnostics.map((item) => {
+              const statusLabel =
+                item.status === "ready"
+                  ? "READY"
+                  : item.status === "blocked"
+                  ? "BLOCKED"
+                  : "MISSING";
+              const statusColor =
+                item.status === "ready"
+                  ? "#A3D977"
+                  : item.status === "blocked"
+                  ? "#EF4444"
+                  : "#F59E0B";
+
+              return (
+                <div
+                  key={`${item.id}:${item.name}`}
+                  className="rounded-xl px-2.5 py-2"
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
+                      {item.name}
+                      {item.isPrimary ? " (primary)" : ""}
+                    </p>
+                    <span className="text-[10px] font-bold" style={{ color: statusColor }}>
+                      {statusLabel}
+                    </span>
+                  </div>
+                  <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+                    id: {item.id} · type: {item.type || "unknown"}
+                  </p>
+                  {item.reason && (
+                    <p className="text-[10px] mt-1" style={{ color: statusColor }}>
+                      {item.reason}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {lastBlockedConnector && (
+            <div
+              className="rounded-xl px-2.5 py-2 text-[10px]"
+              style={{
+                color: "#EF4444",
+                background: "rgba(239,68,68,0.08)",
+                border: "1px solid rgba(239,68,68,0.2)",
+              }}
+            >
+              Last blocked: {lastBlockedConnector.name} ({lastBlockedConnector.id}) · {lastBlockedConnector.reason}
+            </div>
+          )}
         </div>
       )}
 

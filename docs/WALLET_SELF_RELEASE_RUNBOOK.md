@@ -88,6 +88,29 @@ npm run release:wallet-self:gate -- --allow-prod-strict-fail
 
 If strict validation fails but skip mode passes, production is likely running an older backend build.
 
+## Test Reset (Before MiniPay Rollout)
+
+When you want a clean security boundary in test (new managed wallets + fresh secrets + isolated state):
+
+```bash
+npm run reset:wallet-security-wall
+```
+
+What it does:
+
+- Rotates managed test wallets (`TREASURY`, `TEST_USER_PRIMARY`, `TEST_USER_SECONDARY`, `RESERVE`, `ADMIN`).
+- Sets backend `PRIVATE_KEY` to the new treasury private key.
+- Rotates `AUTH_SECRET` and `SELF_CALLBACK_SECRET`.
+- Moves `SECURITY_STATE_FILE` to a new file (isolates old sessions/replay/rate-limit buckets).
+- Removes local `.data/security-state*` files.
+- Writes a Render-ready snippet to `.data/wallet-reset-<timestamp>.env`.
+
+After running:
+
+1. Copy values from `.data/wallet-reset-<timestamp>.env` to Render Environment.
+2. Redeploy backend.
+3. Run production gate using lowercase test address shown by script output.
+
 ## Manual QA Matrix (Mobile + Desktop)
 
 Run these checks on the live frontend:

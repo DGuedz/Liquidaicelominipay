@@ -12,9 +12,20 @@ import {
 let initError = null;
 let verifier = null;
 let verifierError = null;
+const RETRYABLE_SELF_HTTP_STATUS = new Set([408, 409, 425, 429, 500, 502, 503, 504]);
 
 function nowMs() {
   return Date.now();
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function createHttpError(statusCode, message) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
 }
 
 function normalizeAddress(value) {
@@ -398,34 +409,73 @@ export async function startSelfRegistration(humanAddress) {
 
     try {
         const normalizedAddress = normalizeAddress(humanAddress);
-        const response = await fetch("https://app.ai.self.xyz/api/agent/register", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                mode: env.selfAgentRegisterMode,
-                minimumAge: env.selfMinimumAge, 
-                ofac: env.selfOfac,
-                network: resolveSelfNetwork(),
-                humanAddress: normalizedAddress,
-            })
-        });
+        let data = null;
+        let lastStatus = 0;
+        let lastErrorBody = "";
+        for (let attempt = 1; attempt <= 3; attempt += 1) {
+            const response = await fetch("https://app.ai.self.xyz/api/agent/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    mode: env.selfAgentRegisterMode,
+                    minimumAge: env.selfMinimumAge,
+                    ofac: env.selfOfac,
+                    network: resolveSelfNetwork(),
+                    humanAddress: normalizedAddress,
+                }),
+            });
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(`Self API Error: ${response.status} - ${JSON.stringify(errorData)}`);
+            if (response.ok) {
+                data = await response.json();
+                break;
+            }
+
+            lastStatus = response.status;
+            lastErrorBody = await response.text().catch(() => "");
+            const canRetry = RETRYABLE_SELF_HTTP_STATUS.has(response.status) && attempt < 3;
+            if (canRetry) {
+                await sleep(800 * attempt);
+                continue;
+            }
+
+            if (response.status === 429) {
+                throw createHttpError(
+                    503,
+                    "Self service temporarily rate-limited. Please retry in a few seconds.",
+                );
+            }
+
+            const compactErrorBody = lastErrorBody.trim().slice(0, 220);
+            throw createHttpError(
+                response.status >= 500 ? 502 : 400,
+                compactErrorBody
+                    ? `Self API Error: ${response.status} - ${compactErrorBody}`
+                    : `Self API Error: ${response.status}`,
+            );
         }
 
-        const data = await response.json();
+        if (!data) {
+            if (lastStatus === 429) {
+                throw createHttpError(
+                    503,
+                    "Self service temporarily rate-limited. Please retry in a few seconds.",
+                );
+            }
+            throw createHttpError(503, "Self service unavailable. Retry in a few seconds.");
+        }
         
         const sessionToken = extractSessionTokenFromResponse(data);
         if (!sessionToken) {
-          throw new Error("Self API response missing session token.");
+          throw createHttpError(502, "Self API response missing session token.");
         }
 
         const { privateKeyHex: _privateKeyHex, ...safeData } = data || {};
         const links = resolveSelfClientLinks(safeData);
+        if (!links.deepLink && !links.qrData) {
+          throw createHttpError(502, "Self API response missing deep link and QR payload.");
+        }
 
         // Guarda apenas campos não sensíveis para o poll.
         await putSelfRegistrationSession(
