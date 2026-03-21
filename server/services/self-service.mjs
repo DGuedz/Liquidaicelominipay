@@ -94,14 +94,14 @@ function resolveSelfNetwork() {
   return env.celoChain === "mainnet" ? "mainnet" : "testnet";
 }
 
-function resolveSelfVerifyEndpoint() {
+function resolveSelfVerifyEndpoint(includeSecret = true) {
   const fallback = "https://liquidaicelominipay.onrender.com/api/self/verify";
   const raw = env.selfVerifyEndpoint || fallback;
   const trimmed = String(raw).trim();
   const matched = trimmed.match(/https?:\/\/[^\s]+/i);
   const resolved = matched?.[0] || trimmed || fallback;
 
-  if (!env.selfCallbackSecret) return resolved;
+  if (!includeSecret || !env.selfCallbackSecret) return resolved;
 
   try {
     const url = new URL(resolved);
@@ -345,7 +345,7 @@ export function getSelfServiceStatus() {
       message: "Mock verification active for demo flow.",
       verifier: {
         ready: false,
-        endpoint: resolveSelfVerifyEndpoint(),
+        endpoint: resolveSelfVerifyEndpoint(false),
         message: "SelfBackendVerifier disabled in mock mode.",
       },
     };
@@ -365,7 +365,7 @@ export function getSelfServiceStatus() {
           : "SELF_CALLBACK_SECRET missing. Configure callback secret before enabling agent mode."),
       verifier: {
         ready: verifierReady,
-        endpoint: resolveSelfVerifyEndpoint(),
+        endpoint: resolveSelfVerifyEndpoint(false),
         message: verifierError || "SelfBackendVerifier online.",
       },
     };
@@ -377,7 +377,7 @@ export function getSelfServiceStatus() {
     message: "Self verification disabled.",
     verifier: {
       ready: false,
-      endpoint: resolveSelfVerifyEndpoint(),
+      endpoint: resolveSelfVerifyEndpoint(false),
       message: "SelfBackendVerifier disabled.",
     },
   };
