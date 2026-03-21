@@ -278,6 +278,7 @@ function printWalletRow(wallet, status, detail = "") {
 async function main() {
   console.log(`\n[wallet-sim] API target: ${API}`);
   const skipNegativeGuards = process.env.LIQUIDAI_SIM_SKIP_NEGATIVE === "1";
+  const skipRateLimitProbe = process.env.LIQUIDAI_SIM_SKIP_RATE_LIMIT === "1";
   const wallets = collectManagedWallets();
   if (!wallets.length) {
     throw new Error("No managed wallet private keys found in environment.");
@@ -308,6 +309,10 @@ async function main() {
   if (skipNegativeGuards) {
     console.log("\n[wallet-sim] Guard negative tests: SKIPPED (LIQUIDAI_SIM_SKIP_NEGATIVE=1)");
     console.log("[wallet-sim] Rate-limit probe: SKIPPED (LIQUIDAI_SIM_SKIP_NEGATIVE=1)");
+  } else if (skipRateLimitProbe) {
+    await runNegativeGuardTests(primary.token, primary.wallet.address, mismatch);
+    console.log("\n[wallet-sim] Guard negative tests: PASS");
+    console.log("[wallet-sim] Rate-limit probe: SKIPPED (LIQUIDAI_SIM_SKIP_RATE_LIMIT=1)");
   } else {
     await runNegativeGuardTests(primary.token, primary.wallet.address, mismatch);
     console.log("\n[wallet-sim] Guard negative tests: PASS");

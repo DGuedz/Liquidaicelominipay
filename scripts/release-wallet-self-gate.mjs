@@ -114,9 +114,14 @@ async function checkSelfStatus(prodApi, testAddress) {
     return { ok: false, skipped: false };
   }
   const data = payload.data || {};
+  const ready = Boolean(data.ready);
   console.log(
-    `[gate] self/status mode=${String(data.mode || "unknown")} ready=${String(Boolean(data.ready))} verified=${String(Boolean(data.verified))}`,
+    `[gate] self/status mode=${String(data.mode || "unknown")} ready=${String(ready)} verified=${String(Boolean(data.verified))}`,
   );
+  if (!ready) {
+    console.error(`[gate] self/status not ready: ${String(data.message || "missing message")}`);
+    return { ok: false, skipped: false };
+  }
   return { ok: true, skipped: false };
 }
 
@@ -185,6 +190,7 @@ async function main() {
       {
         env: {
           LIQUIDAI_SIM_API_BASE_URL: args.prodApi,
+          LIQUIDAI_SIM_SKIP_RATE_LIMIT: "1",
         },
       },
     );
