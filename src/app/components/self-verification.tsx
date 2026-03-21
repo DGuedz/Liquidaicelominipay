@@ -4,6 +4,7 @@ import { Shield, CheckCircle2, ExternalLink, Fingerprint, X, Zap, RotateCcw } fr
 import { CELO_CHAIN_ID } from "../lib/celo-wallet";
 import { apiGet, apiPost, SelfPollPayload, SelfRegistrationPayload, SelfStatusPayload } from "../lib/api";
 import { ensureWalletAuthSession } from "../lib/wallet-auth";
+import { resolveSelfSessionLinks } from "../lib/self-flow";
 import { useCeloWallet } from "../hooks/use-celo-wallet";
 import { useTheme } from "../hooks/useTheme";
 import QRCode from "qrcode";
@@ -77,6 +78,7 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
     isConnected,
     isMiniPay,
     hasConnector,
+    walletSupportLabelEn,
     wrongNetwork,
     isConnecting,
     isSwitchingChain,
@@ -134,7 +136,7 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
     clearTimers();
 
     if (!hasConnector) {
-      setInlineError("No wallet detected. Open in MiniPay or MetaMask and try again.");
+      setInlineError(`No wallet detected. Open in ${walletSupportLabelEn} and try again.`);
       return;
     }
 
@@ -145,6 +147,10 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
       }
       return message;
     };
+
+    const preOpenedPopup = !isMiniPay
+      ? window.open("", "_blank", "noopener,noreferrer")
+      : null;
 
     try {
       let connectedAddress = address;
@@ -174,9 +180,12 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
         throw new Error("Self registration session missing token.");
       }
 
-      const deepLink = session.deepLink || session.qrData || "";
-      if (!deepLink) {
+      const links = resolveSelfSessionLinks(session);
+      if (!links.actionUrl) {
         throw new Error("Self registration did not return a deep link or QR payload.");
+      }
+      if (!links.qrValue) {
+        throw new Error("Self registration returned an invalid QR payload.");
       }
 
       const openSelfAction = (url: string) => {
@@ -185,16 +194,20 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
           window.location.href = url;
           return true;
         }
+        if (preOpenedPopup && !preOpenedPopup.closed) {
+          preOpenedPopup.location.href = url;
+          return true;
+        }
         const popup = window.open(url, "_blank", "noopener,noreferrer");
         return Boolean(popup);
       };
 
       setInlineSuccess("Aguardando confirmação no app Self...");
-      setSelfActionUrl(deepLink);
-      const qrImage = await QRCode.toDataURL(session.qrData || session.deepLink, { width: 220, margin: 1 });
+      setSelfActionUrl(links.actionUrl);
+      const qrImage = await QRCode.toDataURL(links.qrValue, { width: 220, margin: 1 });
       setSelfQrDataUrl(qrImage);
 
-      const opened = openSelfAction(deepLink);
+      const opened = openSelfAction(links.actionUrl);
       if (!opened) {
         setInlineSuccess("Abra o Self manualmente no botao abaixo para continuar.");
       }
@@ -248,6 +261,9 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
       }
       setState("done");
     } catch (error) {
+      if (preOpenedPopup && !preOpenedPopup.closed) {
+        preOpenedPopup.close();
+      }
       setState("idle");
       setShowQr(false);
       setInlineError(formatSelfError(error));

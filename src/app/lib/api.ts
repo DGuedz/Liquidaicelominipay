@@ -1,5 +1,6 @@
 const DEFAULT_API_BASE_URL = "http://localhost:8787";
 const AUTH_TOKEN_STORAGE_KEY = "liquidai-auth-token";
+let inMemoryAuthToken = "";
 
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/+$/, "");
 
@@ -266,8 +267,8 @@ export type SelfStatusPayload = {
 
 export type SelfRegistrationPayload = {
   sessionToken: string;
-  deepLink: string;
-  qrData?: string;
+  deepLink?: string;
+  qrData?: string | Record<string, unknown>;
   mode: string;
 };
 
@@ -325,19 +326,37 @@ function canUseLocalStorage() {
 }
 
 export function getApiAuthToken() {
-  if (!canUseLocalStorage()) return "";
-  return window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY) || "";
+  return inMemoryAuthToken;
 }
 
 export function setApiAuthToken(token: string) {
-  if (!canUseLocalStorage()) return;
-  if (typeof token !== "string" || !token.trim()) return;
-  window.localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token.trim());
+  if (typeof token !== "string" || !token.trim()) {
+    inMemoryAuthToken = "";
+    return;
+  }
+  inMemoryAuthToken = token.trim();
 }
 
 export function clearApiAuthToken() {
-  if (!canUseLocalStorage()) return;
-  window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+  inMemoryAuthToken = "";
+  if (canUseLocalStorage()) {
+    window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+  }
+  if (typeof window !== "undefined") {
+    void fetch(`${API_BASE_URL}/api/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+    }).catch(() => {});
+  }
+}
+
+export async function hasApiAuthSession() {
+  try {
+    await apiGet<{ address: string; expiresAt: string }>("/api/auth/me");
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function withQuery(path: string, query?: Record<string, string | number | undefined>) {
@@ -361,6 +380,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers,
+    credentials: "include",
   });
   if (!response.ok) {
     throw new Error(`API ${response.status}: ${response.statusText}`);

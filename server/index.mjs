@@ -29,9 +29,11 @@ import {
   resetSelfVerification,
 } from "./store/self-store.mjs";
 import {
+  assertSelfCallbackContext,
   checkRegistrationStatus,
   getSelfServiceStatus,
   initSelfAgent,
+  markSelfCallbackProcessed,
   startSelfRegistration,
   verifySelfProofPayload,
 } from "./services/self-service.mjs";
@@ -43,8 +45,70 @@ import {
 } from "./services/settlement-service.mjs";
 import { getUserProfile, updateUserProfile } from "./services/profile-service.mjs";
 import { getKarmaReputation } from "./services/karma-service.mjs";
+import {
+  consumeRateLimitBucket,
+  getSecurityStateStoreMode,
+} from "./store/security-state-store.mjs";
 
 const app = express();
+const AUTH_COOKIE_PATH = "/";
+
+function parseCookies(req) {
+  const raw = typeof req.headers.cookie === "string" ? req.headers.cookie : "";
+  if (!raw) return {};
+  return raw.split(";").reduce((acc, item) => {
+    const [key, ...rest] = item.trim().split("=");
+    if (!key) return acc;
+    const rawValue = rest.join("=") || "";
+    try {
+      acc[key] = decodeURIComponent(rawValue);
+    } catch {
+      acc[key] = rawValue;
+    }
+    return acc;
+  }, {});
+}
+
+function readAuthCookie(req) {
+  const cookies = parseCookies(req);
+  const value = cookies[env.authCookieName];
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function setAuthCookie(res, token) {
+  const options = {
+    httpOnly: true,
+    secure: env.nodeEnv === "production",
+    sameSite: "lax",
+    path: AUTH_COOKIE_PATH,
+    maxAge: env.authTokenTtlMs,
+  };
+  if (env.authCookieDomain) {
+    res.cookie(env.authCookieName, token, {
+      ...options,
+      domain: env.authCookieDomain,
+    });
+    return;
+  }
+  res.cookie(env.authCookieName, token, options);
+}
+
+function clearAuthCookie(res) {
+  const options = {
+    httpOnly: true,
+    secure: env.nodeEnv === "production",
+    sameSite: "lax",
+    path: AUTH_COOKIE_PATH,
+  };
+  if (env.authCookieDomain) {
+    res.clearCookie(env.authCookieName, {
+      ...options,
+      domain: env.authCookieDomain,
+    });
+    return;
+  }
+  res.clearCookie(env.authCookieName, options);
+}
 
 function isAllowedOrigin(origin) {
   if (!origin) return true;
@@ -75,6 +139,24 @@ app.use(express.json({ limit: "512kb" }));
 function parseNumeric(value, fallback) {
   const parsed = Number.parseFloat(String(value));
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function parseBoolean(value, fallback = false) {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["1", "true", "yes", "on"].includes(normalized)) return true;
+    if (["0", "false", "no", "off"].includes(normalized)) return false;
+  }
+  return fallback;
+}
+
+function parseSafeActionId(value) {
+  const parsed = Number.parseInt(String(value), 10);
+  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 1_000_000) {
+    throw new Error("Invalid actionId.");
+  }
+  return parsed;
 }
 
 function queryParams(req) {
@@ -112,18 +194,116 @@ function authError(res, status, message) {
   });
 }
 
+function createRouteRateLimiter({
+  windowMs,
+  maxRequests,
+  message,
+  keyBuilder,
+}) {
+  const safeWindowMs = Math.max(1_000, Number(windowMs) || 60_000);
+  const safeMaxRequests = Math.max(1, Number(maxRequests) || 30);
+
+  return async (req, res, next) => {
+    const identity = typeof keyBuilder === "function"
+      ? String(keyBuilder(req) || "")
+      : String(req.ip || "unknown");
+    const routeKey = `${req.path}:${identity}`;
+    try {
+      const result = await consumeRateLimitBucket(routeKey, {
+        windowMs: safeWindowMs,
+        maxRequests: safeMaxRequests,
+      });
+      if (!result.allowed) {
+        authError(res, 429, message || "Too many requests. Try again later.");
+        return;
+      }
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
+function readIpAddress(req) {
+  const forwarded = typeof req.headers["x-forwarded-for"] === "string"
+    ? req.headers["x-forwarded-for"].split(",")[0]
+    : "";
+  const raw = String(req.ip || forwarded || "unknown").trim().toLowerCase();
+  return raw.slice(0, 128);
+}
+
+function readRequestAddress(req) {
+  if (typeof req.body?.address === "string") return req.body.address.trim().toLowerCase().slice(0, 128);
+  if (typeof req.query?.address === "string") return req.query.address.trim().toLowerCase().slice(0, 128);
+  return "";
+}
+
+const authChallengeRateLimit = createRouteRateLimiter({
+  windowMs: 60_000,
+  maxRequests: 20,
+  message: "Too many auth challenge attempts. Please retry in a minute.",
+  keyBuilder: (req) => `${readIpAddress(req)}:${readRequestAddress(req) || "no-address"}`,
+});
+
+const authVerifyRateLimit = createRouteRateLimiter({
+  windowMs: 60_000,
+  maxRequests: 20,
+  message: "Too many signature verifications. Please retry in a minute.",
+  keyBuilder: (req) => `${readIpAddress(req)}:${readRequestAddress(req) || "no-address"}`,
+});
+
+const faucetClaimRateLimit = createRouteRateLimiter({
+  windowMs: 5 * 60_000,
+  maxRequests: 5,
+  message: "Too many faucet requests. Please wait before trying again.",
+  keyBuilder: (req) => `${readIpAddress(req)}:${readRequestAddress(req) || "no-address"}`,
+});
+
+const selfStartRateLimit = createRouteRateLimiter({
+  windowMs: 10 * 60_000,
+  maxRequests: 10,
+  message: "Too many Self registration attempts. Please retry later.",
+  keyBuilder: (req) => `${readIpAddress(req)}:${readRequestAddress(req) || "no-address"}`,
+});
+
+const selfPollRateLimit = createRouteRateLimiter({
+  windowMs: 60_000,
+  maxRequests: 60,
+  message: "Self polling rate exceeded. Slow down and retry.",
+  keyBuilder: (req) => `${readIpAddress(req)}:${readRequestAddress(req) || "no-address"}`,
+});
+
+const selfVerifyRateLimit = createRouteRateLimiter({
+  windowMs: 60_000,
+  maxRequests: 30,
+  message: "Self callback rate exceeded.",
+  keyBuilder: (req) => readIpAddress(req),
+});
+
+const agentAuthorizeRateLimit = createRouteRateLimiter({
+  windowMs: 60_000,
+  maxRequests: 30,
+  message: "Too many authorization requests. Please retry shortly.",
+  keyBuilder: (req) => `${readIpAddress(req)}:${readRequestAddress(req) || "no-address"}`,
+});
+
 function readBearerToken(req) {
   const header = req.headers.authorization;
-  if (typeof header !== "string") return "";
-  if (!header.toLowerCase().startsWith("bearer ")) return "";
-  return header.slice(7).trim();
+  if (typeof header === "string" && header.toLowerCase().startsWith("bearer ")) {
+    return header.slice(7).trim();
+  }
+  return readAuthCookie(req);
 }
 
 function walletAuthGuard(extractAddress) {
   return (req, res, next) => {
     const candidate = extractAddress(req);
+    if (typeof candidate !== "string" || !candidate.trim()) {
+      authError(res, 400, "A valid wallet address is required.");
+      return;
+    }
     if (!isAddress(candidate)) {
-      next();
+      authError(res, 400, "Invalid wallet address.");
       return;
     }
 
@@ -187,6 +367,7 @@ app.get(
       yieldsUpdatedAt: yields.updatedAt,
       oracleUpdatedAt: oracle?.updatedAt || null,
       oracleSource: oracle?.source || null,
+      securityStateStore: getSecurityStateStoreMode(),
       service: "liquidai-backend",
     });
   }),
@@ -194,6 +375,7 @@ app.get(
 
 app.post(
   "/api/auth/challenge",
+  authChallengeRateLimit,
   asyncRoute(async (req, res) => {
     const { address = "" } = req.body || {};
     const challenge = createAuthChallenge(address);
@@ -203,6 +385,7 @@ app.post(
 
 app.post(
   "/api/auth/verify",
+  authVerifyRateLimit,
   asyncRoute(async (req, res) => {
     const { address = "", nonce = "", signature = "" } = req.body || {};
     const session = await verifyAuthChallenge({
@@ -210,7 +393,16 @@ app.post(
       rawNonce: nonce,
       rawSignature: signature,
     });
+    setAuthCookie(res, session.token);
     success(res, session);
+  }),
+);
+
+app.post(
+  "/api/auth/logout",
+  asyncRoute(async (_req, res) => {
+    clearAuthCookie(res);
+    success(res, { loggedOut: true });
   }),
 );
 
@@ -266,9 +458,14 @@ app.get(
 
 app.post(
   "/api/testnet/faucet/claim",
+  faucetClaimRateLimit,
   walletAuthGuard((req) => (typeof req.body?.address === "string" ? req.body.address : "")),
   asyncRoute(async (req, res) => {
     const { address = "" } = req.body || {};
+    if (!isAddress(address)) {
+      authError(res, 400, "Invalid address");
+      return;
+    }
     const claim = await claimDemoFunds(address);
     success(res, claim);
   }),
@@ -339,6 +536,10 @@ app.post(
   selfAuthGuard((req) => (typeof req.body?.address === "string" ? req.body.address : "")),
   asyncRoute(async (req, res) => {
     const { address = "", riskMode = "balanced" } = req.body || {};
+    if (!isAddress(address)) {
+      authError(res, 400, "Invalid address");
+      return;
+    }
 
     const dashboard = await getDashboardData({
       address,
@@ -387,10 +588,14 @@ app.get(
 
 app.post(
   "/api/self/start-registration",
+  selfStartRateLimit,
   walletAuthGuard((req) => req.body.address),
   asyncRoute(async (req, res) => {
     const { address } = req.body;
-    if (!isAddress(address)) throw new Error("Invalid address");
+    if (!isAddress(address)) {
+      authError(res, 400, "Invalid address");
+      return;
+    }
 
     const session = await startSelfRegistration(address);
     success(res, session);
@@ -399,10 +604,18 @@ app.post(
 
 app.get(
   "/api/self/poll-registration",
+  selfPollRateLimit,
   walletAuthGuard((req) => req.query.address),
   asyncRoute(async (req, res) => {
     const { address, sessionToken } = req.query;
-    if (!sessionToken) throw new Error("Missing sessionToken");
+    if (!isAddress(address)) {
+      authError(res, 400, "Invalid address");
+      return;
+    }
+    if (typeof sessionToken !== "string" || !sessionToken.trim()) {
+      authError(res, 400, "Missing sessionToken");
+      return;
+    }
 
     try {
       const status = await checkRegistrationStatus(sessionToken);
@@ -432,6 +645,7 @@ app.get(
 
 app.post(
   "/api/self/verify",
+  selfVerifyRateLimit,
   asyncRoute(async (req, res) => {
     const {
       address = "",
@@ -441,15 +655,15 @@ app.post(
       pubSignals,
       userContextData,
     } = req.body || {};
-
-    if (!isAddress(address)) {
-      res.status(400).json({
-        ok: false,
-        error: "Valid address is required.",
-        timestamp: new Date().toISOString(),
-      });
-      return;
-    }
+    const callbackSecret = typeof req.query?.selfSecret === "string"
+      ? req.query.selfSecret
+      : (typeof req.headers["x-self-callback-secret"] === "string" ? req.headers["x-self-callback-secret"] : "");
+    const callbackContext = await assertSelfCallbackContext({
+      rawAddress: address,
+      attestationId,
+      userContextData,
+      callbackSecret,
+    });
 
     const verification = await verifySelfProofPayload({
       attestationId,
@@ -469,8 +683,13 @@ app.post(
       return;
     }
 
-    const proofRef = `self-proof-${attestationId || "unknown"}-${Date.now()}`;
-    await markSelfVerified(address, {
+    await markSelfCallbackProcessed({
+      attestationId: callbackContext.attestationId,
+      sessionToken: callbackContext.sessionToken,
+    });
+
+    const proofRef = `self-proof-${callbackContext.attestationId || "unknown"}-${Date.now()}`;
+    await markSelfVerified(callbackContext.address, {
       mode: "agent",
       provider: "Self Protocol",
       proofRef,
@@ -485,13 +704,44 @@ app.post(
 );
 
 app.post(
-  "/api/agent/authorize",
+  "/api/self/reset",
   walletAuthGuard((req) => (typeof req.body?.address === "string" ? req.body.address : "")),
-  selfAuthGuard((req) => (req.body?.accepted ? (typeof req.body?.address === "string" ? req.body.address : "") : "")),
+  asyncRoute(async (req, res) => {
+    const { address = "" } = req.body || {};
+    if (!isAddress(address)) {
+      authError(res, 400, "Invalid address");
+      return;
+    }
+
+    resetSelfVerification(address);
+    const { mode, ready, message, verifier } = getSelfServiceStatus();
+
+    success(res, {
+      ready,
+      mode,
+      verified: false,
+      requiredForAgent: mode === "agent",
+      message,
+      verifier,
+    });
+  }),
+);
+
+app.post(
+  "/api/agent/authorize",
+  agentAuthorizeRateLimit,
+  walletAuthGuard((req) => (typeof req.body?.address === "string" ? req.body.address : "")),
+  selfAuthGuard((req) => (parseBoolean(req.body?.accepted, true) ? (typeof req.body?.address === "string" ? req.body.address : "") : "")),
   asyncRoute(async (req, res) => {
     const { address = "", actionId = "", accepted = true } = req.body || {};
+    if (!isAddress(address)) {
+      authError(res, 400, "Invalid address");
+      return;
+    }
+    const acceptedFlag = parseBoolean(accepted, true);
+    const normalizedActionId = parseSafeActionId(actionId);
 
-    if (accepted) {
+    if (acceptedFlag) {
       // Regra 2 - Não finalizamos aqui diretamente se envolver capital, mas para manter compatibilidade com o frontend atual, 
       // criamos o lock atômico e o finalizamos no mesmo endpoint para simular a atomicidade do backend
       // Em uma V2 de frontend, isso seria separado.
@@ -507,7 +757,7 @@ app.post(
         settlementId: lock.settlementId
       });
 
-      markActionAuthorized(address, actionId);
+      markActionAuthorized(address, normalizedActionId);
       incrementOps(address, 1);
       const dashboard = await getDashboardData({
         address,
@@ -523,8 +773,8 @@ app.post(
       );
       
       success(res, {
-        actionId,
-        accepted: Boolean(accepted),
+        actionId: normalizedActionId,
+        accepted: acceptedFlag,
         opsCount: getOps(address),
         network,
         settlement: {
@@ -536,10 +786,10 @@ app.post(
         }
       });
     } else {
-      markActionDismissed(address, actionId);
+      markActionDismissed(address, normalizedActionId);
       success(res, {
-        actionId,
-        accepted: Boolean(accepted),
+        actionId: normalizedActionId,
+        accepted: acceptedFlag,
         opsCount: getOps(address),
       });
     }
@@ -591,6 +841,7 @@ app.get(
 
 app.get(
   "/api/profile/settings",
+  walletAuthGuard((req) => (typeof req.query.address === "string" ? req.query.address : "")),
   asyncRoute(async (req, res) => {
     const address = req.query.address;
     if (!address || !isAddress(address)) {
@@ -604,6 +855,7 @@ app.get(
 
 app.post(
   "/api/profile/settings",
+  walletAuthGuard((req) => (typeof req.body?.address === "string" ? req.body.address : "")),
   asyncRoute(async (req, res) => {
     const { address, updates } = req.body;
     if (!address || !isAddress(address)) {

@@ -15,12 +15,9 @@ import { useNavigate } from "react-router";
 import { CELO_CHAIN_ID } from "../lib/celo-wallet";
 import { useCeloWallet } from "../hooks/use-celo-wallet";
 import {
-  apiPost,
-  AuthChallengePayload,
-  AuthSessionPayload,
   clearApiAuthToken,
-  setApiAuthToken,
 } from "../lib/api";
+import { ensureWalletAuthSession } from "../lib/wallet-auth";
 import { truncateAddress } from "../utils/formatters";
 
 type WalletCard = {
@@ -45,6 +42,7 @@ export function ProfileCarteirasPage() {
     address,
     shortAddress,
     connectorName,
+    walletSupportLabelEn,
     nativeBalanceFormatted,
     isConnected,
     hasConnector,
@@ -87,7 +85,7 @@ export function ProfileCarteirasPage() {
   const handleConnect = async () => {
     setInlineError("");
     if (!hasConnector) {
-      setInlineError("No wallet detected. Open in MiniPay or MetaMask and try again.");
+      setInlineError(`No wallet detected. Open in ${walletSupportLabelEn} and try again.`);
       return;
     }
     try {
@@ -98,16 +96,7 @@ export function ProfileCarteirasPage() {
 
       const connectedAddress = session.accounts?.[0] || address;
       if (connectedAddress) {
-        const challenge = await apiPost<AuthChallengePayload>("/api/auth/challenge", {
-          address: connectedAddress,
-        });
-        const signature = await signWalletMessage(challenge.message);
-        const authSession = await apiPost<AuthSessionPayload>("/api/auth/verify", {
-          address: connectedAddress,
-          nonce: challenge.nonce,
-          signature,
-        });
-        setApiAuthToken(authSession.token);
+        await ensureWalletAuthSession(connectedAddress, signWalletMessage);
       }
 
       setExpanded("connected");
@@ -357,7 +346,7 @@ export function ProfileCarteirasPage() {
           {isConnected ? "Main wallet connected" : "Connect New Wallet"}
         </motion.button>
         <p className="text-center text-xs text-text-muted mt-3">
-          Compatible with MiniPay and injected EVM providers
+          Compatible with MiniPay, MetaMask, Rabby, Trust, Coinbase Wallet and WalletConnect
         </p>
       </div>
     </div>

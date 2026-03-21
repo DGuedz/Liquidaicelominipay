@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import QRCode from "qrcode";
@@ -32,6 +32,7 @@ import {
   SelfPollPayload,
 } from "../lib/api";
 import { ensureWalletAuthSession } from "../lib/wallet-auth";
+import { resolveSelfSessionLinks } from "../lib/self-flow";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type RiskId = "conservative" | "balanced" | "aggressive";
@@ -267,6 +268,8 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     isConnected,
     isMiniPay,
     walletMode,
+    walletSupportLabelPt,
+    walletSupportLabelEn,
     connectorName,
     shortAddress,
     hasConnector,
@@ -282,6 +285,12 @@ function StepConnect({ onNext }: { onNext: () => void }) {
   } = useCeloWallet();
   const selfIsRequired = selfStatus?.requiredForAgent ?? true;
   const requiresSelfVerification = selfIsRequired || selfEnabled;
+  const selectedConnectorName = useMemo(() => {
+    const selected = connectorOptions.find((item) => item.id === selectedConnectorId);
+    if (selected?.name) return selected.name;
+    if (connectorName) return connectorName;
+    return isMiniPay ? "MiniPay" : "wallet";
+  }, [connectorName, connectorOptions, isMiniPay, selectedConnectorId]);
 
   useEffect(() => {
     if (!connectorOptions.length) {
@@ -423,7 +432,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     clearTimers();
 
     if (!hasConnector) {
-      setInlineError("Nenhuma carteira detectada. Abra no MiniPay ou MetaMask e tente novamente.");
+      setInlineError(`Nenhuma carteira detectada. Abra no ${walletSupportLabelPt} e tente novamente.`);
       return;
     }
 
@@ -538,6 +547,10 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       return message;
     };
 
+    const preOpenedPopup = !isMiniPay
+      ? window.open("", "_blank", "noopener,noreferrer")
+      : null;
+
     try {
       await ensureWalletAuthSession(address, signWalletMessage);
       
@@ -557,30 +570,36 @@ function StepConnect({ onNext }: { onNext: () => void }) {
           window.location.href = url;
           return true;
         }
+
+        if (preOpenedPopup && !preOpenedPopup.closed) {
+          preOpenedPopup.location.href = url;
+          return true;
+        }
         
         // Em navegadores normais, tentamos abrir em nova aba
         const popup = window.open(url, "_blank", "noopener,noreferrer");
         return Boolean(popup);
       };
 
+      const links = resolveSelfSessionLinks(session);
+
       if (session.mode === "mock") {
          setInlineSuccess("Mock verification instant success.");
-      } else if (session.deepLink) {
+      } else if (links.deepLink) {
          setInlineSuccess("Aguardando confirmação no app Self...");
-         setSelfActionUrl(session.deepLink);
-         const qrContent = session.qrData || session.deepLink;
-         const generatedQr = await QRCode.toDataURL(qrContent, { width: 220, margin: 1 });
+         setSelfActionUrl(links.actionUrl);
+         const generatedQr = await QRCode.toDataURL(links.qrValue, { width: 220, margin: 1 });
          setSelfQrDataUrl(generatedQr);
-         const opened = openSelfAction(session.deepLink);
+         const opened = openSelfAction(links.actionUrl);
          if (!opened) {
            setInlineSuccess("Open Self manually using the button below to continue.");
          }
-      } else if (session.qrData) {
+      } else if (links.qrValue) {
          setInlineSuccess("Verifique via QR Code ou abra o app Self...");
-         setSelfActionUrl(session.qrData);
-         const generatedQr = await QRCode.toDataURL(session.qrData, { width: 220, margin: 1 });
+         setSelfActionUrl(links.actionUrl);
+         const generatedQr = await QRCode.toDataURL(links.qrValue, { width: 220, margin: 1 });
          setSelfQrDataUrl(generatedQr);
-         const opened = openSelfAction(session.qrData);
+         const opened = openSelfAction(links.actionUrl);
          if (!opened) {
            setInlineSuccess("Open Self manually using the button below to continue.");
          }
@@ -634,6 +653,9 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       setPhase("connected");
 
     } catch (error) {
+      if (preOpenedPopup && !preOpenedPopup.closed) {
+        preOpenedPopup.close();
+      }
       setPhase("connected");
       setInlineError(formatSelfError(error));
     } finally {
@@ -841,13 +863,13 @@ function StepConnect({ onNext }: { onNext: () => void }) {
                     ? isMiniPay
                       ? "MiniPay detected"
                       : "Browser wallet detected"
-                    : "Open in MiniPay or MetaMask to continue"}
+                    : `Open in ${walletSupportLabelEn} to continue`}
                 </p>
               </>
             )}
             {phase === "connecting" && (
               <>
-                <p className="font-semibold text-base" style={{ color: "var(--text-primary)" }}>Connecting MiniPay...</p>
+                <p className="font-semibold text-base" style={{ color: "var(--text-primary)" }}>Connecting {selectedConnectorName}...</p>
                 <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Authenticating on Celo network</p>
               </>
             )}
@@ -1193,7 +1215,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
           {phase === "idle" && !wrongNetwork ? (
             <>
               <Wallet className="w-5 h-5" />
-              {isMiniPay ? "Connecting MiniPay..." : "Connect wallet"}
+              {isMiniPay ? "Connect MiniPay" : `Connect ${selectedConnectorName}`}
             </>
           ) : activationRoute?.nextAction === "activate_session" ? (
             <>

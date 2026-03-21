@@ -73,8 +73,9 @@ This skeleton will guide our visual presentation for the Hackathon finale and fu
 - **Mechanic:** How we eliminate slippage. 
 - **Visual:** Agent A (wants BRLm) matches with Agent B (wants USDm) internally within the UTXO pool. Zero MEV front-running.
 
-### Slide 7: Go-To-Market (Celo & MiniPay Synergy)
+### Slide 7: Go-To-Market (The Opera Mega-Catalyst)
 - **Distribution:** Why Celo? Sub-cent fees. Why MiniPay? 14M+ captive audience in emerging markets.
+- **The Mega-Catalyst:** Opera just proposed acquiring 27% of the CELO supply (160M tokens). Opera *is* Celo now. By building natively for MiniPay, we are building for the largest institutional stakeholder in the ecosystem.
 - **Growth:** Phase 1 (Retail Yield) -> Phase 2 (Remittance) -> Phase 3 (B2B Privacy API).
 
 ### Slide 8: Business Model (Sustainable Revenue)

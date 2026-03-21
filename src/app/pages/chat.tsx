@@ -20,10 +20,11 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useTheme } from "../hooks/useTheme";
-import { apiGet, apiPost, ChatReplyPayload, DashboardPayload, getApiAuthToken } from "../lib/api";
+import { apiGet, apiPost, ChatReplyPayload, DashboardPayload, hasApiAuthSession } from "../lib/api";
 import { CELO_CHAIN_ID } from "../lib/celo-wallet";
 import { ensureWalletAuthSession } from "../lib/wallet-auth";
 import { useCeloWallet } from "../hooks/use-celo-wallet";
+import { sanitizeActionId } from "../security/txGuard";
 import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -522,6 +523,7 @@ export function ChatPage() {
     address,
     isConnected,
     hasConnector,
+    walletSupportLabelEn,
     wrongNetwork,
     isConnecting,
     isSwitchingChain,
@@ -536,7 +538,7 @@ export function ChatPage() {
   const [thinkingStep, setThinkingStep] = useState("Analisando...");
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [sessionReady, setSessionReady] = useState(() => Boolean(getApiAuthToken()));
+  const [sessionReady, setSessionReady] = useState(false);
   const [dashboard, setDashboard] = useState<DashboardPayload | null>(null);
   const canUseProtectedFlow = isConnected && !wrongNetwork && sessionReady;
   const activeCapital = dashboard?.summary.managedCapitalUsd ?? 0;
@@ -544,17 +546,22 @@ export function ChatPage() {
   const activeYieldToday = (dashboard?.summary.monthlyYieldUsd ?? 0) / 30;
 
   useEffect(() => {
-    const syncSessionState = () => {
-      setSessionReady(Boolean(getApiAuthToken()));
+    let active = true;
+    const syncSessionState = async () => {
+      const ready = await hasApiAuthSession();
+      if (!active) return;
+      setSessionReady(ready);
     };
 
-    syncSessionState();
-    window.addEventListener("focus", syncSessionState);
-    window.addEventListener("storage", syncSessionState);
+    void syncSessionState();
+    const onFocus = () => {
+      void syncSessionState();
+    };
+    window.addEventListener("focus", onFocus);
 
     return () => {
-      window.removeEventListener("focus", syncSessionState);
-      window.removeEventListener("storage", syncSessionState);
+      active = false;
+      window.removeEventListener("focus", onFocus);
     };
   }, []);
 
@@ -685,7 +692,7 @@ export function ChatPage() {
 
   const handlePrepareWallet = async () => {
     if (!hasConnector) {
-      toast.error("No wallet detected. Open the app in MiniPay or MetaMask.");
+      toast.error(`No wallet detected. Open the app in ${walletSupportLabelEn}.`);
       return;
     }
 
@@ -730,9 +737,10 @@ export function ChatPage() {
     try {
       await ensureWalletAuthSession(address, signWalletMessage);
       setSessionReady(true);
+      const safeActionId = sanitizeActionId(id);
       await apiPost("/api/agent/authorize", {
         address,
-        actionId: id,
+        actionId: safeActionId,
         accepted,
       });
       return true;

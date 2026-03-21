@@ -1,11 +1,94 @@
 import { env } from "../config/env.mjs";
+import { getAddress, isAddress } from "viem";
+import {
+  findSelfRegistrationSessionTokenByAddress,
+  getSelfRegistrationSession,
+  isSelfAttestationUsed,
+  markSelfAttestationUsed,
+  patchSelfRegistrationSession,
+  putSelfRegistrationSession,
+} from "../store/security-state-store.mjs";
 
 let initError = null;
 let verifier = null;
 let verifierError = null;
 
-// Armazena as sessões ativas em memória
-const activeSessions = new Map();
+function nowMs() {
+  return Date.now();
+}
+
+function normalizeAddress(value) {
+  if (!isAddress(value)) {
+    throw new Error("Invalid wallet address for Self flow.");
+  }
+  return getAddress(value);
+}
+
+function readDeepLinkTokenCandidates(deepLink = "") {
+  const tokens = [];
+  if (!deepLink) return tokens;
+  try {
+    const url = new URL(deepLink);
+    const selfAppEncoded = url.searchParams.get("selfApp");
+    if (!selfAppEncoded) return tokens;
+    const selfApp = JSON.parse(selfAppEncoded);
+    const fromDeepLink = [
+      selfApp?.sessionId,
+      selfApp?.sessionToken,
+      selfApp?.token,
+    ]
+      .filter((value) => typeof value === "string" && value.length > 0);
+    return fromDeepLink;
+  } catch {
+    return tokens;
+  }
+}
+
+function nonEmptyString(value) {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : "";
+}
+
+function asRecord(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value;
+}
+
+function encodeSelfAppPayload(payload) {
+  try {
+    return `https://redirect.self.xyz?selfApp=${encodeURIComponent(JSON.stringify(payload))}`;
+  } catch {
+    return "";
+  }
+}
+
+function resolveSelfClientLinks(payload = {}) {
+  const safePayload = asRecord(payload) || {};
+  const rawDeepLink = nonEmptyString(safePayload.deepLink)
+    || nonEmptyString(safePayload.deeplink)
+    || nonEmptyString(safePayload.url)
+    || nonEmptyString(safePayload.actionUrl)
+    || nonEmptyString(safePayload.selfUrl);
+
+  const qrRawString = nonEmptyString(safePayload.qrData);
+  const qrRecord = asRecord(safePayload.qrData);
+  const qrDeepLink = qrRecord
+    ? nonEmptyString(qrRecord.deepLink)
+      || nonEmptyString(qrRecord.deeplink)
+      || nonEmptyString(qrRecord.url)
+      || nonEmptyString(qrRecord.actionUrl)
+    : "";
+  const qrEncoded = qrRecord ? encodeSelfAppPayload(qrRecord) : "";
+
+  const deepLink = rawDeepLink || qrDeepLink || qrEncoded || qrRawString;
+  const qrData = qrRawString || qrDeepLink || qrEncoded || deepLink;
+
+  return {
+    deepLink,
+    qrData,
+  };
+}
 
 function resolveSelfNetwork() {
   return env.celoChain === "mainnet" ? "mainnet" : "testnet";
@@ -16,7 +99,19 @@ function resolveSelfVerifyEndpoint() {
   const raw = env.selfVerifyEndpoint || fallback;
   const trimmed = String(raw).trim();
   const matched = trimmed.match(/https?:\/\/[^\s]+/i);
-  return matched?.[0] || trimmed || fallback;
+  const resolved = matched?.[0] || trimmed || fallback;
+
+  if (!env.selfCallbackSecret) return resolved;
+
+  try {
+    const url = new URL(resolved);
+    if (!url.searchParams.has("selfSecret")) {
+      url.searchParams.set("selfSecret", env.selfCallbackSecret);
+    }
+    return url.toString();
+  } catch {
+    return resolved;
+  }
 }
 
 function extractSessionTokenFromResponse(payload = {}) {
@@ -30,25 +125,173 @@ function extractSessionTokenFromResponse(payload = {}) {
     return direct;
   }
 
-  const deepLink = typeof payload?.deepLink === "string" ? payload.deepLink : "";
+  const { deepLink } = resolveSelfClientLinks(payload);
   if (deepLink) {
-    try {
-      const url = new URL(deepLink);
-      const selfAppEncoded = url.searchParams.get("selfApp");
-      if (selfAppEncoded) {
-        const selfApp = JSON.parse(selfAppEncoded);
-        const fromDeepLink =
-          selfApp?.sessionId ||
-          selfApp?.sessionToken ||
-          selfApp?.token ||
-          "";
-        if (typeof fromDeepLink === "string" && fromDeepLink.length > 0) {
-          return fromDeepLink;
-        }
-      }
-    } catch {}
+    const candidates = readDeepLinkTokenCandidates(deepLink);
+    if (candidates.length) {
+      return candidates[0];
+    }
   }
   return "";
+}
+
+function extractCallbackContextCandidates(userContextData) {
+  const tokens = new Set();
+  const addresses = new Set();
+
+  const maybeAddAddress = (value) => {
+    if (typeof value !== "string") return;
+    if (!isAddress(value)) return;
+    addresses.add(getAddress(value));
+  };
+  const maybeAddToken = (value) => {
+    if (typeof value !== "string") return;
+    const trimmed = value.trim();
+    if (!trimmed || trimmed.length < 8) return;
+    tokens.add(trimmed);
+  };
+
+  const visit = (node, depth = 0) => {
+    if (depth > 5 || node === null || node === undefined) return;
+    if (typeof node === "string") {
+      maybeAddAddress(node);
+      maybeAddToken(node);
+      return;
+    }
+    if (Array.isArray(node)) {
+      for (const item of node) visit(item, depth + 1);
+      return;
+    }
+    if (typeof node !== "object") return;
+
+    for (const [key, value] of Object.entries(node)) {
+      const normalizedKey = key.toLowerCase();
+      if (
+        normalizedKey.includes("token") ||
+        normalizedKey.includes("session") ||
+        normalizedKey.includes("attestation")
+      ) {
+        maybeAddToken(value);
+      }
+      if (
+        normalizedKey.includes("address") ||
+        normalizedKey.includes("wallet") ||
+        normalizedKey.includes("human")
+      ) {
+        maybeAddAddress(value);
+      }
+      visit(value, depth + 1);
+    }
+  };
+
+  if (typeof userContextData === "string") {
+    const trimmed = userContextData.trim();
+    maybeAddAddress(trimmed);
+    maybeAddToken(trimmed);
+    try {
+      const parsed = JSON.parse(trimmed);
+      visit(parsed, 0);
+    } catch {}
+  } else {
+    visit(userContextData, 0);
+  }
+
+  return {
+    tokens: Array.from(tokens),
+    addresses: Array.from(addresses),
+  };
+}
+
+async function findSessionByAddress(address) {
+  const normalized = normalizeAddress(address);
+  const sessionToken = await findSelfRegistrationSessionTokenByAddress(normalized);
+  if (!sessionToken) return null;
+  const session = await getSelfRegistrationSession(sessionToken);
+  if (!session) return null;
+  return { sessionToken, session };
+}
+
+export async function assertSelfCallbackContext({
+  rawAddress,
+  attestationId,
+  userContextData,
+  callbackSecret = "",
+}) {
+  if (env.selfMode !== "agent") {
+    return {
+      address: normalizeAddress(rawAddress),
+      attestationId: String(attestationId || "").trim(),
+      sessionToken: "",
+    };
+  }
+
+  if (!env.selfCallbackSecret) {
+    throw new Error("Self callback secret is not configured (SELF_CALLBACK_SECRET).");
+  }
+
+  if (env.selfCallbackSecret && callbackSecret !== env.selfCallbackSecret) {
+    throw new Error("Unauthorized Self verification callback.");
+  }
+
+  const normalizedAddress = normalizeAddress(rawAddress);
+  const normalizedAttestationId = String(attestationId || "").trim();
+  if (normalizedAttestationId.length < 6) {
+    throw new Error("Invalid attestationId in Self callback.");
+  }
+  const replayDetected = await isSelfAttestationUsed(normalizedAttestationId);
+  if (replayDetected) {
+    throw new Error("Replay detected: attestation already processed.");
+  }
+
+  const context = extractCallbackContextCandidates(userContextData);
+  if (context.addresses.length && !context.addresses.includes(normalizedAddress)) {
+    throw new Error("Self callback address mismatch with wallet session.");
+  }
+
+  let matchedSessionToken = "";
+  if (context.tokens.length) {
+    for (const token of context.tokens) {
+      const session = await getSelfRegistrationSession(token);
+      if (!session) continue;
+      if (session.walletAddress !== normalizedAddress) continue;
+      if (Number(session.expiresAt || 0) <= nowMs()) continue;
+      matchedSessionToken = token;
+      break;
+    }
+    if (!matchedSessionToken) {
+      throw new Error("Self callback token is not bound to wallet session.");
+    }
+  } else {
+    const fallbackSession = await findSessionByAddress(normalizedAddress);
+    if (!fallbackSession) {
+      throw new Error("No active Self registration session found for callback wallet.");
+    }
+    matchedSessionToken = fallbackSession.sessionToken;
+  }
+
+  return {
+    address: normalizedAddress,
+    attestationId: normalizedAttestationId,
+    sessionToken: matchedSessionToken,
+  };
+}
+
+export async function markSelfCallbackProcessed({ attestationId, sessionToken }) {
+  const normalizedAttestationId = String(attestationId || "").trim();
+  if (normalizedAttestationId) {
+    const replayTtlMs = Math.max(60_000, env.selfCallbackReplayWindowMs);
+    await markSelfAttestationUsed(normalizedAttestationId, replayTtlMs);
+  }
+
+  if (!sessionToken) return;
+  const current = await getSelfRegistrationSession(sessionToken);
+  if (!current) return;
+  const nextStatus = current.status === "pending" ? "callback_verified" : current.status;
+  await patchSelfRegistrationSession(sessionToken, {
+    callbackValidated: true,
+    callbackValidatedAt: nowMs(),
+    status: nextStatus,
+  });
 }
 
 async function ensureSelfVerifier() {
@@ -109,11 +352,17 @@ export function getSelfServiceStatus() {
   }
 
   if (env.selfMode === "agent") {
+    const secretReady = Boolean(env.selfCallbackSecret);
     const verifierReady = Boolean(verifier) && !verifierError;
     return {
       mode: "agent",
-      ready: !initError && verifierReady,
-      message: initError || verifierError || "Agent client online. Ready for start-registration → poll-registration → self/status flow.",
+      ready: !initError && verifierReady && secretReady,
+      message:
+        initError ||
+        verifierError ||
+        (secretReady
+          ? "Agent client online. Ready for start-registration → poll-registration → self/status flow."
+          : "SELF_CALLBACK_SECRET missing. Configure callback secret before enabling agent mode."),
       verifier: {
         ready: verifierReady,
         endpoint: resolveSelfVerifyEndpoint(),
@@ -148,6 +397,7 @@ export async function startSelfRegistration(humanAddress) {
     }
 
     try {
+        const normalizedAddress = normalizeAddress(humanAddress);
         const response = await fetch("https://app.ai.self.xyz/api/agent/register", {
             method: "POST",
             headers: {
@@ -158,7 +408,7 @@ export async function startSelfRegistration(humanAddress) {
                 minimumAge: env.selfMinimumAge, 
                 ofac: env.selfOfac,
                 network: resolveSelfNetwork(),
-                humanAddress,
+                humanAddress: normalizedAddress,
             })
         });
 
@@ -174,17 +424,29 @@ export async function startSelfRegistration(humanAddress) {
           throw new Error("Self API response missing session token.");
         }
 
-        // Guarda a sessão na memória para conseguirmos fazer o poll depois
-        activeSessions.set(sessionToken, {
-            ...data,
-            startedAt: Date.now()
-        });
+        const { privateKeyHex: _privateKeyHex, ...safeData } = data || {};
+        const links = resolveSelfClientLinks(safeData);
+
+        // Guarda apenas campos não sensíveis para o poll.
+        await putSelfRegistrationSession(
+          sessionToken,
+          {
+            ...safeData,
+            deepLink: links.deepLink,
+            qrData: links.qrData,
+            walletAddress: normalizedAddress,
+            startedAt: nowMs(),
+            expiresAt: nowMs() + env.selfSessionTtlMs,
+            status: "pending",
+            callbackValidated: false,
+          },
+          env.selfSessionTtlMs,
+        );
         
         return { 
             sessionToken,
-            deepLink: data.deepLink,
-            qrData: data.deepLink, // Self App internal scanner expects the deepLink URL, not stringified JSON
-            privateKeyHex: data.privateKeyHex,
+            deepLink: links.deepLink,
+            qrData: links.qrData,
             mode: "agent" 
         };
     } catch (error) {
@@ -201,7 +463,7 @@ export async function checkRegistrationStatus(sessionToken) {
         return { stage: "completed", agentId: 999, verified: true };
     }
 
-    const session = activeSessions.get(sessionToken);
+    const session = await getSelfRegistrationSession(sessionToken);
     if (!session) {
         throw new Error("Session not found or expired");
     }
@@ -230,12 +492,20 @@ export async function checkRegistrationStatus(sessionToken) {
         if (isVerified) {
             // Em produção, o privateKey gerado deve ser injetado na session/db do usuário
             console.log(`[Self Service] Agent ${data.agentId || 'verified'} verified successfully!`);
+            await patchSelfRegistrationSession(sessionToken, {
+              status: "verified",
+              verifiedAt: nowMs(),
+            });
             return { 
                 stage: "completed",
                 agentId: data.agentId,
                 verified: true
             };
         } else if (isFailed) {
+            await patchSelfRegistrationSession(sessionToken, {
+              status: "failed",
+              failedAt: nowMs(),
+            });
             throw new Error(`Self registration failed or expired: ${data.reason || data.stage}`);
         }
         

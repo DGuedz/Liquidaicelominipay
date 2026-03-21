@@ -10,6 +10,7 @@ import {
 } from "wagmi";
 import {
   CELO_CHAIN_ID,
+  WALLETCONNECT_PROJECT_ID,
   clearWalletConnectorPersistence,
   isWalletResetOverride,
   readPreferredAccounts,
@@ -18,7 +19,34 @@ import {
   setWalletResetOverride,
   subscribePreferredProviderEvents,
 } from "../lib/celo-wallet";
+import {
+  assertTrustedOrigin,
+  getRuntimeWalletSecurityPolicy,
+  isAllowedConnector,
+} from "../security/walletValidator";
 import { truncateAddress } from "../utils/formatters";
+
+const PREFERRED_CONNECTOR_KEY = "liquidai.preferred-connector";
+
+function isWalletConnectConnector(connector: any) {
+  const id = String(connector?.id || "").toLowerCase();
+  const type = String(connector?.type || "").toLowerCase();
+  return type === "walletconnect" || id.includes("walletconnect");
+}
+
+function readPreferredConnectorId() {
+  if (typeof window === "undefined") return "";
+  return window.localStorage.getItem(PREFERRED_CONNECTOR_KEY) || "";
+}
+
+function writePreferredConnectorId(connectorId: string) {
+  if (typeof window === "undefined") return;
+  if (!connectorId) {
+    window.localStorage.removeItem(PREFERRED_CONNECTOR_KEY);
+    return;
+  }
+  window.localStorage.setItem(PREFERRED_CONNECTOR_KEY, connectorId);
+}
 
 export function useCeloWallet() {
   const { address, chainId, isConnected, connector } = useAccount();
@@ -42,6 +70,13 @@ export function useCeloWallet() {
   const connectInFlightRef = useRef(false);
   const pendingWalletApprovalRef = useRef(false);
   const miniPayAutoConnectAttemptedRef = useRef(false);
+  const walletConnectEnabled = Boolean(WALLETCONNECT_PROJECT_ID);
+  const walletSupportLabelPt = walletConnectEnabled
+    ? "MiniPay, MetaMask, Rabby, Trust, Coinbase Wallet ou WalletConnect"
+    : "MiniPay, MetaMask, Rabby, Trust ou Coinbase Wallet";
+  const walletSupportLabelEn = walletConnectEnabled
+    ? "MiniPay, MetaMask, Rabby, Trust, Coinbase Wallet, or WalletConnect"
+    : "MiniPay, MetaMask, Rabby, Trust, or Coinbase Wallet";
 
   const { data: nativeBalance } = useBalance({
     address: effectiveAddress,
@@ -54,14 +89,23 @@ export function useCeloWallet() {
   const supportedConnectors = useMemo(
     () =>
       connectors.filter((item: any) => {
-        const name = item.name.toLowerCase();
-        const id = item.id.toLowerCase();
+        const name = String(item.name || "").toLowerCase();
+        const id = String(item.id || "").toLowerCase();
+        const type = String(item.type || "").toLowerCase();
         return (
-          item.type === "injected"
+          type === "injected"
+          || type === "walletconnect"
+          || id.includes("walletconnect")
+          || id.includes("coinbase")
+          || name.includes("coinbase")
           || id.includes("meta")
           || id.includes("minipay")
+          || id.includes("rabby")
+          || id.includes("trust")
           || name.includes("metamask")
           || name.includes("minipay")
+          || name.includes("rabby")
+          || name.includes("trust")
         );
       }),
     [connectors],
@@ -69,6 +113,11 @@ export function useCeloWallet() {
 
   const primaryConnector = useMemo(() => {
     if (!supportedConnectors.length) return null;
+    const preferredConnectorId = readPreferredConnectorId().toLowerCase();
+    if (preferredConnectorId) {
+      const preferred = supportedConnectors.find((item: any) => item.id.toLowerCase() === preferredConnectorId);
+      if (preferred) return preferred;
+    }
 
     if (resolveWalletMode() === "minipay") {
       return (
@@ -80,6 +129,10 @@ export function useCeloWallet() {
 
     return (
       supportedConnectors.find((item: any) => item.id.toLowerCase().includes("meta") || item.name.toLowerCase().includes("metamask"))
+      ?? supportedConnectors.find((item: any) => item.id.toLowerCase().includes("rabby") || item.name.toLowerCase().includes("rabby"))
+      ?? supportedConnectors.find((item: any) => item.id.toLowerCase().includes("coinbase") || item.name.toLowerCase().includes("coinbase"))
+      ?? supportedConnectors.find((item: any) => item.id.toLowerCase().includes("walletconnect") || item.type?.toLowerCase() === "walletconnect")
+      ?? supportedConnectors.find((item: any) => item.id.toLowerCase().includes("trust") || item.name.toLowerCase().includes("trust"))
       ?? supportedConnectors.find((item: any) => item.type === "injected")
       ?? supportedConnectors[0]
     );
@@ -116,6 +169,48 @@ export function useCeloWallet() {
       return Array.from(unique.values());
     },
     [supportedConnectors],
+  );
+
+  const isConnectorAvailable = useCallback(
+    async (candidate: any) => {
+      if (!candidate) return false;
+      if (isWalletConnectConnector(candidate)) return walletConnectEnabled;
+
+      try {
+        const provider = await (candidate as { getProvider?: () => Promise<unknown> | unknown }).getProvider?.();
+        return Boolean(provider);
+      } catch {
+        return false;
+      }
+    },
+    [walletConnectEnabled],
+  );
+
+  const resolveUsableConnector = useCallback(
+    async (requestedConnectorId?: string) => {
+      const ordered: any[] = [];
+      const pushUnique = (item: any) => {
+        if (!item) return;
+        if (ordered.some((existing) => existing.id === item.id)) return;
+        ordered.push(item);
+      };
+
+      if (requestedConnectorId) {
+        pushUnique(supportedConnectors.find((item: any) => item.id === requestedConnectorId));
+      }
+
+      pushUnique(primaryConnector);
+      supportedConnectors.forEach((item) => pushUnique(item));
+
+      for (const connectorItem of ordered) {
+        if (await isConnectorAvailable(connectorItem)) {
+          return connectorItem;
+        }
+      }
+
+      return null;
+    },
+    [isConnectorAvailable, primaryConnector, supportedConnectors],
   );
 
   const requestConnectorAccounts = useCallback(
@@ -236,17 +331,26 @@ export function useCeloWallet() {
     connectInFlightRef.current = true;
     setWalletResetOverride(false);
 
-    const selectedConnector =
-      (connectorId
-        ? supportedConnectors.find((item: any) => item.id === connectorId)
-        : null) ?? primaryConnector;
-
-    if (!selectedConnector) {
-      connectInFlightRef.current = false;
-      throw new Error("Nenhuma carteira detectada. Abra no MiniPay ou MetaMask.");
-    }
-
     try {
+      const selectedConnector = await resolveUsableConnector(connectorId);
+      if (!selectedConnector) {
+        throw new Error(
+          walletConnectEnabled
+            ? "Nenhuma carteira EVM pronta para conexão foi detectada. Abra MiniPay/MetaMask/Rabby/Trust/Coinbase ou use WalletConnect."
+            : "Nenhuma carteira EVM pronta para conexão foi detectada. WalletConnect está desativado: configure VITE_WALLETCONNECT_PROJECT_ID.",
+        );
+      }
+
+      const walletSecurityPolicy = getRuntimeWalletSecurityPolicy(CELO_CHAIN_ID);
+      const hostname = typeof window !== "undefined" ? window.location.hostname : "";
+      assertTrustedOrigin(hostname, walletSecurityPolicy.allowedHosts);
+      if (!isAllowedConnector(selectedConnector, walletSecurityPolicy.allowedConnectorPatterns)) {
+        throw new Error(
+          `Blocked connector "${selectedConnector.name || selectedConnector.id || "unknown"}". Use an allow-listed wallet provider.`,
+        );
+      }
+
+      writePreferredConnectorId(selectedConnector.id);
       pendingWalletApprovalRef.current = true;
       const session = await connectAsync({
         connector: selectedConnector,
@@ -294,6 +398,7 @@ export function useCeloWallet() {
 
   const disconnectWallet = async () => {
     pendingWalletApprovalRef.current = false;
+    writePreferredConnectorId("");
     setWalletResetOverride(true);
     clearWalletConnectorPersistence();
 
@@ -317,6 +422,9 @@ export function useCeloWallet() {
     nativeBalanceFormatted,
     isMiniPay,
     walletMode,
+    walletConnectEnabled,
+    walletSupportLabelPt,
+    walletSupportLabelEn,
     hasConnector: Boolean(primaryConnector),
     connectorOptions,
     wrongNetwork: effectiveWrongNetwork,

@@ -1,36 +1,75 @@
 import { ArrowLeft, Shield, Lock, Fingerprint, Smartphone, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useEffect, useState } from "react";
-import { useAccount } from "wagmi";
 import { apiGet, apiPost } from "../../lib/api";
+import { useCeloWallet } from "../../hooks/use-celo-wallet";
+import { ensureWalletAuthSession } from "../../lib/wallet-auth";
 
 export function SecurityPage() {
   const navigate = useNavigate();
-  const { address } = useAccount();
+  const { address, wrongNetwork, signWalletMessage } = useCeloWallet();
   const [profile, setProfile] = useState<any>(null);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
-    if (address) {
-      apiGet("/api/profile/settings", { address }).then(setProfile);
+    let active = true;
+    if (!address || wrongNetwork) {
+      setProfile(null);
+      setLoadError("");
+      return () => {
+        active = false;
+      };
     }
-  }, [address]);
 
-  const toggleApproval = () => {
+    (async () => {
+      try {
+        await ensureWalletAuthSession(address, signWalletMessage);
+        const payload = await apiGet("/api/profile/settings", { address });
+        if (!active) return;
+        setProfile(payload);
+        setLoadError("");
+      } catch (error) {
+        if (!active) return;
+        setLoadError(error instanceof Error ? error.message : "Failed to load security settings.");
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [address, signWalletMessage, wrongNetwork]);
+
+  const toggleApproval = async () => {
     if (!profile) return;
     const newVal = !profile.security.requireApproval;
     const updated = { ...profile, security: { ...profile.security, requireApproval: newVal } };
     setProfile(updated);
-    apiPost("/api/profile/settings", { address, updates: { security: { requireApproval: newVal } } });
+    try {
+      if (!address) throw new Error("Wallet not connected.");
+      await ensureWalletAuthSession(address, signWalletMessage);
+      await apiPost("/api/profile/settings", { address, updates: { security: { requireApproval: newVal } } });
+    } catch {
+      setProfile(profile);
+    }
   };
 
-  const toggleBiometrics = () => {
+  const toggleBiometrics = async () => {
     if (!profile) return;
     const newVal = !profile.security.biometricsEnabled;
     const updated = { ...profile, security: { ...profile.security, biometricsEnabled: newVal } };
     setProfile(updated);
-    apiPost("/api/profile/settings", { address, updates: { security: { biometricsEnabled: newVal } } });
+    try {
+      if (!address) throw new Error("Wallet not connected.");
+      await ensureWalletAuthSession(address, signWalletMessage);
+      await apiPost("/api/profile/settings", { address, updates: { security: { biometricsEnabled: newVal } } });
+    } catch {
+      setProfile(profile);
+    }
   };
 
+  if (loadError) {
+    return <div className="p-10 text-center text-red-400">{loadError}</div>;
+  }
   if (!profile) return <div className="p-10 text-center text-text-muted">Loading settings...</div>;
 
   return (

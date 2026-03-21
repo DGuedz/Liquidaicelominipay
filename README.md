@@ -31,6 +31,38 @@ By abstracting the complexity of AMMs, fee structures, and bridge routing, Liqui
 
 ---
 
+## Wallet Connectivity (EVM L2)
+
+LiquidAI uses `wagmi + viem` connectors to support browser and mobile wallets on Celo Sepolia:
+- MiniPay (in-app injected provider)
+- MetaMask / Rabby / Trust / Coinbase Wallet extension (injected providers)
+- WalletConnect v2 (mobile wallets, including Trust/Rainbow/BitPay/Ledger flows)
+
+### Required env for WalletConnect
+
+If `VITE_WALLETCONNECT_PROJECT_ID` is missing, WalletConnect is disabled and only injected wallets will be available.
+
+1. Create a project at [Reown Cloud](https://cloud.reown.com).
+2. Add the project id to your env:
+
+```bash
+VITE_WALLETCONNECT_PROJECT_ID=your_project_id_here
+```
+
+3. Restart the frontend dev server.
+
+### Wallet Session Security
+
+- Wallet auth sessions are set by the backend as `httpOnly` cookies.
+- The frontend no longer persists auth tokens in `localStorage`.
+- Connection is blocked on untrusted hostnames unless they are allow-listed via:
+
+```bash
+VITE_ALLOWED_APP_HOSTS=localhost,127.0.0.1,app.liquidai.ai,liquidai.ai
+```
+
+---
+
 ## Technical Evidence & On-Chain Proofs
 
 LiquidAI architecture has been fully verified and deployed on-chain:
@@ -59,3 +91,5 @@ The agent's decision-making is logged following the ERC-8004 standard, and execu
   - 📖 **Read the Blueprint:** [ZK-Shielded Architecture](docs/ZK_SHIELD_ARCHITECTURE.md)
   - 🛠️ **Read the Execution Plan:** [ZK Implementation Plan](docs/ZK_IMPLEMENTATION_PLAN.md)
   - 💰 **Read the Business Case:** [Revenue Model & Projections](docs/REVENUE_MODEL_PROJECTIONS.md)
+  - 🔐 **Read Wallet + Self Execution Plan:** [Wallet + Self Plan](docs/WALLET_SELF_EXECUTION_PLAN.md)
+  - 🚀 **Read Release Runbook (Wallet + Self):** [Wallet + Self Release Runbook](docs/WALLET_SELF_RELEASE_RUNBOOK.md)

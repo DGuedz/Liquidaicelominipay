@@ -2,7 +2,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { createConfig, http } from "wagmi";
 import { defineChain } from "viem";
 import { chainConfig } from "viem/celo";
-import { injected, metaMask } from "wagmi/connectors";
+import { injected, metaMask, walletConnect } from "wagmi/connectors";
 
 const DEFAULT_CELO_RPC_URL = "https://forno.celo-sepolia.celo-testnet.org";
 const APP_WALLET_RESET_KEY = "liquidai.wallet-reset";
@@ -10,6 +10,9 @@ const APP_WALLET_RESET_KEY = "liquidai.wallet-reset";
 type InjectedProvider = {
   isMiniPay?: boolean;
   isMetaMask?: boolean;
+  isRabby?: boolean;
+  isTrust?: boolean;
+  isCoinbaseWallet?: boolean;
   providers?: InjectedProvider[];
   request?: (args: { method: string; params?: unknown[] | object }) => Promise<unknown>;
   on?: (event: string, listener: (...args: unknown[]) => void) => void;
@@ -21,7 +24,7 @@ type InjectedProvider = {
 
 export type WalletMode = "minipay" | "browser";
 
-function getEnvVar(key: "VITE_CELO_RPC_URL" | "VITE_APP_URL"): string {
+function getEnvVar(key: "VITE_CELO_RPC_URL" | "VITE_APP_URL" | "VITE_WALLETCONNECT_PROJECT_ID"): string {
   const value = import.meta.env[key];
   return typeof value === "string" ? value.trim() : "";
 }
@@ -36,24 +39,63 @@ function hasWindowStorage() {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 }
 
-function getInjectedProviderForTarget(targetId?: string): InjectedProvider | null {
+function listInjectedProviders(): InjectedProvider[] {
   const ethereum = getBrowserEthereum();
-  if (!ethereum) return null;
+  if (!ethereum) return [];
+  if (Array.isArray(ethereum.providers) && ethereum.providers.length > 0) {
+    return ethereum.providers;
+  }
+  return [ethereum];
+}
 
-  const providers = Array.isArray(ethereum.providers) && ethereum.providers.length > 0
-    ? ethereum.providers
-    : [ethereum];
+function resolveInjectedProviderId(provider: InjectedProvider): string {
+  if (provider.isMiniPay) return "minipay";
+  if (provider.isMetaMask) return "metamask";
+  if (provider.isRabby) return "rabby";
+  if (provider.isTrust) return "trust";
+  if (provider.isCoinbaseWallet) return "coinbase";
+  return "injected";
+}
 
-  if (targetId?.toLowerCase().includes("minipay")) {
+function resolveInjectedProviderName(provider: InjectedProvider): string {
+  if (provider.isMiniPay) return "MiniPay";
+  if (provider.isMetaMask) return "MetaMask";
+  if (provider.isRabby) return "Rabby";
+  if (provider.isTrust) return "Trust Wallet";
+  if (provider.isCoinbaseWallet) return "Coinbase Wallet";
+  return "Injected Wallet";
+}
+
+function getInjectedProviderForTarget(targetId?: string): InjectedProvider | null {
+  const providers = listInjectedProviders();
+  if (!providers.length) return null;
+
+  const normalizedTarget = String(targetId || "").toLowerCase();
+  if (normalizedTarget.includes("minipay")) {
     return providers.find((provider) => provider?.isMiniPay) ?? null;
   }
 
-  if (targetId?.toLowerCase().includes("meta")) {
+  if (normalizedTarget.includes("meta")) {
     return providers.find((provider) => provider?.isMetaMask) ?? null;
+  }
+
+  if (normalizedTarget.includes("rabby")) {
+    return providers.find((provider) => provider?.isRabby) ?? null;
+  }
+
+  if (normalizedTarget.includes("trust")) {
+    return providers.find((provider) => provider?.isTrust) ?? null;
+  }
+
+  if (normalizedTarget.includes("coinbase")) {
+    return providers.find((provider) => provider?.isCoinbaseWallet) ?? null;
   }
 
   return providers.find((provider) => provider?.isMiniPay)
     ?? providers.find((provider) => provider?.isMetaMask)
+    ?? providers.find((provider) => provider?.isRabby)
+    ?? providers.find((provider) => provider?.isTrust)
+    ?? providers.find((provider) => provider?.isCoinbaseWallet)
     ?? providers[0]
     ?? null;
 }
@@ -208,29 +250,91 @@ export const CELO_CHAIN = defineChain({
 export const CELO_CHAIN_ID = CELO_CHAIN.id;
 export const CELO_RPC_URL = getEnvVar("VITE_CELO_RPC_URL") || DEFAULT_CELO_RPC_URL;
 export const APP_URL = getEnvVar("VITE_APP_URL") || "http://localhost:5173";
+export const WALLETCONNECT_PROJECT_ID = getEnvVar("VITE_WALLETCONNECT_PROJECT_ID");
+
+const baseConnectors = [
+  metaMask({
+    dappMetadata: {
+      name: "LiquidAI",
+      url: APP_URL,
+    },
+  }),
+  injected({
+    shimDisconnect: true,
+    target() {
+      const provider = getPreferredInjectedProvider("minipay");
+      return {
+        id: "minipay",
+        name: "MiniPay",
+        provider,
+      };
+    },
+  }),
+  injected({
+    shimDisconnect: true,
+    target() {
+      const provider = getPreferredInjectedProvider("rabby");
+      return {
+        id: "rabby",
+        name: "Rabby",
+        provider,
+      };
+    },
+  }),
+  injected({
+    shimDisconnect: true,
+    target() {
+      const provider = getPreferredInjectedProvider("trust");
+      return {
+        id: "trust",
+        name: "Trust Wallet",
+        provider,
+      };
+    },
+  }),
+  injected({
+    shimDisconnect: true,
+    target() {
+      const provider = getPreferredInjectedProvider("coinbase");
+      return {
+        id: "coinbase",
+        name: "Coinbase Wallet",
+        provider,
+      };
+    },
+  }),
+  injected({
+    shimDisconnect: true,
+    target() {
+      const provider = getPreferredInjectedProvider();
+      return {
+        id: resolveInjectedProviderId(provider || {}),
+        name: resolveInjectedProviderName(provider || {}),
+        provider,
+      };
+    },
+  }),
+];
+
+if (WALLETCONNECT_PROJECT_ID) {
+  baseConnectors.push(
+    walletConnect({
+      projectId: WALLETCONNECT_PROJECT_ID,
+      showQrModal: true,
+      metadata: {
+        name: "LiquidAI",
+        description: "LiquidAI Treasury OS for Celo",
+        url: APP_URL,
+        icons: [`${APP_URL}/favicon.ico`],
+      },
+    }),
+  );
+}
 
 export const wagmiConfig = createConfig({
   multiInjectedProviderDiscovery: false,
   chains: [CELO_CHAIN],
-  connectors: [
-    metaMask({
-      dappMetadata: {
-        name: "LiquidAI",
-        url: APP_URL,
-      },
-    }),
-    injected({
-      shimDisconnect: true,
-      target() {
-        const provider = getPreferredInjectedProvider();
-        return {
-          id: provider?.isMiniPay ? "minipay" : provider?.isMetaMask ? "metamask" : "injected",
-          name: provider?.isMiniPay ? "MiniPay" : provider?.isMetaMask ? "MetaMask" : "Injected Wallet",
-          provider,
-        };
-      },
-    }),
-  ],
+  connectors: baseConnectors,
   transports: {
     [CELO_CHAIN_ID]: http(CELO_RPC_URL),
   },

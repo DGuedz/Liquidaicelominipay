@@ -1,7 +1,9 @@
 import {
   apiPost,
+  apiGet,
   AuthChallengePayload,
   AuthSessionPayload,
+  clearApiAuthToken,
   getApiAuthToken,
   setApiAuthToken,
 } from "./api";
@@ -11,7 +13,18 @@ export async function ensureWalletAuthSession(
   signWalletMessage: (message: string) => Promise<string>,
 ) {
   const existing = getApiAuthToken();
-  if (existing) return existing;
+  const normalizedAddress = String(address || "").trim().toLowerCase();
+  if (existing) {
+    try {
+      const currentSession = await apiGet<{ address: string; expiresAt: string }>("/api/auth/me");
+      if (String(currentSession.address || "").trim().toLowerCase() === normalizedAddress) {
+        return existing;
+      }
+    } catch {
+      // Token invalid/expired. We renew below.
+    }
+    clearApiAuthToken();
+  }
 
   const challenge = await apiPost<AuthChallengePayload>("/api/auth/challenge", {
     address,

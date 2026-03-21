@@ -1,8 +1,9 @@
 import { ArrowLeft, Globe } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useEffect, useState } from "react";
-import { useAccount } from "wagmi";
 import { apiGet, apiPost } from "../../lib/api";
+import { useCeloWallet } from "../../hooks/use-celo-wallet";
+import { ensureWalletAuthSession } from "../../lib/wallet-auth";
 
 const protocolMeta: Record<string, { name: string; desc: string; apy: string; color: string }> = {
   aave: { name: "Aave v3", desc: "Lending market", apy: "4.8%", color: "#06B6D4" },
@@ -15,23 +16,53 @@ const protocolMeta: Record<string, { name: string; desc: string; apy: string; co
 
 export function ProtocolsPage() {
   const navigate = useNavigate();
-  const { address } = useAccount();
+  const { address, wrongNetwork, signWalletMessage } = useCeloWallet();
   const [profile, setProfile] = useState<any>(null);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
-    if (address) {
-      apiGet("/api/profile/settings", { address }).then(setProfile);
+    let active = true;
+    if (!address || wrongNetwork) {
+      setProfile(null);
+      setLoadError("");
+      return () => {
+        active = false;
+      };
     }
-  }, [address]);
 
-  const toggleProtocol = (key: string) => {
+    (async () => {
+      try {
+        await ensureWalletAuthSession(address, signWalletMessage);
+        const payload = await apiGet("/api/profile/settings", { address });
+        if (!active) return;
+        setProfile(payload);
+        setLoadError("");
+      } catch (error) {
+        if (!active) return;
+        setLoadError(error instanceof Error ? error.message : "Failed to load protocol settings.");
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [address, signWalletMessage, wrongNetwork]);
+
+  const toggleProtocol = async (key: string) => {
     if (!profile) return;
     const newVal = !profile.protocols[key];
     const updated = { ...profile, protocols: { ...profile.protocols, [key]: newVal } };
     setProfile(updated);
-    apiPost("/api/profile/settings", { address, updates: { protocols: { [key]: newVal } } });
+    try {
+      if (!address) throw new Error("Wallet not connected.");
+      await ensureWalletAuthSession(address, signWalletMessage);
+      await apiPost("/api/profile/settings", { address, updates: { protocols: { [key]: newVal } } });
+    } catch {
+      setProfile(profile);
+    }
   };
 
+  if (loadError) return <div className="p-10 text-center text-red-400">{loadError}</div>;
   if (!profile) return <div className="p-10 text-center text-text-muted">Loading settings...</div>;
 
   return (

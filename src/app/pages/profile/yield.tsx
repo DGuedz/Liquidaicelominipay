@@ -1,8 +1,9 @@
 import { ArrowLeft, Sparkles, Activity, Shield, Zap } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useEffect, useState } from "react";
-import { useAccount } from "wagmi";
 import { apiGet, apiPost } from "../../lib/api";
+import { useCeloWallet } from "../../hooks/use-celo-wallet";
+import { ensureWalletAuthSession } from "../../lib/wallet-auth";
 
 const strategies = [
   { id: "conservative", name: "Inflation Shield", icon: Shield, desc: "Capital preservation. Only stablecoins.", apy: "3.2-4.2%", color: "#3B82F6" },
@@ -12,30 +13,66 @@ const strategies = [
 
 export function YieldStrategyPage() {
   const navigate = useNavigate();
-  const { address } = useAccount();
+  const { address, wrongNetwork, signWalletMessage } = useCeloWallet();
   const [profile, setProfile] = useState<any>(null);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
-    if (address) {
-      apiGet("/api/profile/settings", { address }).then(setProfile);
+    let active = true;
+    if (!address || wrongNetwork) {
+      setProfile(null);
+      setLoadError("");
+      return () => {
+        active = false;
+      };
     }
-  }, [address]);
 
-  const toggleAutoRebalance = () => {
+    (async () => {
+      try {
+        await ensureWalletAuthSession(address, signWalletMessage);
+        const payload = await apiGet("/api/profile/settings", { address });
+        if (!active) return;
+        setProfile(payload);
+        setLoadError("");
+      } catch (error) {
+        if (!active) return;
+        setLoadError(error instanceof Error ? error.message : "Failed to load yield settings.");
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [address, signWalletMessage, wrongNetwork]);
+
+  const toggleAutoRebalance = async () => {
     if (!profile) return;
     const newVal = !profile.yield.autoRebalance;
     const updated = { ...profile, yield: { ...profile.yield, autoRebalance: newVal } };
     setProfile(updated);
-    apiPost("/api/profile/settings", { address, updates: { yield: { autoRebalance: newVal } } });
+    try {
+      if (!address) throw new Error("Wallet not connected.");
+      await ensureWalletAuthSession(address, signWalletMessage);
+      await apiPost("/api/profile/settings", { address, updates: { yield: { autoRebalance: newVal } } });
+    } catch {
+      setProfile(profile);
+    }
   };
 
-  const selectStrategy = (id: string) => {
+  const selectStrategy = async (id: string) => {
     if (!profile) return;
     const updated = { ...profile, yield: { ...profile.yield, strategyId: id } };
     setProfile(updated);
-    apiPost("/api/profile/settings", { address, updates: { yield: { strategyId: id } } });
+    try {
+      if (!address) throw new Error("Wallet not connected.");
+      await ensureWalletAuthSession(address, signWalletMessage);
+      await apiPost("/api/profile/settings", { address, updates: { yield: { strategyId: id } } });
+    } catch {
+      setProfile(profile);
+    }
   };
 
+  if (loadError) return <div className="p-10 text-center text-red-400">{loadError}</div>;
   if (!profile) return <div className="p-10 text-center text-text-muted">Loading settings...</div>;
 
   return (

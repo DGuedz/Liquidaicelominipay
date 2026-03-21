@@ -1,0 +1,14 @@
+{
+  "updatedAt": "2026-03-20",
+  "advisories": [
+    {
+      "id": "1112030",
+      "ghsa": "GHSA-848j-6mx2-7j84",
+      "module": "elliptic",
+      "severity": "low",
+      "pathIncludes": "@selfxyz/core>@selfxyz/common>elliptic",
+      "expiresOn": "2026-06-30",
+      "reason": "Transitive dependency from @selfxyz/core with no patched upstream release published yet."
+    }
+  ]
+}

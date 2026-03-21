@@ -48,11 +48,17 @@ export function createAuthChallenge(rawAddress) {
   const expiresAt = new Date(expiresAtMs).toISOString();
 
   const message = [
-    "LiquidAI wallet authentication",
-    `Address: ${address}`,
+    `${env.authDomain} wants you to sign in with your Ethereum account:`,
+    address,
+    "",
+    "Sign in to LiquidAI Treasury OS.",
+    "",
+    `URI: ${env.authUri}`,
+    "Version: 1",
+    `Chain ID: ${env.celoChainId}`,
     `Nonce: ${nonce}`,
     `Issued At: ${issuedAt.toISOString()}`,
-    `Expires At: ${expiresAt}`,
+    `Expiration Time: ${expiresAt}`,
   ].join("\n");
 
   challenges.set(nonce, {
