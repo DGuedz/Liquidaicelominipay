@@ -85,13 +85,13 @@ const RISK_CONFIG = {
     icon: Activity,
     ModeIcon: LightningIcon,
     narrative:
-      "Beats the benchmark easily via Morpho looping of stCELO. Organic APY of 1.85% boosted to 8%+ by the agent — without the user needing to understand collateralization.",
+      "Outperforms the base stable benchmark via managed stCELO looping when risk conditions remain healthy.",
     agentBehavior:
       "Executes looping only when the collateral profile stays healthy. If volatility rises materially, the agent rotates part of the position back into stables.",
     sampleLog: "Looping opportunity approved → position resized while preserving exit liquidity.",
     pools: [
       { name: "Aave v3 (USDm)", type: "Lending · stable base", apy: "4.8%", pct: 30, amount: 0, color: "#06B6D4", iconUrl: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9/logo.png" },
-      { name: "Morpho + stCELO Loop", type: "🆕 Institutional Looping · Mar 2026", apy: "9.1%", pct: 32, amount: 0, color: "#10B981", iconUrl: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x9994E35Db50125E0DF82e4c2dde124b36Ee1535e/logo.png" },
+      { name: "Morpho + stCELO Loop", type: "Institutional Looping · live", apy: "9.1%", pct: 32, amount: 0, color: "#10B981", iconUrl: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x9994E35Db50125E0DF82e4c2dde124b36Ee1535e/logo.png" },
       { name: "Ubeswap USDm/CELO", type: "AMM · extra yield", apy: "8.2%", pct: 22, amount: 0, color: "#F59E0B", iconUrl: "https://raw.githubusercontent.com/valora-inc/address-metadata/main/assets/tokens/CELO.png" },
       { name: "Liquidity Buffer", type: "Card + PIX", apy: "0%", pct: 16, amount: 0, color: "#A3D977" },
     ],
@@ -112,14 +112,14 @@ const RISK_CONFIG = {
     narrative:
       "Maximizes yield via aggressive looping and higher-volatility routes, but only while the risk engine can still guarantee a fast exit path.",
     agentBehavior:
-      "Max Morpho looping + Credit Engine as bridge. Risk Engine on alert: exit in 2–5s via Mento V3 if IL > threshold. Off-ramp via Daimo if liquidity needed from another chain.",
+      "Max Morpho looping + Credit Engine as bridge. Risk Engine keeps an emergency exit via Mento V3 whenever liquidity conditions deteriorate.",
     sampleLog: "Arbitrage window detected → risk engine kept the route active while preserving the emergency exit.",
     pools: [
       { name: "Morpho + stCELO Loop (Aggressive)", type: "🆕 Max Looping · 3x leverage", apy: "15%", pct: 30, amount: 0, color: "#10B981", iconUrl: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x9994E35Db50125E0DF82e4c2dde124b36Ee1535e/logo.png" },
       { name: "CELO/ETH (Ubeswap)", type: "Volatile Pair · arbitrage", apy: "18%", pct: 25, amount: 0, color: "#EF4444", iconUrl: "https://raw.githubusercontent.com/valora-inc/address-metadata/main/assets/tokens/CELO.png" },
       { name: "PWN / EthicHub (RWA)", type: "Real Credit · stable yield", apy: "11.4%", pct: 22, amount: 0, color: "#8B5CF6" },
       { name: "Credit Engine (Bridge)", type: "Bridge · does not touch profitable pools", apy: "–", pct: 13, amount: 0, color: "#06B6D4" },
-      { name: "Emergency Buffer", type: "Fast Mento V3 Exit · 2–5s", apy: "0%", pct: 10, amount: 0, color: "#A3D977", iconUrl: "https://raw.githubusercontent.com/valora-inc/address-metadata/main/assets/tokens/USDm.png" },
+      { name: "Emergency Buffer", type: "Fast Mento V3 Exit · liquidity-aware", apy: "0%", pct: 10, amount: 0, color: "#A3D977", iconUrl: "https://raw.githubusercontent.com/valora-inc/address-metadata/main/assets/tokens/USDm.png" },
     ],
     riskMetrics: { il: 78, ilLabel: "High", poolDepth: 65, withdrawalTime: 72, ilPositive: false },
     creditEngine: true,
@@ -160,7 +160,7 @@ const INITIAL_LOGS = [
   { time: "14:30", action: "Rebalanced productive capital into the current best route", type: "optimize", icon: RotateCcw, color: "#A3D977" },
   { time: "08:00", action: "Latest overnight yield checkpoint recorded", type: "yield", icon: Sparkles, color: "#10B981" },
   { time: "03:00", action: "Automatic rebalance completed", type: "rebalance", icon: RotateCcw, color: "#0D4B2E" },
-  { time: "Yesterday 22:00", action: "Detected 5.2% opportunity in Moola", type: "detect", icon: Activity, color: "#06B6D4" },
+  { time: "Yesterday 22:00", action: "Detected 5.2% opportunity in Morpho", type: "detect", icon: Activity, color: "#06B6D4" },
   { time: "Yesterday 18:45", action: "Liquidity buffer preserved for instant payments", type: "reserve", icon: Lock, color: "#8B5CF6" },
   { time: "Yesterday 12:00", action: "Forex protection applied automatically", type: "protect", icon: Shield, color: "#3B82F6" },
 ];
@@ -1156,23 +1156,7 @@ export function AgentPage() {
         </AnimatePresence>
       </div>
 
-      {/* ── CREDIT ENGINE BRIDGE (aggressive only) ─────────── */}
-      <AnimatePresence>
-        {riskMode === "aggressive" && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="px-5 mb-5"
-          >
-            <p className="text-xs font-semibold uppercase tracking-wider mb-3 px-1" style={{ color: "var(--text-muted)" }}>
-              Credit Engine Bridge
-            </p>
-            <CreditEngineBridge />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+      {/* ── CREDIT ENGINE BRIDGE (REMOVED FOR MVP STREAMLINING) ─────────── */}
       {/* ── ACTIVITY LOG ───────────────────────────────────── */}
       <div className="px-5 mb-5">
         <div className="flex items-center justify-between mb-3 px-1">
@@ -1315,7 +1299,7 @@ export function AgentPage() {
         <div className="space-y-2.5">
           {[
             { icon: Shield, label: "Security Settings", sub: "Agent limits and permissions", color: "#3B82F6", bg: "rgba(59,130,246,0.1)" },
-            { icon: Globe, label: "Allowed Protocols", sub: "Aave, Mento, Moola, Ubeswap, PWN", color: "#8B5CF6", bg: "rgba(139,92,246,0.1)" },
+            { icon: Globe, label: "Allowed Protocols", sub: "Aave, Morpho, Mento, Ubeswap, PWN", color: "#8B5CF6", bg: "rgba(139,92,246,0.1)" },
             { icon: Sparkles, label: "Yield Strategy", sub: `${cfg.subtitle} · Auto mode active`, color: cfg.color, bg: cfg.bg },
           ].map(({ icon: Icon, label, sub, color, bg }) => (
             <motion.button
