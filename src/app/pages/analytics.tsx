@@ -257,6 +257,7 @@ export function AnalyticsPage() {
   const yieldGrowthPct = yieldStart > 0 ? ((yieldEnd - yieldStart) / yieldStart) * 100 : 0;
   const protectedDelta = Math.max(0, (inflationData[inflationData.length - 1]?.liquidAI || 0) - (inflationData[inflationData.length - 1]?.brlReal || 0));
   const totalVaultUsd = displayVaultReserves.reduce((sum, reserve) => sum + reserve.amount, 0);
+  const monthlyYieldUsd = 12.45;
 
   return (
     <div className="min-h-dvh bg-background pb-28">
@@ -927,21 +928,37 @@ export function AnalyticsPage() {
               </div>
             </div>
 
-            <div className="rounded-xl p-3 flex items-start gap-3" style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)" }}>
-              <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#8B5CF6" }} />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="rounded-xl p-3 flex items-start gap-3" 
+              style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)" }}
+            >
+              <motion.div
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#8B5CF6" }} />
+              </motion.div>
               <div>
                 <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Reward Overlay Active</p>
                 <p className="text-[10px] mt-0.5" style={{ color: "var(--text-secondary)" }}>
                   Agent is optimizing yield across Uniswap/Merkl with fee abstraction in stablecoins.
                 </p>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>
 
       {/* AI Insight Card */}
-      <div className="px-5 mb-5">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 0.6 }}
+        className="px-5 mb-5"
+      >
         <div
           className="rounded-2xl p-4 flex items-start gap-3"
           style={{
@@ -949,12 +966,14 @@ export function AnalyticsPage() {
             boxShadow: "0 4px 20px rgba(13,75,46,0.2)",
           }}
         >
-          <div
+          <motion.div
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
             className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
             style={{ background: "rgba(255,255,255,0.1)" }}
           >
             <Zap className="w-5 h-5 text-white" />
-          </div>
+          </motion.div>
           <div>
             <p className="text-sm font-semibold text-white mb-1">
               AI Agent Insight
@@ -978,7 +997,7 @@ export function AnalyticsPage() {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
     </div>
   );
