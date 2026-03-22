@@ -79,8 +79,8 @@ export async function getFaucetStatus(rawAddress = "") {
   const enabled =
     env.celoChain === "sepolia" &&
     Boolean(backendAddress) &&
-    treasury.native.balance > env.demoFaucetNativeAmount + env.demoFaucetNativeReserve &&
-    treasury.stable.balance > env.demoFaucetStableAmount + env.demoFaucetStableReserve;
+    treasury.native.balance >= env.demoFaucetNativeAmount &&
+    treasury.stable.balance >= env.demoFaucetStableAmount;
 
   return {
     enabled,
@@ -130,11 +130,13 @@ export async function claimDemoFunds(rawAddress) {
     }),
   ]);
 
-  if (treasury.native.balance < env.demoFaucetNativeAmount + env.demoFaucetNativeReserve) {
+  // Relax the strict balance checks for the hackathon MVP so users don't get blocked
+  // if the backend wallet runs slightly low on funds during a demo.
+  // We still do a basic check to ensure the backend has *some* funds.
+  if (treasury.native.balance < env.demoFaucetNativeAmount) {
     throw new Error("Demo faucet is out of CELO liquidity.");
   }
-
-  if (treasury.stable.balance < env.demoFaucetStableAmount + env.demoFaucetStableReserve) {
+  if (treasury.stable.balance < env.demoFaucetStableAmount) {
     throw new Error(`Demo faucet is out of ${treasury.stable.token} liquidity.`);
   }
 
