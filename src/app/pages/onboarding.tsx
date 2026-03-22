@@ -686,7 +686,12 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       const links = resolveSelfSessionLinks(session);
 
       if (session.mode === "mock") {
-         setInlineSuccess("Mock verification instant success.");
+         setInlineSuccess("SELF_MODE=mock detected. Real Self QR scan is disabled in this environment.");
+         setSelfActionUrl(links.actionUrl);
+         if (links.qrValue) {
+           const generatedQr = await QRCode.toDataURL(links.qrValue, { width: 220, margin: 1 });
+           setSelfQrDataUrl(generatedQr);
+         }
       } else if (links.deepLink) {
          setInlineSuccess("Aguardando confirmação no app Self...");
          setSelfActionUrl(links.actionUrl);

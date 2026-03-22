@@ -28,6 +28,29 @@ function findDeepLinkCandidate(source: unknown): string {
   return "";
 }
 
+function isLikelyActionUrl(value: string): boolean {
+  if (!value) return false;
+  if (/^self:\/\//i.test(value)) return true;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:" || parsed.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+function encodeSelfAppJsonString(value: string): string {
+  if (!value || !value.trim().startsWith("{")) return "";
+  try {
+    const parsed = JSON.parse(value);
+    const record = asRecord(parsed);
+    if (!record) return "";
+    return encodeSelfAppPayload(record);
+  } catch {
+    return "";
+  }
+}
+
 function encodeSelfAppPayload(payload: UnknownRecord) {
   const selfApp = encodeURIComponent(JSON.stringify(payload));
   return `https://redirect.self.xyz?selfApp=${selfApp}`;
@@ -51,9 +74,23 @@ export function resolveSelfSessionLinks(session: SelfSessionLike): ResolvedSelfS
   const qrRecord = asRecord(session.qrData);
   const qrDeepLinkFromObject = findDeepLinkCandidate(qrRecord);
   const qrEncodedObject = qrRecord ? encodeSelfAppPayload(qrRecord) : "";
+  const qrStringAsUrl = isLikelyActionUrl(qrString) ? qrString : "";
+  const qrStringAsEncodedSelfApp = encodeSelfAppJsonString(qrString);
 
-  const normalizedDeepLink = deepLink || qrDeepLinkFromObject || qrEncodedObject || qrString;
-  const normalizedQrValue = qrString || qrDeepLinkFromObject || qrEncodedObject || normalizedDeepLink;
+  // Prefer explicit deep-link style values; only fall back to raw qrString as a last resort.
+  const normalizedDeepLink =
+    deepLink ||
+    qrDeepLinkFromObject ||
+    qrEncodedObject ||
+    qrStringAsUrl ||
+    qrStringAsEncodedSelfApp;
+  const normalizedQrValue =
+    qrStringAsUrl ||
+    qrStringAsEncodedSelfApp ||
+    qrDeepLinkFromObject ||
+    qrEncodedObject ||
+    normalizedDeepLink ||
+    qrString;
   const actionUrl = normalizedDeepLink || normalizedQrValue;
 
   return {

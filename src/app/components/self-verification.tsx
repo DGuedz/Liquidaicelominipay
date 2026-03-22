@@ -170,6 +170,7 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
         throw new Error("Wallet address unavailable for Self verification.");
       }
 
+      // Ensure the SIWE session is bound to the currently connected wallet before starting Self registration.
       await ensureWalletAuthSession(walletAddress, signWalletMessage);
 
       let session: SelfRegistrationPayload | null = null;
@@ -220,14 +221,22 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
         return Boolean(popup);
       };
 
-      setInlineSuccess("Aguardando confirmação no app Self...");
+      setInlineSuccess(
+        session.mode === "mock"
+          ? "SELF_MODE=mock detected. Real Self QR scan is disabled in this environment."
+          : "Aguardando confirmação no app Self...",
+      );
       setSelfActionUrl(links.actionUrl);
       const qrImage = await QRCode.toDataURL(links.qrValue, { width: 220, margin: 1 });
       setSelfQrDataUrl(qrImage);
 
-      const opened = openSelfAction(links.actionUrl);
+      const opened = session.mode === "mock" ? false : openSelfAction(links.actionUrl);
       if (!opened) {
-        setInlineSuccess("Abra o Self manualmente no botao abaixo para continuar.");
+        setInlineSuccess(
+          session.mode === "mock"
+            ? "SELF_MODE=mock detected. Real Self QR scan is disabled in this environment."
+            : "Abra o Self manualmente no botao abaixo para continuar.",
+        );
       }
 
       setState("scanning");

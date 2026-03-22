@@ -1,4 +1,4 @@
-import { isSelfVerified } from "../store/security-state-store.mjs";
+import { isSelfVerified } from "../store/self-store.mjs";
 
 export const Sentinel = {
   async triggerIdentitySupport(address, errorCode) {

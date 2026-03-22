@@ -1,5 +1,6 @@
 import { env } from "../config/env.mjs";
 import { getAddress, isAddress } from "viem";
+import { timingSafeEqual } from "node:crypto";
 import {
   findSelfRegistrationSessionTokenByAddress,
   getSelfRegistrationSession,
@@ -105,24 +106,64 @@ function resolveSelfNetwork() {
   return env.celoChain === "mainnet" ? "mainnet" : "testnet";
 }
 
-function resolveSelfVerifyEndpoint(includeSecret = true) {
-  const fallback = "https://liquidaicelominipay.onrender.com/api/self/verify";
-  const raw = env.selfVerifyEndpoint || fallback;
-  const trimmed = String(raw).trim();
-  const matched = trimmed.match(/https?:\/\/[^\s]+/i);
-  const resolved = matched?.[0] || trimmed || fallback;
+function normalizeBaseUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
 
-  if (!includeSecret || !env.selfCallbackSecret) return resolved;
-
-  try {
-    const url = new URL(resolved);
-    if (!url.searchParams.has("selfSecret")) {
-      url.searchParams.set("selfSecret", env.selfCallbackSecret);
+  const toUrl = (candidate) => {
+    const cleaned = String(candidate || "")
+      .trim()
+      .replace(/^[-*]\s*/, "")
+      .replace(/^["']|["']$/g, "")
+      .trim();
+    if (!cleaned) return "";
+    const matched = cleaned.match(/https?:\/\/[^\s,"'\\]+/i);
+    const normalized = matched ? matched[0] : cleaned;
+    try {
+      return new URL(normalized).toString().replace(/\/+$/, "");
+    } catch {
+      return "";
     }
-    return url.toString();
-  } catch {
-    return resolved;
+  };
+
+  const direct = toUrl(raw);
+  if (direct) return direct;
+
+  const parts = raw
+    .split(/\r?\n|,/g)
+    .map((part) => toUrl(part))
+    .filter(Boolean);
+  if (parts.length) return parts[0];
+
+  const match = raw.match(/https?:\/\/[^\s,"'\\]+/i);
+  if (!match) return "";
+  return toUrl(match[0]);
+}
+
+function resolveSelfVerifyEndpoint() {
+  const explicit = normalizeBaseUrl(env.selfVerifyEndpoint);
+  if (explicit) {
+    if (/\/api\/self\/verify\/?$/i.test(explicit)) return explicit;
+    return `${explicit}/api/self/verify`;
   }
+
+  const publicBase = normalizeBaseUrl(env.publicApiBaseUrl);
+  if (publicBase) {
+    return `${publicBase}/api/self/verify`;
+  }
+
+  if (env.nodeEnv !== "production") {
+    return `http://localhost:${env.port}/api/self/verify`;
+  }
+
+  return "https://liquidaicelominipay.onrender.com/api/self/verify";
+}
+
+function safeEqualSecrets(left, right) {
+  const a = Buffer.from(String(left || ""));
+  const b = Buffer.from(String(right || ""));
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
 }
 
 function extractSessionTokenFromResponse(payload = {}) {
@@ -236,12 +277,13 @@ export async function assertSelfCallbackContext({
     };
   }
 
-  if (!env.selfCallbackSecret) {
-    throw new Error("Self callback secret is not configured (SELF_CALLBACK_SECRET).");
-  }
-
-  if (env.selfCallbackSecret && callbackSecret !== env.selfCallbackSecret) {
-    throw new Error("Unauthorized Self verification callback.");
+  if (env.selfEnforceCallbackSecret) {
+    if (!env.selfCallbackSecret) {
+      throw new Error("SELF_ENFORCE_CALLBACK_SECRET=true but SELF_CALLBACK_SECRET is missing.");
+    }
+    if (!safeEqualSecrets(callbackSecret, env.selfCallbackSecret)) {
+      throw new Error("Unauthorized Self verification callback.");
+    }
   }
 
   const normalizedAddress = normalizeAddress(rawAddress);
@@ -356,14 +398,14 @@ export function getSelfServiceStatus() {
       message: "Mock verification active for demo flow.",
       verifier: {
         ready: false,
-        endpoint: resolveSelfVerifyEndpoint(false),
+        endpoint: resolveSelfVerifyEndpoint(),
         message: "SelfBackendVerifier disabled in mock mode.",
       },
     };
   }
 
   if (env.selfMode === "agent") {
-    const secretReady = Boolean(env.selfCallbackSecret);
+    const secretReady = env.selfEnforceCallbackSecret ? Boolean(env.selfCallbackSecret) : true;
     const verifierReady = Boolean(verifier) && !verifierError;
     return {
       mode: "agent",
@@ -373,10 +415,10 @@ export function getSelfServiceStatus() {
         verifierError ||
         (secretReady
           ? "Agent client online. Ready for start-registration → poll-registration → self/status flow."
-          : "SELF_CALLBACK_SECRET missing. Configure callback secret before enabling agent mode."),
+          : "SELF_ENFORCE_CALLBACK_SECRET=true but SELF_CALLBACK_SECRET is missing."),
       verifier: {
         ready: verifierReady,
-        endpoint: resolveSelfVerifyEndpoint(false),
+        endpoint: resolveSelfVerifyEndpoint(),
         message: verifierError || "SelfBackendVerifier online.",
       },
     };
@@ -388,7 +430,7 @@ export function getSelfServiceStatus() {
     message: "Self verification disabled.",
     verifier: {
       ready: false,
-      endpoint: resolveSelfVerifyEndpoint(false),
+      endpoint: resolveSelfVerifyEndpoint(),
       message: "SelfBackendVerifier disabled.",
     },
   };
@@ -399,15 +441,39 @@ export function getSelfServiceStatus() {
  */
 export async function startSelfRegistration(humanAddress) {
     if (env.selfMode === "mock") {
+        const normalizedAddress = normalizeAddress(humanAddress);
+        const mockSessionToken = `mock_${normalizedAddress.toLowerCase()}_${nowMs()}`;
+        const mockDeepLink = "https://self.xyz/mock-deep-link";
+        await putSelfRegistrationSession(
+          mockSessionToken,
+          {
+            walletAddress: normalizedAddress,
+            deepLink: mockDeepLink,
+            qrData: mockDeepLink,
+            startedAt: nowMs(),
+            expiresAt: nowMs() + env.selfSessionTtlMs,
+            status: "pending",
+            callbackValidated: false,
+          },
+          env.selfSessionTtlMs,
+        );
         return {
-            sessionToken: "mock_session_token",
-            deepLink: "https://self.xyz/mock-deep-link",
-            qrData: "mock_qr_data",
+            sessionToken: mockSessionToken,
+            deepLink: mockDeepLink,
+            qrData: mockDeepLink,
             mode: "mock"
         };
     }
 
     try {
+        const serviceStatus = getSelfServiceStatus();
+        if (!serviceStatus.ready) {
+          throw createHttpError(
+            503,
+            serviceStatus.message || "Self service not ready. Check backend Self configuration.",
+          );
+        }
+
         const normalizedAddress = normalizeAddress(humanAddress);
         let data = null;
         let lastStatus = 0;
@@ -508,14 +574,24 @@ export async function startSelfRegistration(humanAddress) {
 /**
  * Polls for registration completion
  */
-export async function checkRegistrationStatus(sessionToken) {
-    if (env.selfMode === "mock") {
-        return { stage: "completed", agentId: 999, verified: true };
-    }
-
+export async function checkRegistrationStatus(sessionToken, expectedAddress = "") {
     const session = await getSelfRegistrationSession(sessionToken);
     if (!session) {
         throw new Error("Session not found or expired");
+    }
+    if (expectedAddress && isAddress(expectedAddress)) {
+      const normalizedExpected = getAddress(expectedAddress).toLowerCase();
+      const sessionAddress = String(session.walletAddress || "").trim().toLowerCase();
+        if (!sessionAddress || sessionAddress !== normalizedExpected) {
+          throw new Error("Self session token does not belong to the authenticated wallet.");
+        }
+    }
+    if (env.selfMode === "mock") {
+        await patchSelfRegistrationSession(sessionToken, {
+          status: "verified",
+          verifiedAt: nowMs(),
+        });
+        return { stage: "completed", agentId: 999, verified: true };
     }
 
     try {

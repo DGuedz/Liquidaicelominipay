@@ -619,7 +619,7 @@ app.get(
     }
 
     try {
-      const status = await checkRegistrationStatus(sessionToken);
+      const status = await checkRegistrationStatus(sessionToken, String(address));
       if (status.verified) {
         await markSelfVerified(address);
         success(res, status);
@@ -627,6 +627,10 @@ app.get(
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      if (/does not belong to the authenticated wallet/i.test(message)) {
+        authError(res, 403, message);
+        return;
+      }
       const transientProviderIssue =
         /missing session token|self api error:\s*400/i.test(message);
       if (!transientProviderIssue) {

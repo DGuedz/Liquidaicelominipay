@@ -529,6 +529,14 @@ export function useCeloWallet() {
     writePreferredConnectorId("");
     setWalletResetOverride(true);
     clearWalletConnectorPersistence();
+    
+    // Force-clear stale SIWE token so the next wallet always signs a fresh session.
+    try {
+      const { clearApiAuthToken } = await import("../lib/api");
+      clearApiAuthToken();
+    } catch (e) {
+      // ignore
+    }
 
     try {
       disconnect();
