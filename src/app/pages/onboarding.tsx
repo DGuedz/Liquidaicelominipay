@@ -622,7 +622,8 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       return message;
     };
 
-    const preOpenedPopup = !isMiniPay
+    const isMobile = typeof window !== "undefined" && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const preOpenedPopup = (!isMiniPay && isMobile)
       ? window.open("", "_blank", "noopener,noreferrer")
       : null;
 
@@ -677,10 +678,15 @@ function StepConnect({ onNext }: { onNext: () => void }) {
           preOpenedPopup.location.href = url;
           return true;
         }
-        
-        // Em navegadores normais, tentamos abrir em nova aba
-        const popup = window.open(url, "_blank", "noopener,noreferrer");
-        return Boolean(popup);
+
+        if (isMobile) {
+          // Em mobile fora do MiniPay, tentamos abrir em nova aba.
+          const popup = window.open(url, "_blank", "noopener,noreferrer");
+          return Boolean(popup);
+        }
+
+        // Desktop: evita aba em branco; mostra QR e CTA manual.
+        return false;
       };
 
       const links = resolveSelfSessionLinks(session);
@@ -699,7 +705,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
          setSelfQrDataUrl(generatedQr);
          const opened = openSelfAction(links.actionUrl);
          if (!opened) {
-           setInlineSuccess("Open Self manually using the button below to continue.");
+           setInlineSuccess("Abra o Self manualmente no botão abaixo para continuar.");
          }
       } else if (links.qrValue) {
          setInlineSuccess("Verifique via QR Code ou abra o app Self...");
@@ -708,7 +714,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
          setSelfQrDataUrl(generatedQr);
          const opened = openSelfAction(links.actionUrl);
          if (!opened) {
-           setInlineSuccess("Open Self manually using the button below to continue.");
+           setInlineSuccess("Abra o Self manualmente no botão abaixo para continuar.");
          }
       } else {
          setInlineSuccess("Check your Self app...");
