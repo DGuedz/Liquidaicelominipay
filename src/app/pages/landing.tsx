@@ -241,23 +241,23 @@ export function LandingPage() {
             >
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 mb-6">
                     <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-xs font-mono text-gray-300">System Online // Celo L2</span>
+                    <span className="text-xs font-mono text-gray-300">BUILD AGENTS FOR THE REAL WORLD V2</span>
                 </div>
                 <h1 className="text-5xl lg:text-7xl font-bold mb-6 leading-tight tracking-tight">
-                    Autonomous <br />
+                    Send it, Swap it, <br />
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">
-                        Treasury Infra.
+                        Earn it.
                     </span>
                 </h1>
                 <p className="text-lg text-gray-400 mb-8 max-w-xl leading-relaxed">
-                    LiquidAI operates silently in the background of the Opera MiniPay ecosystem. We secure idle stablecoins via Self Protocol ZK-proofs and route them to optimal Celo yields through Agent-to-Agent execution. Zero friction. Maximum efficiency.
+                    LiquidAI extends MiniPay's mission. You hold the stablecoins, our A2A (Agent-to-Agent) engine stacks the rewards. No strings, no locks, no confusing DeFi fees. Just the easiest autonomous treasury you'll ever use.
                 </p>
                 <div className="flex flex-wrap items-center gap-4">
                     <button 
                         onClick={() => navigate("/minipay")}
                         className="bg-white text-black px-8 py-4 rounded-full font-bold text-sm hover:scale-105 transition-transform flex items-center gap-2"
                     >
-                        Initialize Agent <ArrowRight size={16} />
+                        Start Earning Now <ArrowRight size={16} />
                     </button>
                     <a href="https://github.com/DGuedz/Liquidaicelominipay" target="_blank" rel="noreferrer" className="px-8 py-4 rounded-full font-bold text-sm border border-white/20 hover:bg-white/5 transition-colors">
                         View Source
@@ -331,63 +331,98 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Value Props */}
-      <section className="py-24 px-6 relative">
-        <div className="max-w-4xl mx-auto text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-4">Invisible DeFi Infrastructure</h2>
-            <p className="text-gray-400 text-lg">We hide the complexity of Web3 behind a simple 3-Tap Rule UX.</p>
-        </div>
+      {/* Features Grid */}
+      <section className="py-24 px-6 bg-black relative">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
+        
+        <div className="max-w-7xl mx-auto relative z-10">
+            <div className="text-center mb-16">
+                <div className="text-blue-400 font-mono text-sm mb-4 tracking-widest uppercase">Why LiquidAI</div>
+                <h2 className="text-3xl lg:text-5xl font-bold mb-6">Invisible DeFi for the Real World</h2>
+                <p className="text-gray-400 max-w-2xl mx-auto text-lg">We abstract the complexity of A2A mechanics so you can focus on holding and earning.</p>
+            </div>
 
-        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8">
-            {[
-                {
-                    title: "Active Auto-Savings",
-                    desc: "Your balance works for you. Idle capital is automatically routed to yield protocols.",
-                    icon: Bot,
-                    color: "text-green-400",
-                    bg: "bg-green-400/10"
-                },
-                {
-                    title: "Liquid Buffer",
-                    desc: "Immediate liquidity for payments. The agent keeps enough ready for your daily needs.",
-                    icon: Zap,
-                    color: "text-yellow-400",
-                    bg: "bg-yellow-400/10"
-                },
-                {
-                    title: "Self Identity",
-                    desc: "Anti-Sybil protection ensuring one human, one efficient treasury.",
-                    icon: Shield,
-                    color: "text-blue-400",
-                    bg: "bg-blue-400/10"
-                }
-            ].map((feature, i) => (
-                <motion.div 
-                    key={i}
-                    whileHover={{ y: -5 }}
-                    className="p-8 rounded-3xl bg-white/5 border border-white/5 hover:border-green-500/30 hover:bg-white/10 transition-all group"
-                >
-                    <div className={`w-14 h-14 rounded-2xl ${feature.bg} ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
-                        <feature.icon size={28} />
+            <div className="grid md:grid-cols-2 gap-6">
+                {[
+                    {
+                        icon: TrendingUp,
+                        title: "Auto-Savings",
+                        desc: "Earn daily rewards on your balance\u2014just for keeping it cozy. The LiquidAI Agent automatically allocates to safe Celo protocols. No strings, no locks."
+                    },
+                    {
+                        icon: Zap,
+                        title: "Liquid Buffer",
+                        desc: "Payments, top-ups, P2P \u2014 everything works as before. The agent keeps a liquid buffer ready while the rest earns yield. Send funds globally in 5 seconds."
+                    },
+                    {
+                        icon: Shield,
+                        title: "Invisible DeFi",
+                        desc: "No complex crypto jargon or confusing fees. If you can use MiniPay, you can use LiquidAI. Enjoy effortless onboarding and seamless fund transfers."
+                    },
+                    {
+                        icon: Bot,
+                        title: "Anti-Sybil",
+                        desc: "You hold the keys, and you make the moves. Self Protocol integration ensures verified usage, backed up and easily restorable. 1:1 human-to-agent."
+                    }
+                ].map((feature, i) => (
+                    <div key={i} className="p-8 rounded-2xl bg-[#020408] border border-white/5 hover:border-white/10 transition-colors group">
+                        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-gray-300 mb-6 group-hover:text-white group-hover:bg-white/10 transition-colors">
+                            <feature.icon size={24} />
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
+                        <p className="text-gray-400 leading-relaxed">{feature.desc}</p>
                     </div>
-                    <h3 className="text-xl font-bold mb-3 text-white">{feature.title}</h3>
-                    <p className="text-gray-400 leading-relaxed">{feature.desc}</p>
-                </motion.div>
-            ))}
+                ))}
+            </div>
+        </div>
+      </section>
+
+      {/* Comparison Section */}
+      <section className="py-24 px-6 bg-black relative">
+        <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-16">
+                <div className="text-green-500 font-mono text-sm mb-4 tracking-widest uppercase">Comparison</div>
+                <h2 className="text-3xl lg:text-4xl font-bold mb-4">MiniPay + LiquidAI</h2>
+                <p className="text-gray-400 max-w-2xl mx-auto">We don't replace MiniPay, we supercharge it. See how our A2A engine turns your existing wallet into an autonomous yield powerhouse.</p>
+            </div>
+
+            <div className="bg-[#020408] rounded-2xl border border-white/10 overflow-hidden">
+                <div className="grid grid-cols-3 border-b border-white/10 bg-white/5 font-mono text-xs text-gray-400 p-4">
+                    <div>Feature</div>
+                    <div className="text-center">MiniPay Only</div>
+                    <div className="text-center text-green-400">With LiquidAI</div>
+                </div>
+                
+                {[
+                    { feature: "Inflation protection", minipay: "Yes (stables)", liquidai: "Yes + Auto-yield 4.8%" },
+                    { feature: "Instant liquidity", minipay: "Yes", liquidai: "Yes (24/7 AI Agent)" },
+                    { feature: "Anti-Sybil Security", minipay: "No", liquidai: "Yes (Self Protocol ZK)" },
+                    { feature: "User Interface", minipay: "Familiar", liquidai: "Familiar (Invisible DeFi)" }
+                ].map((row, i) => (
+                    <div key={i} className="grid grid-cols-3 p-4 border-b border-white/5 text-sm items-center hover:bg-white/5 transition-colors">
+                        <div className="font-medium text-white">{row.feature}</div>
+                        <div className="text-center text-gray-500">{row.minipay}</div>
+                        <div className="text-center text-green-400 font-bold">{row.liquidai}</div>
+                    </div>
+                ))}
+            </div>
         </div>
       </section>
 
       {/* How it works */}
       <section className="py-24 bg-[#020408] border-t border-white/5 px-6">
         <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-16">
+                <div className="text-green-500 font-mono text-sm mb-4 tracking-widest uppercase">How It Works</div>
+                <h2 className="text-3xl lg:text-4xl font-bold mb-4">No extra setup. Just connect.</h2>
+            </div>
             <div className="flex flex-col md:flex-row items-center justify-between gap-12">
                 <div className="md:w-1/2">
-                    <h2 className="text-3xl lg:text-4xl font-bold mb-8">System Architecture</h2>
                     <div className="space-y-8">
                         {[
-                            { step: "01", title: "Identity Perimeter", desc: "Sybil-resistance enforced by Self Protocol ZK-proofs. Strict 1:1 human-to-agent mapping." },
-                            { step: "02", title: "A2A Routing", desc: "Internal agents analyze Celo state (Mento V3, Aave) to route capital efficiently." },
-                            { step: "03", title: "Atomic Execution", desc: "Operator agent uses ERC-4337 Session Keys to settle intents with zero human friction." }
+                            { step: "01", title: "Connect MiniPay", desc: "Open LiquidAI inside Opera Mini. No complex wallet setup, no friction." },
+                            { step: "02", title: "Verify with Self", desc: "1 selfie + passport = identity proven via ZK Proof. Data never exposed." },
+                            { step: "03", title: "Hold & Earn", desc: "LiquidAI Agent optimizes your USDm 24/7, keeping liquidity for your daily spending." }
                         ].map((item, i) => (
                             <div key={i} className="flex gap-6">
                                 <div className="text-gray-500 font-mono text-xl font-bold pt-1">{item.step}</div>
