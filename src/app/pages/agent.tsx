@@ -1211,52 +1211,7 @@ export function AgentPage() {
         </div>
       </div>
 
-      {/* ── INSIGHTS CARD ──────────────────────────────────── */}
-      <div className="px-5 mb-5">
-        <motion.div
-          key={`insight-${riskMode}`}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="rounded-2xl p-4 flex items-start gap-3"
-          style={{ background: "linear-gradient(135deg, #0D4B2E 0%, #1a6b45 100%)", boxShadow: "0 4px 24px rgba(13,75,46,0.25)" }}
-        >
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: "rgba(255,255,255,0.1)" }}>
-            <TrendingUp className="w-5 h-5 text-white" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-white mb-1">
-              {riskMode === "conservative" && "Maximum Protection Active"}
-              {riskMode === "balanced" && "Next Opportunity"}
-              {riskMode === "aggressive" && "Arbitrage Detected"}
-            </p>
-            <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.7)" }}>
-              {riskMode === "conservative" &&
-                <>The agent is maintaining the wallet prioritizing immediate liquidity and stable routes while monitoring inflation and on-chain spread.</>}
-              {riskMode === "balanced" &&
-                <>The best current destination is <span className="font-semibold text-white">{remoteState?.bestProtocol?.name || "the best available pool"}</span>. The decision uses only the synced wallet capital and the real APY delta.</>}
-              {riskMode === "aggressive" &&
-                <>The aggressive layer only opens a higher return route when the exit risk remains acceptable and the expected improvement exceeds the reallocation threshold.</>}
-            </p>
-            <div className="flex gap-2 mt-3">
-              <button
-                onClick={() => handleAuthorize(99)}
-                className="px-4 py-1.5 rounded-full text-xs font-semibold"
-                style={{ background: "#A3D977", color: "#0D4B2E" }}
-              >
-                Authorize
-              </button>
-              <button
-                className="px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1"
-                style={{ background: "rgba(255,255,255,0.12)", color: "#fff" }}
-              >
-                Details
-                <ArrowUpRight className="w-3 h-3" />
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      </div>
+      {/* ── INSIGHTS CARD (REMOVED FOR MVP STREAMLINING) ──────────────────────────────────── */}
 
       {/* ── PERFORMANCE STATS ──────────────────────────────── */}
       <div className="px-5 mb-5">
