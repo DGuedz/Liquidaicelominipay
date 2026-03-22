@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
-import QRCode from "qrcode";
 import {
   Bot,
   Zap,
@@ -33,6 +32,7 @@ import {
 } from "../lib/api";
 import { ensureWalletAuthSession } from "../lib/wallet-auth";
 import { resolveSelfSessionLinks } from "../lib/self-flow";
+import { generateSelfQrDataUrl } from "../lib/self-qr";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type RiskId = "conservative" | "balanced" | "aggressive";
@@ -568,9 +568,12 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     setPhase("verifying");
     setIsVerifyingSelf(true);
 
-    QRCode.toDataURL(pending.qrValue, { width: 220, margin: 1 })
-      .then((generatedQr) => {
-        if (!cancelled) setSelfQrDataUrl(generatedQr);
+    generateSelfQrDataUrl({
+      actionUrl: pending.actionUrl,
+      qrValue: pending.qrValue,
+    })
+      .then((qr) => {
+        if (!cancelled) setSelfQrDataUrl(qr?.dataUrl || "");
       })
       .catch(() => {
         if (!cancelled) setSelfQrDataUrl("");
@@ -703,7 +706,11 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       if (nextRoute) setActivationRoute(nextRoute);
       setInlineSuccess("Session signed successfully.");
     } catch (error) {
-      setInlineError(error instanceof Error ? error.message : "Failed to activate the session.");
+      const msg = error instanceof Error ? error.message : "Failed to activate the session.";
+      // Don't show confusing error if the user just rejected the signature in MetaMask
+      if (!/User rejected/i.test(msg) && !/User denied/i.test(msg)) {
+        setInlineError(msg);
+      }
     } finally {
       setIsEnsuringSession(false);
     }
@@ -854,43 +861,48 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       if (!links.actionUrl) {
         throw new Error("Self registration did not return a deep link or QR payload.");
       }
-      if (!links.qrValue) {
-        throw new Error("Self registration returned an invalid QR payload.");
-      }
+      const qrResult = await generateSelfQrDataUrl({
+        actionUrl: links.actionUrl,
+        deepLink: links.deepLink,
+        qrValue: links.qrValue,
+      });
       persistPendingSelfSession({
         address: connectedAddress,
         sessionToken: session.sessionToken,
         actionUrl: links.actionUrl,
-        qrValue: links.qrValue,
+        qrValue: qrResult?.payload || links.qrValue || links.actionUrl,
         startedAt: Date.now(),
       });
 
       if (session.mode === "mock") {
          setInlineSuccess("SELF_MODE=mock detected. Real Self QR scan is disabled in this environment.");
          setSelfActionUrl(links.actionUrl);
-         if (links.qrValue) {
-           const generatedQr = await QRCode.toDataURL(links.qrValue, { width: 220, margin: 1 });
-           setSelfQrDataUrl(generatedQr);
-         }
+         setSelfQrDataUrl(qrResult?.dataUrl || "");
       } else if (links.deepLink) {
          setInlineSuccess("Aguardando confirmação no app Self...");
          setSelfActionUrl(links.actionUrl);
-         const generatedQr = await QRCode.toDataURL(links.qrValue, { width: 220, margin: 1 });
-         setSelfQrDataUrl(generatedQr);
+         setSelfQrDataUrl(qrResult?.dataUrl || "");
          const opened = openSelfAction(links.actionUrl);
          if (!opened && preOpenedPopup && !preOpenedPopup.closed) preOpenedPopup.close();
          if (!opened) {
-           setInlineSuccess("Abra o Self manualmente no botão abaixo para continuar.");
+           setInlineSuccess(
+             qrResult?.dataUrl
+               ? "Abra o Self manualmente no botão abaixo para continuar."
+               : "QR indisponível no momento. Abra o Self manualmente no botão abaixo.",
+           );
          }
       } else if (links.qrValue) {
          setInlineSuccess("Verifique via QR Code ou abra o app Self...");
          setSelfActionUrl(links.actionUrl);
-         const generatedQr = await QRCode.toDataURL(links.qrValue, { width: 220, margin: 1 });
-         setSelfQrDataUrl(generatedQr);
+         setSelfQrDataUrl(qrResult?.dataUrl || "");
          const opened = openSelfAction(links.actionUrl);
          if (!opened && preOpenedPopup && !preOpenedPopup.closed) preOpenedPopup.close();
          if (!opened) {
-           setInlineSuccess("Abra o Self manualmente no botão abaixo para continuar.");
+           setInlineSuccess(
+             qrResult?.dataUrl
+               ? "Abra o Self manualmente no botão abaixo para continuar."
+               : "QR indisponível no momento. Abra o Self manualmente no botão abaixo.",
+           );
          }
       } else {
          setInlineSuccess("Check your Self app...");
