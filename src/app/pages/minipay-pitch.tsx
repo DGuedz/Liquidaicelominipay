@@ -18,6 +18,7 @@ import {
 import { useNavigate } from "react-router";
 import { useTheme } from "../hooks/useTheme";
 import { LiquidLogo } from "../components/LiquidLogo";
+import { AnimatedCounter } from "../components/AnimatedCounter";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 const STATS = [
@@ -310,27 +311,39 @@ export function MiniPayPitchPage() {
                 <LiquidLogo size={24} variant="icon" theme="auto" background="transparent" className="mr-1" />
                 <span className="text-sm font-semibold text-white">Live model: wallet-first treasury</span>
               </div>
-              {[
-                { label: "Without LiquidAI (idle)", value: "$1,200.00", sub: "Local inflation: -8%/yr", color: "#EF4444" },
-                { label: "With LiquidAI (4.8% APY)", value: "$1,257.60", sub: "+$57.60 in 12 months", color: "#A3D977" },
-              ].map((row, i) => (
-                <div
-                  key={row.label}
+              <div
                   className="flex items-center justify-between py-3"
-                  style={{ borderBottom: i === 0 ? "1px solid rgba(255,255,255,0.08)" : "none" }}
+                  style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
                 >
                   <div>
-                    <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>{row.label}</p>
-                    <p className="text-base font-mono font-bold text-white">{row.value}</p>
+                    <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>Without LiquidAI (idle)</p>
+                    <p className="text-base font-mono font-bold text-white">$1,200.00</p>
                   </div>
                   <div
                     className="px-2.5 py-1 rounded-full text-xs font-semibold"
-                    style={{ background: `${row.color}20`, color: row.color }}
+                    style={{ background: "rgba(239, 68, 68, 0.125)", color: "#EF4444" }}
                   >
-                    {row.sub}
+                    Local inflation: -8%/yr
                   </div>
                 </div>
-              ))}
+
+                <div
+                  className="flex items-center justify-between py-3"
+                >
+                  <div>
+                    <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>With LiquidAI (4.8% APY)</p>
+                    <div className="flex items-center">
+                        <p className="text-base font-mono font-bold text-white">$1,257.</p>
+                        <AnimatedCounter />
+                    </div>
+                  </div>
+                  <div
+                    className="px-2.5 py-1 rounded-full text-xs font-semibold"
+                    style={{ background: "rgba(163, 217, 119, 0.125)", color: "#A3D977" }}
+                  >
+                    +$57.60 in 12 months
+                  </div>
+                </div>
               <div
                 className="mt-4 p-3 rounded-xl flex items-center gap-2"
                 style={{ background: "rgba(163,217,119,0.1)" }}
@@ -413,7 +426,7 @@ export function MiniPayPitchPage() {
               {
                 step: "01",
                 title: "Connect MiniPay",
-                desc: "Open LiquidAI inside Opera Mini. No seed phrase, no complexity.",
+                desc: "Open LiquidAI inside Opera Mini. No complex wallet setup, no friction.",
                 color: "#A3D977",
               },
               {
