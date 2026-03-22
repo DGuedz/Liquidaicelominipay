@@ -14,7 +14,15 @@ const DEFAULT_API_BASE_URL = resolveDefaultApiBaseUrl();
 const AUTH_TOKEN_STORAGE_KEY = "liquidai-auth-token";
 let inMemoryAuthToken = "";
 
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/+$/, "");
+export const API_BASE_URL = (() => {
+  // If we're strictly on localhost (Vite dev server), use the local backend.
+  if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+    return (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:8787";
+  }
+  // Otherwise, ALWAYS force the production backend.
+  // This prevents Vercel preview environments from trying to hit localhost.
+  return "https://liquidaicelominipay.onrender.com";
+})().replace(/\/+$/, "");
 
 type ApiEnvelope<T> = {
   ok: boolean;
