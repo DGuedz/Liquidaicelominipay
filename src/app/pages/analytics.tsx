@@ -24,6 +24,7 @@ import {
   Layers,
   ArrowRight,
   Info,
+  Sparkles,
 } from "lucide-react";
 import {
   YieldIcon,
@@ -586,7 +587,7 @@ export function AnalyticsPage() {
                       ))}
                     </div>
                     <p className="text-xs mt-1.5" style={{ color: "var(--text-muted)", fontSize: "10px" }}>
-                      Yield via institutional staking and lending strategies (Morpho · Celo Mondo · Mar/2026)
+                      Yield via institutional staking and lending strategies (Morpho · Celo ecosystem · live routing)
                     </p>
                   </div>
                 </div>
