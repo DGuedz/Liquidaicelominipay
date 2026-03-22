@@ -234,48 +234,46 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 lg:gap-16 items-center relative z-10 w-full">
             {/* Text Content */}
             <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6 }}
-                className="text-center md:text-left flex flex-col items-center md:items-start"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="text-left"
             >
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-medium mb-6">
-                    <Sparkles size={12} />
-                    Built for the MiniPay Ecosystem
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 mb-6">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-xs font-mono text-gray-300">System Online // Celo L2</span>
                 </div>
-                
-                <h1 className="text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-[1.1] mb-6 tracking-tight">
-                    Hold & Earn. <br/>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600">
-                        Zero complexity.
+                <h1 className="text-5xl lg:text-7xl font-bold mb-6 leading-tight tracking-tight">
+                    Autonomous <br />
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">
+                        Treasury Infra.
                     </span>
                 </h1>
-                
-                <p className="text-lg lg:text-xl text-gray-400 mb-8 leading-relaxed max-w-xl lg:max-w-2xl">
-                    LiquidAI turns your MiniPay wallet into an autonomous treasury. 
-                    Keep your local cash in stablecoins and earn daily rewards, without learning DeFi.
+                <p className="text-lg text-gray-400 mb-8 max-w-xl leading-relaxed">
+                    LiquidAI operates silently in the background of the Opera MiniPay ecosystem. We secure idle stablecoins via Self Protocol ZK-proofs and route them to optimal Celo yields through Agent-to-Agent execution. Zero friction. Maximum efficiency.
                 </p>
-
-                <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+                <div className="flex flex-wrap items-center gap-4">
                     <button 
                         onClick={() => navigate("/minipay")}
-                        className="w-full sm:w-auto h-14 px-8 rounded-full bg-green-500 hover:bg-green-400 text-black font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_30px_rgba(34,197,94,0.5)]"
+                        className="bg-white text-black px-8 py-4 rounded-full font-bold text-sm hover:scale-105 transition-transform flex items-center gap-2"
                     >
-                        Explore Mini App <ArrowRight size={20} />
+                        Initialize Agent <ArrowRight size={16} />
                     </button>
-                    <button 
-                        onClick={() => window.open('https://github.com/DGuedz/Liquidaicelominipay', '_blank')}
-                        className="w-full sm:w-auto h-14 px-8 rounded-full bg-white/5 hover:bg-white/10 text-white font-medium border border-white/10 transition-all"
-                    >
-                        View Documentation
-                    </button>
+                    <a href="https://github.com/DGuedz/Liquidaicelominipay" target="_blank" rel="noreferrer" className="px-8 py-4 rounded-full font-bold text-sm border border-white/20 hover:bg-white/5 transition-colors">
+                        View Source
+                    </a>
                 </div>
-
-                {/* Trust Badges */}
-                <div className="mt-12 pt-8 border-t border-white/5 flex flex-wrap items-center justify-center md:justify-start gap-8 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-                    <div className="flex items-center gap-2 text-sm lg:text-base"><Globe size={18}/> Celo Network</div>
-                    <div className="flex items-center gap-2 text-sm lg:text-base"><Shield size={18}/> Self Protocol</div>
-                    <div className="flex items-center gap-2 text-sm lg:text-base"><Bot size={18}/> Karma Reputation</div>
+                
+                <div className="mt-12 flex items-center gap-8 border-t border-white/10 pt-8">
+                    {stats.map((stat, i) => (
+                        <div key={i}>
+                            <div className="flex items-center gap-2 text-gray-400 text-sm mb-1">
+                                <stat.icon size={14} />
+                                {stat.label}
+                            </div>
+                            <div className="text-xl font-mono font-bold text-white">{stat.value}</div>
+                        </div>
+                    ))}
                 </div>
             </motion.div>
 
@@ -380,19 +378,19 @@ export function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section className="py-24 bg-gradient-to-b from-transparent to-green-900/10 px-6">
+      <section className="py-24 bg-[#020408] border-t border-white/5 px-6">
         <div className="max-w-6xl mx-auto">
             <div className="flex flex-col md:flex-row items-center justify-between gap-12">
                 <div className="md:w-1/2">
-                    <h2 className="text-3xl lg:text-4xl font-bold mb-8">How it works</h2>
+                    <h2 className="text-3xl lg:text-4xl font-bold mb-8">System Architecture</h2>
                     <div className="space-y-8">
                         {[
-                            { step: "01", title: "Connect Wallet", desc: "The app reads your real balance and understands your liquidity needs." },
-                            { step: "02", title: "Agent Organizes", desc: "Part of the capital stays liquid. The rest is routed to yield opportunities." },
-                            { step: "03", title: "Instant Access", desc: "Need to pay? The agent liquidates yield positions instantly." }
+                            { step: "01", title: "Identity Perimeter", desc: "Sybil-resistance enforced by Self Protocol ZK-proofs. Strict 1:1 human-to-agent mapping." },
+                            { step: "02", title: "A2A Routing", desc: "Internal agents analyze Celo state (Mento V3, Aave) to route capital efficiently." },
+                            { step: "03", title: "Atomic Execution", desc: "Operator agent uses ERC-4337 Session Keys to settle intents with zero human friction." }
                         ].map((item, i) => (
                             <div key={i} className="flex gap-6">
-                                <div className="text-green-500 font-mono text-xl font-bold pt-1">{item.step}</div>
+                                <div className="text-gray-500 font-mono text-xl font-bold pt-1">{item.step}</div>
                                 <div>
                                     <h3 className="text-xl font-bold text-white mb-2">{item.title}</h3>
                                     <p className="text-gray-400">{item.desc}</p>
@@ -402,25 +400,27 @@ export function LandingPage() {
                     </div>
                 </div>
                 <div className="md:w-1/2 relative">
-                    <div className="absolute inset-0 bg-green-500/20 blur-[80px] rounded-full" />
-                    <div className="relative bg-black/40 backdrop-blur-md border border-white/10 rounded-3xl p-8">
-                        <div className="space-y-4 font-mono text-sm text-gray-300">
-                            <div className="flex justify-between border-b border-white/10 pb-2">
-                                <span>Status</span>
-                                <span className="text-green-400">Active ●</span>
+                    <div className="relative bg-black border border-white/10 rounded-xl p-6 font-mono text-xs text-gray-400 shadow-2xl">
+                        <div className="flex justify-between border-b border-white/10 pb-3 mb-3">
+                            <span className="text-gray-500">Node Status</span>
+                            <span className="text-green-500 flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"/> SECURE</span>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="flex justify-between">
+                                <span>Sybil Guard</span>
+                                <span className="text-white">Active (Self Protocol)</span>
                             </div>
                             <div className="flex justify-between">
-                                <span>Target Protocol</span>
-                                <span className="text-white">Mento + Aave</span>
+                                <span>Yield Router</span>
+                                <span className="text-white">Mento V3 + stCelo</span>
                             </div>
                             <div className="flex justify-between">
-                                <span>Daily Rebalance</span>
-                                <span className="text-white">08:00 UTC</span>
+                                <span>Gas Abstraction</span>
+                                <span className="text-white">CIP-64 (USDm)</span>
                             </div>
-                            <div className="flex justify-between">
-                                <span>Gas Strategy</span>
-                                <span className="text-white">USDm Fee Abstraction</span>
-                            </div>
+                        </div>
+                        <div className="mt-4 pt-4 border-t border-white/10">
+                            <p className="text-gray-500">BLCK MNDZ LABS // Celo L2</p>
                         </div>
                     </div>
                 </div>

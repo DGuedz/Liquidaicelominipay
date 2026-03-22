@@ -139,9 +139,9 @@ function FloatingCoins() {
 function StepWelcome({ onNext, onSkip }: { onNext: () => void; onSkip: () => void }) {
   const { isDark } = useTheme();
   const highlights = [
-    { icon: TrendingUp, color: "#A3D977", label: "4.8% APY avg", sub: "Auto-yield 24/7" },
-    { icon: Zap, color: "#10B981", label: "3 taps per action", sub: "PIX, top-up, remittance" },
-    { icon: Shield, color: "#3B82F6", label: "Invisible DeFi", sub: "Secured by Celo" },
+    { icon: TrendingUp, color: "#A3D977", label: "Automated Treasury", sub: "Yield routing via Mento V3" },
+    { icon: Zap, color: "#10B981", label: "Atomic Execution", sub: "Gasless CIP-64 operations" },
+    { icon: Shield, color: "#3B82F6", label: "Sybil-Resistant", sub: "Secured by Self Protocol" },
   ];
 
   return (
@@ -182,7 +182,7 @@ function StepWelcome({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
           className="text-sm mb-6 max-w-[260px]"
           style={{ color: "var(--text-secondary)", lineHeight: 1.5 }}
         >
-          Your money earns while you live. Autonomous agent on Celo.
+          Autonomous infrastructure for the MiniPay ecosystem.
         </motion.p>
 
         {/* Compact value highlights */}
