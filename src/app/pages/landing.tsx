@@ -365,13 +365,20 @@ export function LandingPage() {
                         desc: "You hold the keys, and you make the moves. Self Protocol integration ensures verified usage, backed up and easily restorable. 1:1 human-to-agent."
                     }
                 ].map((feature, i) => (
-                    <div key={i} className="p-8 rounded-2xl bg-[#020408] border border-white/5 hover:border-white/10 transition-colors group">
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: "-50px" }}
+                        transition={{ duration: 0.5, delay: i * 0.1 }}
+                        key={i} 
+                        className="p-8 rounded-2xl bg-[#020408] border border-white/5 hover:border-white/10 transition-colors group"
+                    >
                         <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-gray-300 mb-6 group-hover:text-white group-hover:bg-white/10 transition-colors">
                             <feature.icon size={24} />
                         </div>
                         <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
                         <p className="text-gray-400 leading-relaxed">{feature.desc}</p>
-                    </div>
+                    </motion.div>
                 ))}
             </div>
         </div>
@@ -380,13 +387,24 @@ export function LandingPage() {
       {/* Comparison Section */}
       <section className="py-24 px-6 bg-black relative">
         <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-16">
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="text-center mb-16"
+            >
                 <div className="text-green-500 font-mono text-sm mb-4 tracking-widest uppercase">Comparison</div>
                 <h2 className="text-3xl lg:text-4xl font-bold mb-4">MiniPay + LiquidAI</h2>
                 <p className="text-gray-400 max-w-2xl mx-auto">We don't replace MiniPay, we supercharge it. See how our A2A engine turns your existing wallet into an autonomous yield powerhouse.</p>
-            </div>
+            </motion.div>
 
-            <div className="bg-[#020408] rounded-2xl border border-white/10 overflow-hidden">
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="bg-[#020408] rounded-2xl border border-white/10 overflow-hidden"
+            >
                 <div className="grid grid-cols-3 border-b border-white/10 bg-white/5 font-mono text-xs text-gray-400 p-4">
                     <div>Feature</div>
                     <div className="text-center">MiniPay Only</div>
@@ -399,13 +417,20 @@ export function LandingPage() {
                     { feature: "Anti-Sybil Security", minipay: "No", liquidai: "Yes (Self Protocol ZK)" },
                     { feature: "User Interface", minipay: "Familiar", liquidai: "Familiar (Invisible DeFi)" }
                 ].map((row, i) => (
-                    <div key={i} className="grid grid-cols-3 p-4 border-b border-white/5 text-sm items-center hover:bg-white/5 transition-colors">
+                    <motion.div 
+                        initial={{ opacity: 0, x: -10 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: i * 0.1 }}
+                        key={i} 
+                        className="grid grid-cols-3 p-4 border-b border-white/5 text-sm items-center hover:bg-white/5 transition-colors"
+                    >
                         <div className="font-medium text-white">{row.feature}</div>
                         <div className="text-center text-gray-500">{row.minipay}</div>
                         <div className="text-center text-green-400 font-bold">{row.liquidai}</div>
-                    </div>
+                    </motion.div>
                 ))}
-            </div>
+            </motion.div>
         </div>
       </section>
 
