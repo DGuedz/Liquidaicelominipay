@@ -72,7 +72,7 @@ const PILLARS = [
 
 const COMPARISON = [
   { feature: "Inflation protection", minipay: false, liquidai: true },
-  { feature: "Auto-yield 4.8%", minipay: false, liquidai: true },
+  { feature: "Auto-yield (live)", minipay: false, liquidai: true },
   { feature: "Instant liquidity (PIX)", minipay: true, liquidai: true },
   { feature: "24/7 AI Agent", minipay: false, liquidai: true },
   { feature: "Anti-Sybil Verification", minipay: false, liquidai: true },
@@ -323,7 +323,7 @@ export function MiniPayPitchPage() {
                     className="px-2.5 py-1 rounded-full text-xs font-semibold"
                     style={{ background: "rgba(239, 68, 68, 0.125)", color: "#EF4444" }}
                   >
-                    Local inflation: -8%/yr
+                    Local inflation pressure
                   </div>
                 </div>
 
@@ -331,7 +331,7 @@ export function MiniPayPitchPage() {
                   className="flex items-center justify-between py-3"
                 >
                   <div>
-                    <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>With LiquidAI (4.8% APY)</p>
+                    <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>With LiquidAI (live APY)</p>
                     <div className="flex items-center">
                         <p className="text-base font-mono font-bold text-white">$1,257.</p>
                         <AnimatedCounter />
@@ -366,51 +366,6 @@ export function MiniPayPitchPage() {
           <div className="flex flex-col gap-4 md:grid md:grid-cols-2">
             {PILLARS.map((pillar, i) => (
               <PillarCard key={pillar.title} {...pillar} delay={i * 0.08} />
-            ))}
-          </div>
-        </div>
-
-        {/* ── COMPARISON TABLE ────────────────────────────────── */}
-        <div className="px-5 mb-8">
-          <SectionLabel text="Comparison" />
-          <h2 className="mb-2" style={{ color: "var(--text-primary)", fontSize: "1.25rem", fontWeight: 700 }}>
-            MiniPay + LiquidAI
-          </h2>
-          <p className="text-sm mb-5" style={{ color: "var(--text-secondary)" }}>
-            We boost MiniPay's power, we supercharge it. See how LiquidAI turns your existing wallet into an autonomous yield engine.
-          </p>
-          <div
-            className="rounded-2xl overflow-hidden"
-            style={{ background: "var(--surface-solid)", boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}
-          >
-            {/* Header */}
-            <div
-              className="grid grid-cols-3 px-4 py-3"
-              style={{ background: "var(--card-bg)", borderBottom: "1px solid var(--border-light)" }}
-            >
-              <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Feature</span>
-              <span className="text-xs font-semibold text-center" style={{ color: "var(--text-muted)" }}>MiniPay Only</span>
-              <span className="text-xs font-semibold text-center" style={{ color: "#A3D977" }}>With LiquidAI</span>
-            </div>
-            {/* Rows */}
-            {COMPARISON.map((row, i) => (
-              <div
-                key={row.feature}
-                className="grid grid-cols-3 items-center px-4 py-3"
-                style={{ borderBottom: i < COMPARISON.length - 1 ? "1px solid var(--border-light)" : "none" }}
-              >
-                <span className="text-xs" style={{ color: "var(--text-secondary)" }}>{row.feature}</span>
-                <div className="flex justify-center">
-                  {row.minipay ? (
-                    <CheckCircle2 className="w-4 h-4" style={{ color: "#10B981" }} />
-                  ) : (
-                    <span className="text-lg" style={{ color: "var(--text-muted)", opacity: 0.3 }}>—</span>
-                  )}
-                </div>
-                <div className="flex justify-center">
-                  <CheckCircle2 className="w-4 h-4" style={{ color: "#A3D977" }} />
-                </div>
-              </div>
             ))}
           </div>
         </div>
