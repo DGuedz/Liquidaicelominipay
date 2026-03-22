@@ -59,7 +59,7 @@ function normalizeConnectorFingerprint(connector?: ConnectorLike) {
 
 export function getRuntimeWalletSecurityPolicy(expectedChainId: number): WalletSecurityPolicy {
   const envHosts = parseAllowedHosts(String(import.meta.env.VITE_ALLOWED_APP_HOSTS || ""));
-  const allowedHosts = envHosts.length ? envHosts : [...DEFAULT_ALLOWED_HOSTS];
+  const allowedHosts = Array.from(new Set([...envHosts, ...DEFAULT_ALLOWED_HOSTS]));
   const allowVercelPreview =
     import.meta.env.DEV || parseBooleanFlag(String(import.meta.env.VITE_ALLOW_VERCEL_PREVIEW || ""));
 
