@@ -439,7 +439,7 @@ export function MiniPayPitchPage() {
             </div>
             <div>
               <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-                Build Agents for the Real World V2
+                Build Agents for the Real World V2 & The Synthesis
               </p>
               <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
                 LiquidAI · Treasury OS · Celo · Self Protocol · 2026
@@ -478,7 +478,7 @@ export function MiniPayPitchPage() {
                 <img src="https://mirrors.creativecommons.org/presskit/icons/by.svg" alt="BY" className="h-3.5 w-3.5 opacity-70 dark:invert" />
               </a>
             </p>
-            <p className="opacity-60">Build Agents for the Real World V2</p>
+            <p className="opacity-60">Build Agents for the Real World V2 & The Synthesis</p>
           </div>
         </div>
       </div>
