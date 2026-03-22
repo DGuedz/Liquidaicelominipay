@@ -148,7 +148,10 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
       return message;
     };
 
-    const preOpenedPopup = !isMiniPay
+    const isMobile = typeof window !== "undefined" && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const shouldAutoOpen = isMiniPay || isMobile;
+
+    const preOpenedPopup = (!isMiniPay && isMobile)
       ? window.open("", "_blank", "noopener,noreferrer")
       : null;
 
@@ -217,8 +220,11 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
           preOpenedPopup.location.href = url;
           return true;
         }
-        const popup = window.open(url, "_blank", "noopener,noreferrer");
-        return Boolean(popup);
+        if (isMobile) {
+          const popup = window.open(url, "_blank", "noopener,noreferrer");
+          return Boolean(popup);
+        }
+        return false; // Desktop: we just show the QR code, don't open anything
       };
 
       setInlineSuccess(
