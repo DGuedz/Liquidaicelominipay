@@ -707,8 +707,12 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       setInlineSuccess("Session signed successfully.");
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Failed to activate the session.";
-      // Don't show confusing error if the user just rejected the signature in MetaMask
-      if (!/User rejected/i.test(msg) && !/User denied/i.test(msg)) {
+      // MetaMask and viem can throw different variations of rejection messages
+      // We catch them here to not show a red error block, just letting the user try again
+      if (/rejected|denied/i.test(msg)) {
+        console.warn("User rejected SIWE signature:", msg);
+        // Do not set inlineError, just let them click again
+      } else {
         setInlineError(msg);
       }
     } finally {
