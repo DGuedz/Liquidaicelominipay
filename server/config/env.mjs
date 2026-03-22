@@ -41,6 +41,53 @@ function readList(name, fallback = []) {
     .filter(Boolean);
 }
 
+function readCountry3List(name, fallback = []) {
+  const values = readList(name, fallback)
+    .map((value) => String(value || "").trim().toUpperCase())
+    .filter((value) => /^[A-Z]{3}$/.test(value));
+  return values.length ? values : [];
+}
+
+function readUrlLike(name, fallback = "") {
+  const raw = process.env[name];
+  if (typeof raw !== "string" || !raw.trim()) return fallback;
+
+  const extract = (input) => {
+    const cleaned = String(input || "")
+      .trim()
+      .replace(/^[-*]\s*/, "")
+      .replace(/^["']|["']$/g, "")
+      .trim();
+    if (!cleaned) return "";
+    const matched = cleaned.match(/https?:\/\/[^\s,"'\\]+/i);
+    const candidate = matched ? matched[0] : cleaned;
+    try {
+      return new URL(candidate).toString().replace(/\/+$/, "");
+    } catch {
+      return "";
+    }
+  };
+
+  const direct = extract(raw);
+  if (direct) return direct;
+
+  const lines = raw
+    .split(/\r?\n|,/g)
+    .map((line) => extract(line))
+    .filter(Boolean);
+  if (lines.length) return lines[0];
+
+  const match = raw.match(/https?:\/\/[^\s,"'\\]+/i);
+  if (!match) return fallback;
+  return extract(match[0]) || fallback;
+}
+
+function clampInt(value, min, max, fallback) {
+  const parsed = Number.parseInt(String(value), 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, parsed));
+}
+
 function normalizeCeloChain(value) {
   const normalized = value.toLowerCase();
   if (normalized === "mainnet" || normalized === "celo") return "mainnet";
@@ -95,11 +142,12 @@ const mergedFrontendOrigins = Array.from(
 
 export const env = {
   nodeEnv: readString("NODE_ENV", "development"),
+  host: readString("HOST", "0.0.0.0"),
   port: readInt("PORT", readInt("API_PORT", 8787)),
   frontendOrigin: readString("FRONTEND_ORIGIN", DEFAULT_FRONTEND_ORIGINS.join(",")),
   frontendOrigins: mergedFrontendOrigins,
-  authDomain: readString("AUTH_DOMAIN", "app.liquidai.ai"),
-  authUri: readString("AUTH_URI", "https://app.liquidai.ai"),
+  authDomain: readString("AUTH_DOMAIN", "liquidaicelominipay.onrender.com"),
+  authUri: readString("AUTH_URI", "https://liquidaicelominipay.onrender.com"),
   authCookieName: readString("AUTH_COOKIE_NAME", "liquidai_auth"),
   authCookieDomain: readString("AUTH_COOKIE_DOMAIN", ""),
   authSecret: readString("AUTH_SECRET", "liquidai-dev-secret-change-me"),
@@ -132,13 +180,15 @@ export const env = {
   demoFaucetStableReserve: readFloat("DEMO_FAUCET_STABLE_RESERVE", 5),
   selfMode: readString("SELF_MODE", "mock"),
   selfRequiredForAgent: readBool("SELF_REQUIRED_FOR_AGENT", true),
-  selfScope: readString("SELF_SCOPE", "liquidai"),
-  selfVerifyEndpoint: readString("SELF_VERIFY_ENDPOINT", ""),
+  selfScope: readString("SELF_SCOPE", "liquidai").slice(0, 30),
+  publicApiBaseUrl: readUrlLike("PUBLIC_API_BASE_URL", ""),
+  selfVerifyEndpoint: readUrlLike("SELF_VERIFY_ENDPOINT", ""),
+  selfEnforceCallbackSecret: readBool("SELF_ENFORCE_CALLBACK_SECRET", false),
   selfUserIdType: readString("SELF_USER_ID_TYPE", "hex"),
   selfAgentRegisterMode: readString("SELF_AGENT_REGISTER_MODE", "linked"),
   selfMockPassport: readBool("SELF_MOCK_PASSPORT", chain !== "mainnet"),
-  selfMinimumAge: readInt("SELF_MINIMUM_AGE", 18),
-  selfExcludedCountries: readList("SELF_EXCLUDED_COUNTRIES", []),
+  selfMinimumAge: clampInt(process.env.SELF_MINIMUM_AGE, 0, 99, 18),
+  selfExcludedCountries: readCountry3List("SELF_EXCLUDED_COUNTRIES", []),
   selfOfac: readBool("SELF_OFAC", true),
   selfSessionTtlMs: readInt("SELF_SESSION_TTL_MS", 30 * 60 * 1000),
   selfCallbackSecret: readString("SELF_CALLBACK_SECRET", ""),
