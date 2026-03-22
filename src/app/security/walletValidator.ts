@@ -26,6 +26,9 @@ const DEFAULT_ALLOWED_HOSTS = [
   "127.0.0.1",
   "app.liquidai.ai",
   "liquidai.ai",
+  "liquidai-app.vercel.app",
+  "*.vercel.app",
+  "*.onrender.com"
 ];
 
 function parseBooleanFlag(rawValue: string) {
