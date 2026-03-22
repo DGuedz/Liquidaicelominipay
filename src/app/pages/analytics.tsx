@@ -952,53 +952,7 @@ export function AnalyticsPage() {
         </div>
       </div>
 
-      {/* AI Insight Card */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 0.6 }}
-        className="px-5 mb-5"
-      >
-        <div
-          className="rounded-2xl p-4 flex items-start gap-3"
-          style={{
-            background: "linear-gradient(135deg, #0D4B2E 0%, #1a6b45 100%)",
-            boxShadow: "0 4px 20px rgba(13,75,46,0.2)",
-          }}
-        >
-          <motion.div
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
-            style={{ background: "rgba(255,255,255,0.1)" }}
-          >
-            <Zap className="w-5 h-5 text-white" />
-          </motion.div>
-          <div>
-            <p className="text-sm font-semibold text-white mb-1">
-              AI Agent Insight
-            </p>
-            <p className="text-xs text-white/70 leading-relaxed">
-              The agent compares buffer, pools, and on-chain opportunities using only the current wallet balance. When there is a material APY improvement, it appears here with real impact estimation.
-            </p>
-            <div className="flex gap-2 mt-3">
-              <button
-                className="px-4 py-1.5 rounded-full text-xs font-semibold"
-                style={{ background: "#A3D977", color: "#0D4B2E" }}
-              >
-                Authorize
-              </button>
-              <button
-                className="px-4 py-1.5 rounded-full text-xs font-semibold"
-                style={{ background: "rgba(255,255,255,0.15)", color: "#fff" }}
-              >
-                See details
-              </button>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
+      {/* AI Insight Card (REMOVED FOR MVP STREAMLINING) */}
     </div>
   );
 }
