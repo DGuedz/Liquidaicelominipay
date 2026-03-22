@@ -11,6 +11,8 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 22
+      - key: HOST
+        value: 0.0.0.0
       - key: FRONTEND_ORIGIN
         value: http://localhost:5173,http://127.0.0.1:5173,https://app.liquidai.ai,https://liquidai.ai,https://*.vercel.app
       - key: CELO_CHAIN

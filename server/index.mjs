@@ -947,13 +947,22 @@ app.get(
   }),
 );
 
-app.listen(env.port, () => {
+const bindHost = String(env.host || process.env.HOST || "0.0.0.0").trim() || "0.0.0.0";
+const server = app.listen(env.port, bindHost, () => {
   // eslint-disable-next-line no-console
-  console.log(`[LiquidAI API] running on port ${env.port} (${env.celoChain}, chainId ${env.celoChainId})`);
+  console.log(
+    `[LiquidAI API] running on ${bindHost}:${env.port} (${env.celoChain}, chainId ${env.celoChainId})`,
+  );
 
   // Self init must not take the API down if it fails at boot.
   initSelfAgent().catch((error) => {
     const message = error instanceof Error ? error.message : String(error);
     console.warn("[Self Service] boot initialization failed:", message);
   });
+});
+
+server.on("error", (error) => {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error("[LiquidAI API] failed to bind server:", message);
+  process.exitCode = 1;
 });

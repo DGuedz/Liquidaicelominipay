@@ -3,17 +3,21 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
+  "engines": {
+    "node": ">=22 <23"
+  },
   "scripts": {
     "build": "vite build",
     "dev": "vite",
     "api:dev": "node --watch server/index.mjs",
-    "api:start": "node server/index.mjs",
+    "api:start": "node scripts/render-preflight.mjs && node server/index.mjs",
     "synth": "node scripts/synthesis-cli.mjs",
     "synth:prepare": "node scripts/synthesis-prepare-draft.mjs",
     "security:deps": "node scripts/verify-wallet-sdk-versions.mjs",
     "security:audit": "node scripts/security-audit-gate.mjs",
     "security:audit:raw": "pnpm audit --prod --json",
     "security:check": "pnpm run security:deps && pnpm run security:audit",
+    "render:preflight": "node scripts/render-preflight.mjs",
     "simulate:wallets": "node scripts/simulate-managed-wallet-connections.mjs",
     "reset:wallet-security-wall": "node scripts/reset-wallet-security-wall.mjs",
     "release:wallet-self:gate": "node scripts/release-wallet-self-gate.mjs",
