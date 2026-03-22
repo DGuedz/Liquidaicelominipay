@@ -27,9 +27,9 @@ import {
   DashboardPayload,
   FaucetClaimPayload,
   FaucetStatusPayload,
+  SelfPollPayload,
   SelfStatusPayload,
   SelfRegistrationPayload,
-  SelfPollPayload,
 } from "../lib/api";
 import { ensureWalletAuthSession } from "../lib/wallet-auth";
 import { resolveSelfSessionLinks } from "../lib/self-flow";
@@ -41,8 +41,18 @@ type SelfTimeoutIncident = {
   address: string;
   reason: string;
 };
+type SelfPendingSession = {
+  address: string;
+  sessionToken: string;
+  actionUrl: string;
+  qrValue: string;
+  startedAt: number;
+};
 
 const SELF_TIMEOUT_INCIDENT_KEY = "liquidai.self-timeout-incident";
+const SELF_PENDING_SESSION_KEY = "liquidai.self-pending-session";
+const SELF_POLL_INTERVAL_MS = 5000;
+const SELF_POLL_MAX_ATTEMPTS = 36;
 
 const RISK_OPTS = [
   {
@@ -272,6 +282,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
   const [selectedConnectorId, setSelectedConnectorId] = useState("");
   const [selfTimeoutIncident, setSelfTimeoutIncident] = useState<SelfTimeoutIncident | null>(null);
   const timersRef = useRef<number[]>([]);
+  const selfResumeAttemptedRef = useRef(false);
   const {
     address,
     isConnected,
@@ -340,6 +351,67 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     timersRef.current = [];
   };
 
+  const persistPendingSelfSession = (session: SelfPendingSession | null) => {
+    if (typeof window === "undefined") return;
+    if (!session) {
+      window.sessionStorage.removeItem(SELF_PENDING_SESSION_KEY);
+      return;
+    }
+    window.sessionStorage.setItem(SELF_PENDING_SESSION_KEY, JSON.stringify(session));
+  };
+
+  const readPendingSelfSession = (): SelfPendingSession | null => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = window.sessionStorage.getItem(SELF_PENDING_SESSION_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as SelfPendingSession;
+      if (!parsed || typeof parsed !== "object") return null;
+      if (!parsed.address || !parsed.sessionToken || !parsed.qrValue || !parsed.actionUrl) return null;
+      if (typeof parsed.startedAt !== "number" || !Number.isFinite(parsed.startedAt)) return null;
+      return parsed;
+    } catch {
+      return null;
+    }
+  };
+
+  const pollSelfSessionUntilComplete = async (
+    connectedAddress: string,
+    sessionToken: string,
+    startedAtMs = Date.now(),
+  ) => {
+    const isTerminalSelfError = (error: unknown) => {
+      const message = error instanceof Error ? error.message : String(error ?? "");
+      return /invalididentitycommitmentroot|session not found|expired|registration failed|self api error:\s*400|401|403|410/i.test(
+        message,
+      );
+    };
+
+    let attempts = 0;
+    while (attempts < SELF_POLL_MAX_ATTEMPTS) {
+      attempts += 1;
+      await new Promise((resolve) => setTimeout(resolve, SELF_POLL_INTERVAL_MS));
+      try {
+        const pollResult = await apiGet<SelfPollPayload>("/api/self/poll-registration", {
+          address: connectedAddress,
+          sessionToken,
+        });
+        if (pollResult.verified) {
+          persistPendingSelfSession(null);
+          return true;
+        }
+      } catch (error) {
+        if (isTerminalSelfError(error)) {
+          throw error instanceof Error ? error : new Error(String(error));
+        }
+        console.warn("Poll falhou, tentando novamente...", error);
+      }
+      const expiredByClock = Date.now() - startedAtMs > SELF_POLL_MAX_ATTEMPTS * SELF_POLL_INTERVAL_MS;
+      if (expiredByClock) break;
+    }
+    return false;
+  };
+
   useEffect(() => {
     return () => clearTimers();
   }, []);
@@ -379,6 +451,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     setSelfQrDataUrl("");
     setInlineError("");
     setInlineSuccess(message);
+    persistPendingSelfSession(null);
     clearSelfTimeoutIncident();
   };
 
@@ -467,8 +540,87 @@ function StepConnect({ onNext }: { onNext: () => void }) {
   }, [address, wrongNetwork]);
 
   useEffect(() => {
+    selfResumeAttemptedRef.current = false;
+  }, [address]);
+
+  useEffect(() => {
+    if (!address) return;
+    if (selfResumeAttemptedRef.current) return;
+    if (isVerifyingSelf || phase === "verifying") return;
+
+    selfResumeAttemptedRef.current = true;
+    const pending = readPendingSelfSession();
+    if (!pending) return;
+    if (pending.address.toLowerCase() !== address.toLowerCase()) {
+      persistPendingSelfSession(null);
+      return;
+    }
+    const expired = Date.now() - pending.startedAt > SELF_POLL_MAX_ATTEMPTS * SELF_POLL_INTERVAL_MS;
+    if (expired) {
+      persistPendingSelfSession(null);
+      return;
+    }
+
+    let cancelled = false;
+    setInlineError("");
+    setInlineSuccess("Retomando verificacao Self apos refresh...");
+    setSelfActionUrl(pending.actionUrl);
+    setPhase("verifying");
+    setIsVerifyingSelf(true);
+
+    QRCode.toDataURL(pending.qrValue, { width: 220, margin: 1 })
+      .then((generatedQr) => {
+        if (!cancelled) setSelfQrDataUrl(generatedQr);
+      })
+      .catch(() => {
+        if (!cancelled) setSelfQrDataUrl("");
+      });
+
+    (async () => {
+      try {
+        await ensureWalletAuthSession(address, signWalletMessage);
+        const verified = await pollSelfSessionUntilComplete(address, pending.sessionToken, pending.startedAt);
+        if (!verified) {
+          throw new Error("Tempo limite de verificacao excedido. Tente novamente.");
+        }
+
+        const [finalStatus, nextRoute] = await Promise.all([
+          apiGet<SelfStatusPayload>("/api/self/status", { address }),
+          refreshActivationRoute(address, !wrongNetwork),
+        ]);
+        if (!cancelled) {
+          setSelfStatus(finalStatus);
+          if (nextRoute) setActivationRoute(nextRoute);
+          setInlineSuccess("Self verification recorded. Agent activation is now unlocked.");
+          clearSelfTimeoutIncident();
+          setPhase("connected");
+        }
+      } catch (error) {
+        if (!cancelled) {
+          const message = error instanceof Error ? error.message : "Failed to resume Self verification.";
+          setInlineError(message);
+          setPhase("connected");
+        }
+      } finally {
+        if (!cancelled) setIsVerifyingSelf(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    address,
+    isVerifyingSelf,
+    phase,
+    signWalletMessage,
+    wrongNetwork,
+  ]);
+
+  useEffect(() => {
     if (!isConnected) {
       setPhase("idle");
+      persistPendingSelfSession(null);
       return;
     }
 
@@ -626,6 +778,8 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     const preOpenedPopup = (!isMiniPay && isMobile)
       ? window.open("", "_blank", "noopener,noreferrer")
       : null;
+    let popupUsed = false;
+    let activeAddress = String(address || "");
 
     try {
       let connectedAddress = address;
@@ -636,6 +790,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       if (!connectedAddress) {
         throw new Error("Wallet address unavailable for Self verification.");
       }
+      activeAddress = connectedAddress;
 
       await ensureWalletAuthSession(connectedAddress, signWalletMessage);
       
@@ -661,6 +816,9 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       if (!session) {
         throw new Error("Failed to start Self registration session.");
       }
+      if (!session.sessionToken) {
+        throw new Error("Self registration session missing token.");
+      }
 
       console.log("Self Session Started:", session);
       
@@ -671,17 +829,20 @@ function StepConnect({ onNext }: { onNext: () => void }) {
         if (isMiniPay) {
           // Dentro do MiniPay, o deep link direto é mais seguro
           window.location.href = url;
+          popupUsed = true;
           return true;
         }
 
         if (preOpenedPopup && !preOpenedPopup.closed) {
           preOpenedPopup.location.href = url;
+          popupUsed = true;
           return true;
         }
 
         if (isMobile) {
           // Em mobile fora do MiniPay, tentamos abrir em nova aba.
           const popup = window.open(url, "_blank", "noopener,noreferrer");
+          popupUsed = Boolean(popup);
           return Boolean(popup);
         }
 
@@ -690,6 +851,19 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       };
 
       const links = resolveSelfSessionLinks(session);
+      if (!links.actionUrl) {
+        throw new Error("Self registration did not return a deep link or QR payload.");
+      }
+      if (!links.qrValue) {
+        throw new Error("Self registration returned an invalid QR payload.");
+      }
+      persistPendingSelfSession({
+        address: connectedAddress,
+        sessionToken: session.sessionToken,
+        actionUrl: links.actionUrl,
+        qrValue: links.qrValue,
+        startedAt: Date.now(),
+      });
 
       if (session.mode === "mock") {
          setInlineSuccess("SELF_MODE=mock detected. Real Self QR scan is disabled in this environment.");
@@ -704,6 +878,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
          const generatedQr = await QRCode.toDataURL(links.qrValue, { width: 220, margin: 1 });
          setSelfQrDataUrl(generatedQr);
          const opened = openSelfAction(links.actionUrl);
+         if (!opened && preOpenedPopup && !preOpenedPopup.closed) preOpenedPopup.close();
          if (!opened) {
            setInlineSuccess("Abra o Self manualmente no botão abaixo para continuar.");
          }
@@ -713,6 +888,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
          const generatedQr = await QRCode.toDataURL(links.qrValue, { width: 220, margin: 1 });
          setSelfQrDataUrl(generatedQr);
          const opened = openSelfAction(links.actionUrl);
+         if (!opened && preOpenedPopup && !preOpenedPopup.closed) preOpenedPopup.close();
          if (!opened) {
            setInlineSuccess("Abra o Self manualmente no botão abaixo para continuar.");
          }
@@ -722,35 +898,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       }
 
       // 3. Poll for completion
-      let verified = false;
-      let attempts = 0;
-      const isTerminalSelfError = (error: unknown) => {
-        const message = error instanceof Error ? error.message : String(error ?? "");
-        return /invalididentitycommitmentroot|session not found|expired|registration failed|self api error:\s*400/i.test(
-          message,
-        );
-      };
-      
-      while (!verified && attempts < 36) { // 36 tentativas de 5s = 3 minutos
-        attempts++;
-        await new Promise(r => setTimeout(r, 5000));
-        
-        try {
-          const pollResult = await apiGet<SelfPollPayload>("/api/self/poll-registration", {
-            address: connectedAddress,
-            sessionToken: session.sessionToken
-          });
-          if (pollResult.verified) {
-            verified = true;
-            break;
-          }
-        } catch (e) {
-          if (isTerminalSelfError(e)) {
-            throw e instanceof Error ? e : new Error(String(e));
-          }
-          console.warn("Poll falhou, tentando novamente...", e);
-        }
-      }
+      const verified = await pollSelfSessionUntilComplete(connectedAddress, session.sessionToken);
 
       if (!verified) {
          throw new Error("Tempo limite de verificação excedido. Tente novamente.");
@@ -763,11 +911,12 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       
       if (nextRoute) setActivationRoute(nextRoute);
       setInlineSuccess("Self verification recorded. Agent activation is now unlocked.");
+      persistPendingSelfSession(null);
       clearSelfTimeoutIncident();
       setPhase("connected");
 
     } catch (error) {
-      if (preOpenedPopup && !preOpenedPopup.closed) {
+      if (preOpenedPopup && !preOpenedPopup.closed && !popupUsed) {
         preOpenedPopup.close();
       }
       setPhase("connected");
@@ -776,7 +925,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       if (/tempo limite|timeout|time out/i.test(formattedError)) {
         const incident: SelfTimeoutIncident = {
           at: new Date().toISOString(),
-          address: String(address || ""),
+          address: activeAddress,
           reason: formattedError,
         };
         persistSelfTimeoutIncident(incident);
@@ -833,6 +982,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     setSelfStatus(null);
     setActivationRoute(null);
     clearSelfTimeoutIncident();
+    persistPendingSelfSession(null);
     await disconnectWallet();
   };
 

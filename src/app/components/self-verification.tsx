@@ -252,7 +252,7 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
       let attempts = 0;
       const isTerminalSelfError = (error: unknown) => {
         const message = error instanceof Error ? error.message : String(error ?? "");
-        return /invalididentitycommitmentroot|session not found|expired|registration failed|self api error:\s*400/i.test(
+        return /invalididentitycommitmentroot|session not found|expired|registration failed|self api error:\s*400|401|403|410/i.test(
           message,
         );
       };

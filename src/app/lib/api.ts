@@ -1,4 +1,16 @@
-const DEFAULT_API_BASE_URL = "http://localhost:8787";
+function resolveDefaultApiBaseUrl() {
+  if (typeof window === "undefined") {
+    return "https://liquidaicelominipay.onrender.com";
+  }
+  const hostname = String(window.location.hostname || "").toLowerCase();
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    return "http://localhost:8787";
+  }
+  // Production-safe fallback when VITE_API_BASE_URL is missing.
+  return "https://liquidaicelominipay.onrender.com";
+}
+
+const DEFAULT_API_BASE_URL = resolveDefaultApiBaseUrl();
 const AUTH_TOKEN_STORAGE_KEY = "liquidai-auth-token";
 let inMemoryAuthToken = "";
 
