@@ -177,10 +177,13 @@ const VAULT_RESERVES = [
   },
 ];
 
+import { useHaptics } from "../hooks/use-haptics";
+
 export function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [overview, setOverview] = useState<AnalyticsPayload | null>(null);
   const { address } = useCeloWallet();
+  const { triggerHaptic } = useHaptics();
 
   useEffect(() => {
     let active = true;
@@ -314,7 +317,10 @@ export function AnalyticsPage() {
           {tabs.map((tab, i) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(i)}
+              onClick={() => {
+                triggerHaptic("light");
+                setActiveTab(i);
+              }}
               className="flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200"
               style={{
                 background: activeTab === i ? "#0D4B2E" : "transparent",

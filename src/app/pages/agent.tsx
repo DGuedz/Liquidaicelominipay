@@ -538,10 +538,13 @@ function JITWarmupBadge({ mode }: { mode: RiskMode }) {
   );
 }
 
+import { useHaptics } from "../hooks/use-haptics";
+
 // ─── Agent Page ───────────────────────────────────────────────────────────────
 export function AgentPage() {
   const { isDark } = useTheme();
   const navigate = useNavigate();
+  const { triggerHaptic } = useHaptics();
   const {
     address,
     isConnected,
@@ -936,7 +939,10 @@ export function AgentPage() {
               <motion.button
                 key={mode.id}
                 whileTap={{ scale: 0.94 }}
-                onClick={() => setRiskMode(mode.id)}
+                onClick={() => {
+                  triggerHaptic("medium");
+                  setRiskMode(mode.id);
+                }}
                 className="flex flex-col items-center gap-1.5 p-3 rounded-2xl relative"
                 style={{
                   background: active ? mode.bg : "var(--surface-solid)",
