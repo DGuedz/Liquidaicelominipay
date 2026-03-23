@@ -8,9 +8,28 @@ dotenv.config();
 const API_BASE_URL = (process.env.LIQUIDAI_SIM_API_BASE_URL || "http://localhost:8787").replace(/\/$/, "");
 const API = `${API_BASE_URL}/api`;
 const RETRYABLE_HTTP_STATUS = new Set([408, 409, 425, 429, 500, 502, 503, 504]);
+const REQUEST_TIMEOUT_MS = Number.parseInt(process.env.LIQUIDAI_SIM_REQUEST_TIMEOUT_MS || "15000", 10);
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithTimeout(url, init = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), Math.max(1000, timeoutMs));
+  try {
+    return await fetch(url, {
+      ...init,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error && typeof error === "object" && error.name === "AbortError") {
+      throw new Error(`[network] timeout after ${timeoutMs}ms for ${String(url)}`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 function normalizePrivateKey(value) {
@@ -84,7 +103,7 @@ async function readJson(response) {
 }
 
 async function authenticateWallet(wallet) {
-  const challengeRes = await fetch(`${API}/auth/challenge`, {
+  const challengeRes = await fetchWithTimeout(`${API}/auth/challenge`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ address: wallet.address }),
@@ -95,7 +114,7 @@ async function authenticateWallet(wallet) {
   }
 
   const signature = await wallet.account.signMessage({ message: challengePayload.data.message });
-  const verifyRes = await fetch(`${API}/auth/verify`, {
+  const verifyRes = await fetchWithTimeout(`${API}/auth/verify`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -117,7 +136,7 @@ async function callWithToken(path, token, init = {}) {
     ...(init.headers || {}),
     authorization: `Bearer ${token}`,
   };
-  return fetch(`${API}${path}`, { ...init, headers });
+  return fetchWithTimeout(`${API}${path}`, { ...init, headers });
 }
 
 async function runWalletSmoke(wallet) {
@@ -252,7 +271,7 @@ async function runRateLimitProbe(address) {
   let seen429 = 0;
   const attempts = 25;
   for (let i = 0; i < attempts; i += 1) {
-    const response = await fetch(`${API}/auth/challenge`, {
+    const response = await fetchWithTimeout(`${API}/auth/challenge`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ address }),
@@ -275,8 +294,24 @@ function printWalletRow(wallet, status, detail = "") {
   console.log(`- ${wallet.name.padEnd(20)} ${status.padEnd(7)} ${addressShort} expected:${expected} ${detail}`.trim());
 }
 
+async function ensureApiReachable() {
+  let lastError = "";
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const response = await fetchWithTimeout(`${API}/health`, { method: "GET" }, 6_000);
+      if (response.ok) return;
+      lastError = `health check HTTP ${response.status}`;
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error);
+    }
+    await sleep(500 * attempt);
+  }
+  throw new Error(`API unreachable at ${API}. ${lastError}`);
+}
+
 async function main() {
   console.log(`\n[wallet-sim] API target: ${API}`);
+  await ensureApiReachable();
   const skipNegativeGuards = process.env.LIQUIDAI_SIM_SKIP_NEGATIVE === "1";
   const skipRateLimitProbe = process.env.LIQUIDAI_SIM_SKIP_RATE_LIMIT === "1";
   const wallets = collectManagedWallets();

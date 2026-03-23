@@ -8,7 +8,7 @@ import { ensureWalletAuthSession } from "../../lib/wallet-auth";
 const protocolMeta: Record<string, { name: string; desc: string; apy: string; color: string }> = {
   aave: { name: "Aave v3", desc: "Lending market", apy: "4.8%", color: "#06B6D4" },
   mento: { name: "Mento", desc: "Stable AMM", apy: "3.8%", color: "#10B981" },
-  moola: { name: "Moola Market", desc: "Celo native lending", apy: "5.2%", color: "#8B5CF6" },
+  moola: { name: "Moola Market (Legacy)", desc: "Legacy lending market", apy: "5.2%", color: "#8B5CF6" },
   ubeswap: { name: "Ubeswap", desc: "DEX liquidity", apy: "8.2%", color: "#F59E0B" },
   pwn: { name: "PWN", desc: "RWA Credit", apy: "11.4%", color: "#EF4444" },
   morpho: { name: "Morpho", desc: "Institutional Looping", apy: "9.1%", color: "#3B82F6" },

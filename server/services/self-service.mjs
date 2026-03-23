@@ -220,8 +220,7 @@ function extractCallbackContextCandidates(userContextData) {
       const normalizedKey = key.toLowerCase();
       if (
         normalizedKey.includes("token") ||
-        normalizedKey.includes("session") ||
-        normalizedKey.includes("attestation")
+        normalizedKey.includes("session")
       ) {
         maybeAddToken(value);
       }
@@ -270,6 +269,9 @@ export async function assertSelfCallbackContext({
   callbackSecret = "",
 }) {
   if (env.selfMode !== "agent") {
+    if (!isAddress(rawAddress)) {
+      throw createHttpError(400, "Invalid wallet address in Self callback.");
+    }
     return {
       address: normalizeAddress(rawAddress),
       attestationId: String(attestationId || "").trim(),
@@ -279,47 +281,72 @@ export async function assertSelfCallbackContext({
 
   if (env.selfEnforceCallbackSecret) {
     if (!env.selfCallbackSecret) {
-      throw new Error("SELF_ENFORCE_CALLBACK_SECRET=true but SELF_CALLBACK_SECRET is missing.");
+      throw createHttpError(500, "SELF_ENFORCE_CALLBACK_SECRET=true but SELF_CALLBACK_SECRET is missing.");
     }
     if (!safeEqualSecrets(callbackSecret, env.selfCallbackSecret)) {
-      throw new Error("Unauthorized Self verification callback.");
+      throw createHttpError(401, "Unauthorized Self verification callback.");
     }
   }
 
-  const normalizedAddress = normalizeAddress(rawAddress);
+  const callbackAddressCandidate = typeof rawAddress === "string" && isAddress(rawAddress)
+    ? normalizeAddress(rawAddress)
+    : "";
   const normalizedAttestationId = String(attestationId || "").trim();
   if (normalizedAttestationId.length < 6) {
-    throw new Error("Invalid attestationId in Self callback.");
+    throw createHttpError(400, "Invalid attestationId in Self callback.");
   }
   const replayDetected = await isSelfAttestationUsed(normalizedAttestationId);
   if (replayDetected) {
-    throw new Error("Replay detected: attestation already processed.");
+    throw createHttpError(409, "Replay detected: attestation already processed.");
   }
 
   const context = extractCallbackContextCandidates(userContextData);
-  if (context.addresses.length && !context.addresses.includes(normalizedAddress)) {
-    throw new Error("Self callback address mismatch with wallet session.");
+  let normalizedAddress = callbackAddressCandidate;
+  if (!normalizedAddress && context.addresses.length === 1) {
+    normalizedAddress = context.addresses[0];
+  }
+  if (normalizedAddress && context.addresses.length && !context.addresses.includes(normalizedAddress)) {
+    throw createHttpError(403, "Self callback address mismatch with wallet session.");
   }
 
   let matchedSessionToken = "";
+  let matchedSessionAddress = "";
   if (context.tokens.length) {
     for (const token of context.tokens) {
       const session = await getSelfRegistrationSession(token);
       if (!session) continue;
-      if (session.walletAddress !== normalizedAddress) continue;
       if (Number(session.expiresAt || 0) <= nowMs()) continue;
+      const sessionAddress = String(session.walletAddress || "").trim();
+      if (!isAddress(sessionAddress)) continue;
+      const normalizedSessionAddress = getAddress(sessionAddress);
+      if (normalizedAddress && normalizedSessionAddress !== normalizedAddress) continue;
       matchedSessionToken = token;
+      matchedSessionAddress = normalizedSessionAddress;
+      if (!normalizedAddress) {
+        normalizedAddress = normalizedSessionAddress;
+      }
       break;
     }
-    if (!matchedSessionToken) {
-      throw new Error("Self callback token is not bound to wallet session.");
-    }
-  } else {
+  }
+
+  if (!matchedSessionToken && normalizedAddress) {
     const fallbackSession = await findSessionByAddress(normalizedAddress);
     if (!fallbackSession) {
-      throw new Error("No active Self registration session found for callback wallet.");
+      throw createHttpError(404, "No active Self registration session found for callback wallet.");
     }
     matchedSessionToken = fallbackSession.sessionToken;
+    matchedSessionAddress = normalizeAddress(fallbackSession.session.walletAddress);
+  }
+
+  if (!matchedSessionToken) {
+    throw createHttpError(404, "Self callback token is not bound to wallet session.");
+  }
+
+  if (!normalizedAddress && matchedSessionAddress) {
+    normalizedAddress = matchedSessionAddress;
+  }
+  if (!normalizedAddress) {
+    throw createHttpError(400, "Self callback missing wallet address context.");
   }
 
   return {
@@ -577,13 +604,13 @@ export async function startSelfRegistration(humanAddress) {
 export async function checkRegistrationStatus(sessionToken, expectedAddress = "") {
     const session = await getSelfRegistrationSession(sessionToken);
     if (!session) {
-        throw new Error("Session not found or expired");
+        throw createHttpError(410, "Self registration session not found or expired.");
     }
     if (expectedAddress && isAddress(expectedAddress)) {
       const normalizedExpected = getAddress(expectedAddress).toLowerCase();
       const sessionAddress = String(session.walletAddress || "").trim().toLowerCase();
         if (!sessionAddress || sessionAddress !== normalizedExpected) {
-          throw new Error("Self session token does not belong to the authenticated wallet.");
+          throw createHttpError(403, "Self session token does not belong to the authenticated wallet.");
         }
     }
     if (env.selfMode === "mock") {
@@ -598,19 +625,53 @@ export async function checkRegistrationStatus(sessionToken, expectedAddress = ""
         const statusUrl = new URL("https://app.ai.self.xyz/api/agent/register/status");
         // Keep query param for backwards compatibility, but always send bearer token (required by current API).
         statusUrl.searchParams.set("token", sessionToken);
-        const response = await fetch(statusUrl, {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${sessionToken}`,
-            },
-        });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), env.externalTimeoutMs);
+        let response;
+        try {
+          response = await fetch(statusUrl, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${sessionToken}`,
+              },
+              signal: controller.signal,
+          });
+        } catch (error) {
+          if (error instanceof Error && error.name === "AbortError") {
+            throw createHttpError(504, "Self status provider timeout. Retry in a few seconds.");
+          }
+          throw createHttpError(503, "Self status provider unavailable. Retry in a few seconds.");
+        } finally {
+          clearTimeout(timeoutId);
+        }
 
         if (!response.ok) {
             const errorBody = await response.text().catch(() => "");
-            throw new Error(`Self API Error: ${response.status}${errorBody ? ` - ${errorBody}` : ""}`);
+            const compactErrorBody = errorBody.trim().slice(0, 220);
+            if (response.status === 401 || response.status === 403) {
+              throw createHttpError(403, "Self session token rejected by provider.");
+            }
+            if (response.status === 404 || response.status === 410) {
+              throw createHttpError(410, "Self registration session expired at provider.");
+            }
+            if (response.status === 429) {
+              throw createHttpError(429, "Self provider rate limit exceeded. Retry shortly.");
+            }
+            if (response.status >= 500) {
+              throw createHttpError(503, "Self provider temporary failure. Retry shortly.");
+            }
+            throw createHttpError(
+              400,
+              compactErrorBody
+                ? `Self API Error: ${response.status} - ${compactErrorBody}`
+                : `Self API Error: ${response.status}`,
+            );
         }
 
-        const data = await response.json();
+        const data = await response.json().catch(() => null);
+        if (!data || typeof data !== "object") {
+          throw createHttpError(502, "Invalid payload from Self status provider.");
+        }
         
         const isVerified = data.status === "verified" || data.stage === "completed" || data.stage === "verified" || data.stage === "agent-ready";
         const isFailed = data.status === "failed" || data.stage === "failed" || data.status === "expired" || data.stage === "expired";
@@ -632,7 +693,7 @@ export async function checkRegistrationStatus(sessionToken, expectedAddress = ""
               status: "failed",
               failedAt: nowMs(),
             });
-            throw new Error(`Self registration failed or expired: ${data.reason || data.stage}`);
+            throw createHttpError(410, `Self registration failed or expired: ${data.reason || data.stage}`);
         }
         
         // Status pending

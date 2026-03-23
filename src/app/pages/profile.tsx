@@ -142,7 +142,7 @@ export function ProfilePage() {
         {
           icon: Globe,
           label: "Allowed Protocols",
-          sub: "Aave, Mento, Moola, Ubeswap, PWN",
+          sub: "Aave, Morpho, Mento, Ubeswap, PWN",
           color: "#8B5CF6",
           bg: isDark ? "rgba(139,92,246,0.15)" : "#F5F3FF",
           route: "/profile/protocols",

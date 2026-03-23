@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { formatUnits } from "viem";
+import { formatUnits, isAddress, type Address } from "viem";
 import {
   useAccount,
   useBalance,
@@ -236,6 +236,40 @@ export function useCeloWallet() {
     [isConnectorAvailable, primaryConnector, supportedConnectors],
   );
 
+  const validateConnectorSecurity = useCallback(
+    (selectedConnector: any, updateBlockedState: boolean) => {
+      const connectorId = String(selectedConnector?.id || "unknown");
+      const connectorName = String(selectedConnector?.name || "Unknown Wallet");
+      const fail = (reason: string) => {
+        if (updateBlockedState) {
+          setLastBlockedConnector({
+            id: connectorId,
+            name: connectorName,
+            reason,
+          });
+        }
+        return false;
+      };
+
+      const hostname = typeof window !== "undefined" ? window.location.hostname : "";
+      try {
+        assertTrustedOrigin(hostname, walletSecurityPolicy.allowedHosts);
+      } catch (error) {
+        return fail(error instanceof Error ? error.message : "Blocked by trusted-origin policy.");
+      }
+
+      if (!isAllowedConnector(selectedConnector, walletSecurityPolicy.allowedConnectorPatterns)) {
+        return fail("Blocked by wallet allow-list policy.");
+      }
+
+      if (updateBlockedState) {
+        setLastBlockedConnector(null);
+      }
+      return true;
+    },
+    [walletSecurityPolicy.allowedConnectorPatterns, walletSecurityPolicy.allowedHosts],
+  );
+
   useEffect(() => {
     let cancelled = false;
 
@@ -334,6 +368,10 @@ export function useCeloWallet() {
 
     const hydratedAccounts = await requestConnectorAccounts(primaryConnector.id, "eth_accounts").catch(() => []);
     if (!hydratedAccounts.length) return;
+    if (!validateConnectorSecurity(primaryConnector, false)) {
+      pendingWalletApprovalRef.current = false;
+      return;
+    }
 
     try {
       setWalletResetOverride(false);
@@ -345,7 +383,13 @@ export function useCeloWallet() {
     } catch (error) {
       console.warn("Provider resync failed:", error);
     }
-  }, [connectAsync, effectiveIsConnected, primaryConnector, requestConnectorAccounts]);
+  }, [
+    connectAsync,
+    effectiveIsConnected,
+    primaryConnector,
+    requestConnectorAccounts,
+    validateConnectorSecurity,
+  ]);
 
   useEffect(() => {
     if (walletMode !== "minipay") return;
@@ -365,6 +409,10 @@ export function useCeloWallet() {
           pendingWalletApprovalRef.current = false;
           return;
         }
+        if (!validateConnectorSecurity(primaryConnector, false)) {
+          pendingWalletApprovalRef.current = false;
+          return;
+        }
         setWalletResetOverride(false);
         await connectAsync({
           connector: primaryConnector,
@@ -379,6 +427,7 @@ export function useCeloWallet() {
     effectiveIsConnected,
     isConnecting,
     primaryConnector,
+    validateConnectorSecurity,
     walletMode,
     walletResetOverride,
   ]);
@@ -455,29 +504,11 @@ export function useCeloWallet() {
         );
       }
 
-      const hostname = typeof window !== "undefined" ? window.location.hostname : "";
-      try {
-        assertTrustedOrigin(hostname, walletSecurityPolicy.allowedHosts);
-      } catch (error) {
-        setLastBlockedConnector({
-          id: String(selectedConnector.id || "unknown"),
-          name: String(selectedConnector.name || "Unknown Wallet"),
-          reason: error instanceof Error ? error.message : "Blocked by trusted-origin policy.",
-        });
-        throw error;
-      }
-      if (!isAllowedConnector(selectedConnector, walletSecurityPolicy.allowedConnectorPatterns)) {
-        setLastBlockedConnector({
-          id: String(selectedConnector.id || "unknown"),
-          name: String(selectedConnector.name || "Unknown Wallet"),
-          reason: "Blocked by wallet allow-list policy.",
-        });
+      if (!validateConnectorSecurity(selectedConnector, true)) {
         throw new Error(
           `Blocked connector "${selectedConnector.name || selectedConnector.id || "unknown"}". Use an allow-listed wallet provider.`,
         );
       }
-
-      setLastBlockedConnector(null);
       writePreferredConnectorId(selectedConnector.id);
       pendingWalletApprovalRef.current = true;
       const session = await connectAsync({
@@ -520,7 +551,10 @@ export function useCeloWallet() {
     return switchChainAsync({ chainId: CELO_CHAIN_ID });
   };
 
-  const signWalletMessage = async (message: string) => {
+  const signWalletMessage = async (message: string, requestedAddress?: string) => {
+    if (requestedAddress && isAddress(requestedAddress)) {
+      return signMessageAsync({ message, account: requestedAddress as Address });
+    }
     return signMessageAsync({ message });
   };
 

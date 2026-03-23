@@ -5,9 +5,9 @@ import { CELO_CHAIN_ID } from "../lib/celo-wallet";
 import { apiGet, apiPost, SelfPollPayload, SelfRegistrationPayload, SelfStatusPayload } from "../lib/api";
 import { ensureWalletAuthSession } from "../lib/wallet-auth";
 import { resolveSelfSessionLinks } from "../lib/self-flow";
+import { generateSelfQrDataUrl } from "../lib/self-qr";
 import { useCeloWallet } from "../hooks/use-celo-wallet";
 import { useTheme } from "../hooks/useTheme";
-import QRCode from "qrcode";
 
 type VerifyState = "idle" | "scanning" | "proving" | "done";
 
@@ -143,7 +143,7 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
     const formatSelfError = (error: unknown) => {
       const message = error instanceof Error ? error.message : "Failed to verify with Self.";
       if (/invalididentitycommitmentroot/i.test(message)) {
-        return "Self proof failed (Identity root desatualizado). No app Self: Manage ID -> refresh/reconnect o passport e tente novamente.";
+        return "Self proof failed (Identity root outdated). In the Self app: Manage ID -> refresh/reconnect passport and try again.";
       }
       return message;
     };
@@ -206,9 +206,11 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
       if (!links.actionUrl) {
         throw new Error("Self registration did not return a deep link or QR payload.");
       }
-      if (!links.qrValue) {
-        throw new Error("Self registration returned an invalid QR payload.");
-      }
+      const qrResult = await generateSelfQrDataUrl({
+        actionUrl: links.actionUrl,
+        deepLink: links.deepLink,
+        qrValue: links.qrValue,
+      });
 
       const openSelfAction = (url: string) => {
         if (!url) return false;
@@ -230,18 +232,19 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
       setInlineSuccess(
         session.mode === "mock"
           ? "SELF_MODE=mock detected. Real Self QR scan is disabled in this environment."
-          : "Aguardando confirmação no app Self...",
+          : "Waiting for confirmation in the Self app...",
       );
       setSelfActionUrl(links.actionUrl);
-      const qrImage = await QRCode.toDataURL(links.qrValue, { width: 220, margin: 1 });
-      setSelfQrDataUrl(qrImage);
+      setSelfQrDataUrl(qrResult?.dataUrl || "");
 
       const opened = session.mode === "mock" ? false : openSelfAction(links.actionUrl);
       if (!opened) {
         setInlineSuccess(
           session.mode === "mock"
             ? "SELF_MODE=mock detected. Real Self QR scan is disabled in this environment."
-            : "Abra o Self manualmente no botao abaixo para continuar.",
+            : (qrResult?.dataUrl
+              ? "Open Self manually via the button below to continue."
+              : "QR currently unavailable. Open Self manually via the button below."),
         );
       }
 
@@ -279,7 +282,7 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
       setShowQr(false);
 
       if (!verified) {
-        throw new Error("Tempo limite da verificacao Self. Tente novamente.");
+        throw new Error("Self verification timeout. Try again.");
       }
 
       setState("proving");
@@ -411,6 +414,25 @@ export function SelfVerification({ onVerified }: SelfVerificationProps) {
           </p>
           {selfQrDataUrl ? (
             <img src={selfQrDataUrl} alt="Self verification QR" className="w-44 h-44 rounded-2xl bg-white p-2 mb-4" />
+          ) : (
+            <p className="text-xs mb-3 text-center" style={{ color: "#F59E0B" }}>
+              QR currently unavailable. Use the manual open button below.
+            </p>
+          )}
+          {selfActionUrl ? (
+            <a
+              href={selfActionUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full max-w-[220px] mb-3 py-2 rounded-xl text-center text-xs font-semibold"
+              style={{
+                color: "#3B82F6",
+                background: "rgba(59,130,246,0.08)",
+                border: "1px solid rgba(59,130,246,0.24)",
+              }}
+            >
+              Open Self manually
+            </a>
           ) : null}
           <div className="flex items-center gap-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
             <motion.div

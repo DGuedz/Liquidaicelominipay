@@ -249,7 +249,7 @@ Base URL: https://raw.githubusercontent.com/trustwallet/assets/master/blockchain
 | curve | Curve | Stable AMM | 5.2% | curve-dao-token |
 | uni | Uni v3 | Stable AMM | 7.1% | uniswap |
 | aave | Aave v3 | Lending | 4.8% | aave |
-| moola | Moola | Lending | 5.9% | moola-market |
+| moola | Moola (Legacy) | Lending | 5.9% | moola-market |
 | pwn | PWN | Lending | 8.2% | pwn-dao |
 | untangled | Untangled | RWA | 9.1% | untangled |
 | credit | Credit Co. | RWA | 11.4% | creditcoin-2 |
@@ -566,7 +566,7 @@ function TabProtocols() {
     { name: "Curve", cat: "AMM", apy: "5.2%" },
     { name: "Uni v3", cat: "AMM", apy: "7.1%" },
     { name: "Aave v3", cat: "Lending", apy: "4.8%" },
-    { name: "Moola", cat: "Lending", apy: "5.9%" },
+    { name: "Moola (Legacy)", cat: "Lending", apy: "5.9%" },
     { name: "PWN", cat: "Lending", apy: "8.2%" },
     { name: "Untangled", cat: "RWA", apy: "9.1%" },
     { name: "Credit Co.", cat: "RWA", apy: "11.4%" },

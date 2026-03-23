@@ -1,4 +1,4 @@
-# LiquidAI: Agentic Treasury OS for MiniPay
+# LiquidAI: Autonomous Treasury Infrastructure
 
 [![Built for Celo](https://img.shields.io/badge/Built_for-Celo-FCFF52?style=flat-square&logo=celo&logoColor=black)](https://celo.org/)
 [![MiniPay Compatible](https://img.shields.io/badge/MiniPay-Compatible-10B981?style=flat-square)](https://minipay.opera.com/)
@@ -8,9 +8,19 @@
 [![DeFi: Mento V3](https://img.shields.io/badge/DeFi-Mento_V3-000000?style=flat-square)](https://mento.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-gray.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-**LiquidAI is an AI liquidity agent built for MiniPay users on Celo.** It acts as an autonomous treasury manager that protects value, routes FX on-chain via Mento V3, optimizes liquidity pools (LP), and maintains instant liquidity for everyday spending.
+LiquidAI is an autonomous treasury infrastructure layer designed to optimize idle stablecoins in high-latency or low-literacy environments. Operating primarily within the Opera MiniPay ecosystem, it relies on strict Zero-Knowledge identity verification (Self Protocol) and deterministic on-chain execution.
 
-By abstracting the complexity of AMMs, fee structures, and bridge routing, LiquidAI delivers a simple, natural-language experience: protecting idle balances against inflation while generating yield, all powered by Celo's fast, low-cost L2 architecture and fee abstraction.
+## The A2A (Agent-to-Agent) Execution Model
+
+Our architecture utilizes a multi-agent state machine designed for capital efficiency and absolute operational silence. Human intervention is reduced to cryptographic intent delegation. 
+
+1. **Identity Gate (Sentinel):** Enforces Sybil-resistance via ZK proofs. No transaction is routed without a 1:1 human-to-agent mapping.
+2. **Oracle Routing (Vault):** Continuously evaluates state across Celo L2 (Mento/stCelo) to determine the most capital-efficient path for idle assets.
+3. **Settlement (Operator):** Secures the execution environment. Uses ERC-4337 style Session Keys to sign and settle intents atomically.
+
+**Economic Efficiency:** By aggregating micro-deposits from the MiniPay ecosystem into systemic liquidity nodes, the protocol achieves high-frequency rebalancing. Value capture occurs naturally at the protocol level through optimized routing and gas abstraction (CIP-64).
+
+---
 
 ## Core Features & Hackathon Tracks Alignment
 
@@ -29,10 +39,16 @@ By abstracting the complexity of AMMs, fee structures, and bridge routing, Liqui
   - **AgentScan Profile:** [LiquidAI (Agent #2729)](https://agentscan.info/agents/celo/2729)
 - **Karma Telemetry:** Execution intents are logged via Karma API for reputation building.
 
-### Hackathon Compliance (Build Agents for the Real World V2)
+### Hackathon Compliance (Build Agents for the Real World V2 & Synthesis)
+
+**1. Build Agents for the Real World V2 (Celo)**
 - **Karma Project:** [LiquidAI (ODL Agent)](https://www.karmahq.xyz/project/liquidai-odl-agent) (Active & Endorsed)
-- **AgentScan ID:** [Agent #2729](https://agentscan.info/agents/celo/2729) (Awaiting indexing on public explorer, validated locally)
-- **Self Protocol:** Integrated and passing all zero-knowledge sybil-resistance checks.
+- **AgentScan ID:** [Agent #2729](https://agentscan.info/agents/celo/2729) (Awaiting indexing on public explorer, validated locally via MetaMask wallet)
+
+**2. Synthesis Hackathon (Bounty Stacking)**
+- 🪪 **Self Protocol (Best Agent Identity Integration):** LiquidAI implements a rigorous Zero-Knowledge (ZK) "Kill Switch". The backend agent (`Sentinel`) strictly refuses to sign or execute any on-chain transaction unless the user wallet holds a valid, active Proof-of-Humanity session from the Self App. Zero PII is leaked. 1:1 Human-to-Agent mapping enforced.
+- 🦊 **MetaMask (Programmable Spending Permissions):** Our backend `Operator` agent leverages Session Keys (ERC-4337 style delegation) tied to the user's MetaMask/MiniPay wallet. Users grant a programmable spending permission for the agent to autonomously move idle stablecoins into Yield protocols (Mento/stCelo), with risk modes and absolute limits controlled via the UI.
+- 🦄 **On-chain Value Movement:** The core engine acts as a Treasury OS, automatically locking/releasing USDm/cUSD into DeFi protocols with atomic settlements and gas abstraction (CIP-64).
 
 ---
 

@@ -7,6 +7,7 @@ dotenv.config();
 
 const DEFAULT_PROD_API = "https://liquidaicelominipay.onrender.com";
 const DEFAULT_TEST_ADDRESS = process.env.TEST_USER_PRIMARY_ADDRESS || "";
+const DEFAULT_STEP_TIMEOUT_MS = Number.parseInt(process.env.LIQUIDAI_GATE_STEP_TIMEOUT_MS || "240000", 10);
 
 function parseArgs(argv) {
   const args = {
@@ -40,14 +41,21 @@ function parseArgs(argv) {
 function runStep(title, command, options = {}) {
   console.log(`\n[gate] ${title}`);
   console.log(`[gate] $ ${command}`);
+  const timeoutMs = Number.isFinite(options.timeoutMs)
+    ? Number(options.timeoutMs)
+    : DEFAULT_STEP_TIMEOUT_MS;
   const result = spawnSync(command, {
     stdio: "inherit",
     shell: true,
+    timeout: Math.max(15_000, timeoutMs),
     env: {
       ...process.env,
       ...(options.env || {}),
     },
   });
+  if (result.error && result.error.code === "ETIMEDOUT") {
+    console.error(`[gate] Step timed out after ${Math.max(15_000, timeoutMs)}ms: ${title}`);
+  }
   const code = Number(result.status ?? 1);
   return { ok: code === 0, code };
 }

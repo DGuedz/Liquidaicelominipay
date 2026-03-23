@@ -257,7 +257,7 @@ export function MiniPayPitchPage() {
               className="mb-8 text-sm md:text-base leading-relaxed"
               style={{ color: "var(--text-secondary)", maxWidth: "480px" }}
             >
-              LiquidAI extends MiniPay's mission. You hold the stablecoins, we stack the rewards. No strings, no locks, no confusing DeFi fees. Just the easiest stablecoin treasury you'll ever use.
+              LiquidAI is an Agentic Treasury OS that transforms idle stablecoins into productive assets. Powered by an A2A (Agent-to-Agent) engine on Celo, it removes all DeFi friction—arbitraging AMMs and yield protocols in the background so MiniPay users can simply hold and earn.
             </motion.p>
           </div>
 

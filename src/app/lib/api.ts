@@ -283,6 +283,8 @@ export type SelfStatusPayload = {
   verified: boolean;
   requiredForAgent: boolean;
   message?: string;
+  provider?: string;
+  proofRef?: string;
 };
 
 export type SelfRegistrationPayload = {

@@ -26,8 +26,8 @@ import {
   Bot,
   ExternalLink,
 } from "lucide-react";
-import { LiquidAILogo } from "../components/liquidai-logo";
-import { useTheme } from "../hooks/useTheme";
+import { LiquidAILogo } from "../src/app/components/liquidai-logo";
+import { useTheme } from "../src/app/hooks/useTheme";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

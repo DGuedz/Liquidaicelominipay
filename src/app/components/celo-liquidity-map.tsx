@@ -23,6 +23,7 @@ interface Protocol {
 interface ControlledConnection {
   id: string;
   apy: string;
+  amountUsd?: number;
 }
 
 interface ControlledNetworkState {
@@ -81,7 +82,7 @@ const PROTOCOLS: Protocol[] = [
   { id:"uni",       short:"U3",  label:"Uni v3",    cx:306, cy:148, ly:172, path:"M148,188 C212,175 272,160 306,148", category:"amm",     apy:"7.1%",  dur:"1.65s" },
   // ── Lending (cyan, right column) ──────────────────────────────────────────
   { id:"aave",      short:"Av",  label:"Aave v3",   cx:308, cy:195, ly:219, path:"M148,188 C210,188 268,190 308,195", category:"lending", apy:"4.8%",  dur:"1.60s" },
-  { id:"moola",     short:"Mo",  label:"Moola",     cx:295, cy:248, ly:272, path:"M148,188 C205,202 262,232 295,248", category:"lending", apy:"5.9%",  dur:"1.85s" },
+  { id:"moola",     short:"Mo",  label:"Moola (Legacy)", cx:295, cy:248, ly:272, path:"M148,188 C205,202 262,232 295,248", category:"lending", apy:"5.9%",  dur:"1.85s" },
   { id:"pwn",       short:"P",   label:"PWN",       cx:268, cy:292, ly:316, path:"M148,188 C195,225 242,268 268,292", category:"lending", apy:"8.2%",  dur:"1.95s" },
   // ── RWA pools (amber, lower arc) ──────────────────────────────────────────
   { id:"untangled", short:"Un",  label:"Untangled", cx:228, cy:325, ly:349, path:"M148,188 C175,238 208,298 228,325", category:"rwa",     apy:"9.1%",  dur:"2.10s" },
@@ -123,6 +124,9 @@ export function CeloLiquidityMap({ network, onOptimize }: CeloLiquidityMapProps 
   const controlled = Boolean(network);
   const controlledApyMap = new Map(
     (network?.connections || []).map((connection) => [connection.id, connection.apy]),
+  );
+  const controlledAmountMap = new Map(
+    (network?.connections || []).map((connection) => [connection.id, connection.amountUsd]),
   );
   const effectivePhase: Phase = remoteOptimizing
     ? "running"
@@ -698,7 +702,9 @@ export function CeloLiquidityMap({ network, onOptimize }: CeloLiquidityMapProps 
                 <div className="p-3 rounded-xl bg-[rgba(0,0,0,0.2)]">
                   <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide">Liquidity</p>
                   <p className="font-mono text-lg font-bold" style={{ color: "var(--text-primary)" }}>
-                    {selectedProtocol.id === 'mento' ? '$55.20' : selectedProtocol.id === 'aave' ? '$32.10' : '$12.40'}
+                    {controlledAmountMap.get(selectedProtocol.id) !== undefined 
+                      ? `$${Number(controlledAmountMap.get(selectedProtocol.id)).toFixed(2)}` 
+                      : selectedProtocol.id === 'mento' ? '$55.20' : selectedProtocol.id === 'aave' ? '$32.10' : '$12.40'}
                   </p>
                 </div>
                 <div className="p-3 rounded-xl bg-[rgba(0,0,0,0.2)]">

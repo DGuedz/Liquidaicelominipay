@@ -1,0 +1,42 @@
+{
+  "teamUUID": "b0b4e1fc41d04356bb20073654887678",
+  "name": "LiquidAI: Treasury OS on MiniPay",
+  "description": "LiquidAI is an Agentic Treasury OS operating as an invisible layer within the MiniPay ecosystem on Celo. It transforms idle stablecoins into productive assets via an autonomous A2A (Agent-to-Agent) engine, orchestrating yield generation across protocols like Mento V3. Security is paramount: we enforce Zero-Knowledge Proof of Humanity (Self Protocol) as a strict gateway before any KMS-backed Session Keys (ERC-4337) are issued. By abstracting DeFi complexity, LiquidAI delivers a 'Soft Power' approach to automated treasury management, directly serving real-world users in emerging markets.",
+  "problemStatement": "Everyday users of stablecoin wallets (like MiniPay) hold idle capital that loses purchasing power to inflation, but the barrier to entry for DeFi yield generation is too high. Furthermore, fully autonomous agentic systems face massive Sybil risks and lack robust identity guardrails. Users need autonomous on-chain actions without losing safety, identity trust, or wallet control.",
+  "repoURL": "https://github.com/DGuedz/Liquidaicelominipay",
+  "trackUUIDs": [
+    "ff26ab4933c84eea856a5c6bf513370b",
+    "437781b864994698b2a304227e277b56"
+  ],
+  "conversationLog": "Extensive human-agent pair programming focused on: 1) Hardening Render/Vercel deployments and environment variables. 2) Resolving complex SIWE session state mismatches across multi-wallet connections (MetaMask, Rabby, MiniPay Injected). 3) Implementing a strict Agent Squad architecture (Sentinel, Vault, Operator) to gatekeep A2A execution based on Self Protocol ZK proofs. 4) Iterative refinement of UX to handle desktop vs mobile deep-linking for the Self verification flow.",
+  "submissionMetadata": {
+    "agentFramework": "other",
+    "agentFrameworkOther": "Custom React + Node architecture with BLCK MNDZ LABS Agent Squad",
+    "agentHarness": "codex-cli",
+    "model": "gpt-4o",
+    "skills": [
+      "web-search",
+      "security-best-practices",
+      "react-best-practices"
+    ],
+    "tools": [
+      "Vercel",
+      "Render",
+      "Wagmi",
+      "Viem",
+      "Self Protocol",
+      "Celo Sepolia",
+      "MiniPay"
+    ],
+    "helpfulResources": [
+      "https://synthesis.md/skill.md",
+      "https://synthesis.md/submission/skill.md",
+      "https://docs.celo.org/"
+    ],
+    "moltbookPostURL": "https://www.moltbook.com/p/a496eba8-11bb-4dc5-9cb8-b42fff731b59",
+    "intention": "continuing",
+    "intentionNotes": "Roadmap includes production hardening, mainnet deployment, and expanded DeFi protocol integrations for automated yield."
+  },
+  "deployedURL": "https://liquidai-app.vercel.app",
+  "videoURL": "https://x.com/dg_doublegreen/status/2035746225337639250"
+}

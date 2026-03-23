@@ -82,7 +82,7 @@ const SCENARIOS: Record<string, Scenario> = {
       "Analisando perfil de risco 'Balanceado'...",
       "Consultando yields em tempo real via Celo...",
       "Calculando impacto no APY e liquidez mínima...",
-      "Avaliando risco de protocolo Moola...",
+      "Avaliando risco de protocolo Morpho...",
     ],
     text:
       "I found **1 opportunity** to increase your yield with low risk. I need your authorization to execute:",

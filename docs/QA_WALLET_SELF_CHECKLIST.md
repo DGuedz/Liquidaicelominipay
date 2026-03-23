@@ -58,6 +58,20 @@
 
 ---
 
+## 5.1 Timeout, Refresh e Suporte (2–3 min)
+- [ ] Forçar cenário de timeout (não concluir a biometria e aguardar expiração).
+  - *Esperado:* UI exibe erro claro de timeout e registra incidente de suporte.
+- [ ] Clicar em **Tentar novamente**.
+  - *Esperado:* Novo ciclo de `start-registration` é iniciado (sem reaproveitar sessão antiga).
+- [ ] Recarregar a página (F5) após timeout.
+  - *Esperado:* Fluxo retorna em estado seguro e permite reiniciar a verificação.
+- [ ] Clicar em **Abrir suporte** no card de timeout.
+  - *Esperado:* Navegação para suporte/chat com contexto do incidente (`issue=self-timeout`, wallet e timestamp).
+- **Status:** `[ PASS / FAIL ]`
+- **Notas:**
+
+---
+
 ## 6. Critério Final de Aceite (Verificação de Erros Críticos)
 - [ ] Conexão permitida apenas em domínios autorizados.
 - [ ] Bloqueio eficaz com mensagens diagnósticas úteis em domínios não permitidos.

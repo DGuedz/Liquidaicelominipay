@@ -200,7 +200,7 @@ function HackathonCountdown({ onDismiss }: { onDismiss: () => void }) {
       >
         <span className="w-1.5 h-1.5 rounded-full animate-pulse flex-shrink-0" style={{ background: "#A3D977" }} />
         <p className="text-xs flex-1" style={{ color: "rgba(255,255,255,0.55)" }}>
-          <span className="text-white font-semibold">Celo Hackathon</span> · Deadline: 18 Mar 2026
+          <span className="text-white font-semibold">Celo Hackathon</span> · Agent track active
         </p>
         <span className="text-xs px-2 py-0.5 rounded-md" style={{ background: "rgba(163,217,119,0.15)", color: "#A3D977" }}>
           Agent Track
@@ -384,11 +384,14 @@ export function HomePage() {
     if (!address || optimizingNetwork) return;
     setOptimizingNetwork(true);
     try {
+      await ensureWalletAuthSession(address, signWalletMessage);
       await apiPost<OptimizeLiquidityPayload>("/api/agent/optimize", {
         address,
         riskMode: "balanced",
       });
       await loadDashboard();
+    } catch (error) {
+      console.error("Optimization failed:", error);
     } finally {
       setOptimizingNetwork(false);
     }

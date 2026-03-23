@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -33,6 +33,7 @@ import {
 import { ensureWalletAuthSession } from "../lib/wallet-auth";
 import { resolveSelfSessionLinks } from "../lib/self-flow";
 import { generateSelfQrDataUrl } from "../lib/self-qr";
+import { sanitizeActionId } from "../security/txGuard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type RiskId = "conservative" | "balanced" | "aggressive";
@@ -279,7 +280,6 @@ function StepConnect({ onNext }: { onNext: () => void }) {
   const [isEnsuringSession, setIsEnsuringSession] = useState(false);
   const [selfActionUrl, setSelfActionUrl] = useState("");
   const [selfQrDataUrl, setSelfQrDataUrl] = useState("");
-  const [selectedConnectorId, setSelectedConnectorId] = useState("");
   const [selfTimeoutIncident, setSelfTimeoutIncident] = useState<SelfTimeoutIncident | null>(null);
   const timersRef = useRef<number[]>([]);
   const selfResumeAttemptedRef = useRef(false);
@@ -287,7 +287,6 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     address,
     isConnected,
     isMiniPay,
-    walletMode,
     walletSupportLabelPt,
     walletSupportLabelEn,
     connectorName,
@@ -297,9 +296,6 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     isConnecting,
     isSwitchingChain,
     isSigningMessage,
-    connectorOptions,
-    connectorDiagnostics,
-    lastBlockedConnector,
     connectWallet,
     switchToCelo,
     signWalletMessage,
@@ -307,31 +303,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
   } = useCeloWallet();
   const selfIsRequired = selfStatus?.requiredForAgent ?? true;
   const requiresSelfVerification = selfIsRequired || selfEnabled;
-  const selectedConnectorName = useMemo(() => {
-    const selected = connectorOptions.find((item) => item.id === selectedConnectorId);
-    if (selected?.name) return selected.name;
-    if (connectorName) return connectorName;
-    return isMiniPay ? "MiniPay" : "wallet";
-  }, [connectorName, connectorOptions, isMiniPay, selectedConnectorId]);
-  const connectorDiagnosticById = useMemo(
-    () => new Map(connectorDiagnostics.map((item) => [item.id, item])),
-    [connectorDiagnostics],
-  );
-
-  useEffect(() => {
-    if (!connectorOptions.length) {
-      setSelectedConnectorId("");
-      return;
-    }
-    const preferredReadyConnector = connectorOptions.find((item) => {
-      const diagnostic = connectorDiagnosticById.get(item.id);
-      return !diagnostic || diagnostic.status === "ready";
-    });
-    const fallbackConnector = preferredReadyConnector ?? connectorOptions[0];
-    if (!selectedConnectorId || !connectorOptions.some((item) => item.id === selectedConnectorId)) {
-      setSelectedConnectorId(fallbackConnector.id);
-    }
-  }, [connectorDiagnosticById, connectorOptions, selectedConnectorId]);
+  const activeConnectorLabel = connectorName || (isMiniPay ? "MiniPay" : "wallet");
 
   const refreshActivationRoute = async (targetAddress = address, networkOkay = !wrongNetwork) => {
     if (!targetAddress) {
@@ -563,7 +535,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
 
     let cancelled = false;
     setInlineError("");
-    setInlineSuccess("Retomando verificacao Self apos refresh...");
+    setInlineSuccess("Resuming Self verification after refresh...");
     setSelfActionUrl(pending.actionUrl);
     setPhase("verifying");
     setIsVerifyingSelf(true);
@@ -584,7 +556,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
         await ensureWalletAuthSession(address, signWalletMessage);
         const verified = await pollSelfSessionUntilComplete(address, pending.sessionToken, pending.startedAt);
         if (!verified) {
-          throw new Error("Tempo limite de verificacao excedido. Tente novamente.");
+          throw new Error("Verification timeout exceeded. Try again.");
         }
 
         const [finalStatus, nextRoute] = await Promise.all([
@@ -642,7 +614,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     }
   }, [isConnected, wrongNetwork, activationRoute?.nextAction, phase]);
 
-  const handleConnect = async (connectorId?: string) => {
+  const handleConnect = async () => {
     if (isBusy) return;
 
     setInlineError("");
@@ -650,24 +622,13 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     clearTimers();
 
     if (!hasConnector) {
-      setInlineError(`Nenhuma carteira detectada. Abra no ${walletSupportLabelPt} e tente novamente.`);
+      setInlineError(`No wallet detected. Open in ${walletSupportLabelEn} and try again.`);
       return;
-    }
-
-    const targetConnectorId = connectorId || selectedConnectorId || "";
-    if (targetConnectorId) {
-      const selectedDiagnostic = connectorDiagnosticById.get(targetConnectorId);
-      if (selectedDiagnostic && selectedDiagnostic.status !== "ready") {
-        setInlineError(
-          `Connector "${selectedDiagnostic.name}" indisponível: ${selectedDiagnostic.reason || "não está pronto para conexão."}`,
-        );
-        return;
-      }
     }
 
     try {
       setPhase("connecting");
-      const session = await connectWallet(targetConnectorId || undefined);
+      const session = await connectWallet();
       if (session.chainId !== CELO_CHAIN_ID) {
         await switchToCelo();
       }
@@ -780,7 +741,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     const formatSelfError = (error: unknown) => {
       const message = error instanceof Error ? error.message : "Failed to verify with Self.";
       if (/invalididentitycommitmentroot/i.test(message)) {
-        return "Self proof failed (Identity root desatualizado). No app Self: Manage ID -> refresh/reconnect o passport, depois tente novamente.";
+        return "Self proof failed (Identity root outdated). In the Self app: Manage ID -> refresh/reconnect passport, then try again.";
       }
       return message;
     };
@@ -795,7 +756,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     try {
       let connectedAddress = address;
       if (!connectedAddress) {
-        const session = await connectWallet(selectedConnectorId || undefined);
+        const session = await connectWallet();
         connectedAddress = session.accounts?.[0] || "";
       }
       if (!connectedAddress) {
@@ -883,7 +844,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
          setSelfActionUrl(links.actionUrl);
          setSelfQrDataUrl(qrResult?.dataUrl || "");
       } else if (links.deepLink) {
-         setInlineSuccess("Aguardando confirmação no app Self...");
+         setInlineSuccess("Waiting for confirmation in the Self app...");
          setSelfActionUrl(links.actionUrl);
          setSelfQrDataUrl(qrResult?.dataUrl || "");
          const opened = openSelfAction(links.actionUrl);
@@ -891,12 +852,12 @@ function StepConnect({ onNext }: { onNext: () => void }) {
          if (!opened) {
            setInlineSuccess(
              qrResult?.dataUrl
-               ? "Abra o Self manualmente no botão abaixo para continuar."
-               : "QR indisponível no momento. Abra o Self manualmente no botão abaixo.",
+               ? "Open Self manually via the button below to continue."
+               : "QR currently unavailable. Open Self manually via the button below.",
            );
          }
       } else if (links.qrValue) {
-         setInlineSuccess("Verifique via QR Code ou abra o app Self...");
+         setInlineSuccess("Verify via QR Code or open the Self app...");
          setSelfActionUrl(links.actionUrl);
          setSelfQrDataUrl(qrResult?.dataUrl || "");
          const opened = openSelfAction(links.actionUrl);
@@ -904,8 +865,8 @@ function StepConnect({ onNext }: { onNext: () => void }) {
          if (!opened) {
            setInlineSuccess(
              qrResult?.dataUrl
-               ? "Abra o Self manualmente no botão abaixo para continuar."
-               : "QR indisponível no momento. Abra o Self manualmente no botão abaixo.",
+               ? "Open Self manually via the button below to continue."
+               : "QR currently unavailable. Open Self manually via the button below.",
            );
          }
       } else {
@@ -917,7 +878,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       const verified = await pollSelfSessionUntilComplete(connectedAddress, session.sessionToken);
 
       if (!verified) {
-         throw new Error("Tempo limite de verificação excedido. Tente novamente.");
+         throw new Error("Verification timeout exceeded. Try again.");
       }
 
       const nextRoute = await refreshActivationRoute(connectedAddress, !wrongNetwork);
@@ -976,18 +937,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
     Boolean(faucetStatus?.backendAddress) &&
     address?.toLowerCase() === faucetStatus?.backendAddress?.toLowerCase();
 
-  // MiniPay test flow logic: If inside MiniPay, auto-connect when reaching this step
-  useEffect(() => {
-    // If we are in MiniPay, automatically trigger connect to bypass explicit user action per track rules
-    if (isMiniPay && phase === "idle" && hasConnector && !isConnected && !isConnecting) {
-      handleConnect();
-    }
-  }, [isMiniPay, phase, hasConnector, isConnected, isConnecting]);
-
-  const handleDisconnect = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
+  const handleResetWallet = async () => {
     clearApiAuthToken();
     setPhase("idle");
     setInlineError("");
@@ -1004,15 +954,6 @@ function StepConnect({ onNext }: { onNext: () => void }) {
 
   return (
     <div className="flex flex-col h-full px-6 pt-10 pb-8 relative">
-      {isConnected && !isMiniPay && (
-          <button 
-            onClick={handleDisconnect}
-            className="absolute top-4 right-6 text-xs text-red-400 font-bold px-3 py-2 rounded-lg border border-red-900/30 bg-red-900/10 hover:bg-red-900/20 transition-all z-50 cursor-pointer shadow-sm active:scale-95 hidden"
-            style={{ pointerEvents: 'auto' }}
-          >
-            RESET WALLET
-          </button>
-        )}
       <div className="mb-5 flex justify-between items-start">
         <div>
           <p className="text-xs uppercase tracking-widest font-semibold mb-2" style={{ color: "#A3D977" }}>
@@ -1026,14 +967,6 @@ function StepConnect({ onNext }: { onNext: () => void }) {
             MiniPay + Self Protocol + Sepolia faucet
           </p>
         </div>
-        {isConnected && !isMiniPay && (
-          <button 
-            onClick={handleDisconnect}
-            className="text-xs text-red-400 font-medium px-2 py-1 rounded hover:bg-red-500/10 transition-colors hidden"
-          >
-            Reset Wallet
-          </button>
-        )}
       </div>
 
       {/* Status visual */}
@@ -1169,7 +1102,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
             )}
             {phase === "connecting" && (
               <>
-                <p className="font-semibold text-base" style={{ color: "var(--text-primary)" }}>Connecting {selectedConnectorName}...</p>
+                <p className="font-semibold text-base" style={{ color: "var(--text-primary)" }}>Connecting {activeConnectorLabel}...</p>
                 <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Authenticating on Celo network</p>
               </>
             )}
@@ -1227,7 +1160,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
               Different network detected
             </p>
             <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-              Switch to Celo Alfajores to activate the demo flow.
+              Switch to Celo Sepolia to activate the demo flow.
             </p>
             <button
               onClick={handleSwitchNetwork}
@@ -1248,7 +1181,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
             }}
           >
             <p className="text-sm font-semibold" style={{ color: "#3B82F6" }}>
-              Verificação Self Obrigatória
+              Self Verification Required
             </p>
             <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
               The agent activation will be locked until your identity is verified via Self Protocol (ZK Proof).
@@ -1265,7 +1198,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
             }}
           >
             <p className="text-sm font-semibold" style={{ color: "#FCFF52" }}>
-              Próximo passo
+              Next step
             </p>
             <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
               {activationRoute.blockers[0].includes("Complete Self verification") 
@@ -1377,7 +1310,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
                 className="rounded-xl px-2 py-2 text-[11px] font-semibold"
                 style={{ background: "rgba(13,75,46,0.18)", color: "#A3D977", border: "1px solid rgba(163,217,119,0.25)" }}
               >
-                Tentar novamente
+                Try again
               </button>
               <button
                 type="button"
@@ -1385,7 +1318,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
                 className="rounded-xl px-2 py-2 text-[11px] font-semibold"
                 style={{ background: "rgba(59,130,246,0.12)", color: "#3B82F6", border: "1px solid rgba(59,130,246,0.24)" }}
               >
-                Abrir suporte
+                Open support
               </button>
               <button
                 type="button"
@@ -1393,7 +1326,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
                 className="rounded-xl px-2 py-2 text-[11px] font-semibold"
                 style={{ background: "rgba(255,255,255,0.04)", color: "var(--text-secondary)", border: "1px solid rgba(255,255,255,0.12)" }}
               >
-                Reiniciar
+                Restart
               </button>
             </div>
           </div>
@@ -1424,7 +1357,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
               border: "1px solid rgba(59,130,246,0.25)",
             }}
           >
-            Abrir Self manualmente
+            Open Self manually
           </a>
         )}
 
@@ -1468,7 +1401,7 @@ function StepConnect({ onNext }: { onNext: () => void }) {
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                 {selfIsRequired
                   ? "Required for security · ZK Proof · Anti-Sybil"
-                  : "Prova ZK Opcional · Anti-Sybil · Privacidade total"}
+                  : "Optional ZK Proof · Anti-Sybil · Full Privacy"}
               </p>
             </div>
             <button
@@ -1495,116 +1428,6 @@ function StepConnect({ onNext }: { onNext: () => void }) {
       </div>
 
       {/* Action button */}
-      {phase === "idle" && !wrongNetwork && walletMode === "browser" && connectorOptions.length > 1 && (
-        <div className="w-full rounded-2xl p-3 flex flex-col gap-2" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <p className="text-[11px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-            Escolha a carteira
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {connectorOptions.map((item) => {
-              const isSelected = selectedConnectorId === item.id;
-              const diagnostic = connectorDiagnosticById.get(item.id);
-              const isUnavailable = Boolean(diagnostic && diagnostic.status !== "ready");
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => {
-                    if (!isUnavailable) setSelectedConnectorId(item.id);
-                  }}
-                  disabled={isUnavailable}
-                  className="rounded-xl px-3 py-2 text-xs font-medium text-left"
-                  style={{
-                    color: isUnavailable ? "rgba(255,255,255,0.45)" : isSelected ? "#fff" : "var(--text-muted)",
-                    background: isUnavailable
-                      ? "rgba(255,255,255,0.015)"
-                      : isSelected
-                        ? "rgba(13,75,46,0.4)"
-                        : "rgba(255,255,255,0.03)",
-                    border: `1px solid ${
-                      isUnavailable
-                        ? "rgba(255,255,255,0.06)"
-                        : isSelected
-                          ? "rgba(13,75,46,0.75)"
-                          : "rgba(255,255,255,0.09)"
-                    }`,
-                    opacity: isUnavailable ? 0.72 : 1,
-                    cursor: isUnavailable ? "not-allowed" : "pointer",
-                  }}
-                >
-                  {item.name}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {phase === "idle" && walletMode === "browser" && connectorDiagnostics.length > 0 && (
-        <div
-          className="w-full rounded-2xl p-3 flex flex-col gap-2"
-          style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)" }}
-        >
-          <p className="text-[11px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-            Wallet debug
-          </p>
-          <div className="space-y-1.5">
-            {connectorDiagnostics.map((item) => {
-              const statusLabel =
-                item.status === "ready"
-                  ? "READY"
-                  : item.status === "blocked"
-                  ? "BLOCKED"
-                  : "MISSING";
-              const statusColor =
-                item.status === "ready"
-                  ? "#A3D977"
-                  : item.status === "blocked"
-                  ? "#EF4444"
-                  : "#F59E0B";
-
-              return (
-                <div
-                  key={`${item.id}:${item.name}`}
-                  className="rounded-xl px-2.5 py-2"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
-                      {item.name}
-                      {item.isPrimary ? " (primary)" : ""}
-                    </p>
-                    <span className="text-[10px] font-bold" style={{ color: statusColor }}>
-                      {statusLabel}
-                    </span>
-                  </div>
-                  <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
-                    id: {item.id} · type: {item.type || "unknown"}
-                  </p>
-                  {item.reason && (
-                    <p className="text-[10px] mt-1" style={{ color: statusColor }}>
-                      {item.reason}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {lastBlockedConnector && (
-            <div
-              className="rounded-xl px-2.5 py-2 text-[10px]"
-              style={{
-                color: "#EF4444",
-                background: "rgba(239,68,68,0.08)",
-                border: "1px solid rgba(239,68,68,0.2)",
-              }}
-            >
-              Last blocked: {lastBlockedConnector.name} ({lastBlockedConnector.id}) · {lastBlockedConnector.reason}
-            </div>
-          )}
-        </div>
-      )}
 
       {isDone ? (
         <motion.button
@@ -1622,69 +1445,86 @@ function StepConnect({ onNext }: { onNext: () => void }) {
           <ChevronRight className="w-5 h-5" />
         </motion.button>
       ) : (
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={
-            wrongNetwork
-              ? handleSwitchNetwork
-              : activationRoute?.nextAction === "activate_session"
-                ? handleEnsureSession
-              : phase === "connected" && requiresSelfVerification && !selfStatus?.verified
-                ? handleVerifySelf
-              : activationRoute?.nextAction === "claim_faucet"
-                ? handleClaimFaucet
-                : () => handleConnect(selectedConnectorId || undefined)
-          }
-          disabled={isBusy}
-          className="w-full py-4 rounded-full font-semibold flex items-center justify-center gap-2"
-          style={{
-            background:
-              phase !== "idle" || wrongNetwork
-                ? "rgba(13,75,46,0.4)"
-                : "linear-gradient(135deg, #0D4B2E 0%, #1a6b45 100%)",
-            color: "#fff",
-            boxShadow: phase === "idle" && !wrongNetwork ? "0 6px 24px rgba(13,75,46,0.35)" : "none",
-          }}
-        >
-          {phase === "idle" && !wrongNetwork ? (
-            <>
-              <Wallet className="w-5 h-5" />
-              {isMiniPay ? "Connect MiniPay" : `Connect ${selectedConnectorName}`}
-            </>
-          ) : activationRoute?.nextAction === "activate_session" ? (
-            <>
-              <Fingerprint className="w-5 h-5" />
-              {isSigningMessage || isEnsuringSession ? "Signing session..." : "Sign session"}
-            </>
-          ) : phase === "connected" && requiresSelfVerification && !selfStatus?.verified ? (
-            <>
-              <Fingerprint className="w-5 h-5" />
-              {isVerifyingSelf ? "Generating Self Link..." : "Unlock with Self ID"}
-            </>
-          ) : activationRoute?.nextAction === "claim_faucet" ? (
-            <>
-              <Wallet className="w-5 h-5" />
-              {isClaimingFaucet ? "Funding..." : "Get test funds"}
-            </>
-          ) : (
-            <>
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white"
-              />
-              {isSwitchingChain
-                ? "Switching to Celo..."
-                : isSigningMessage
-                ? "Signing session..."
-                : phase === "connecting"
-                ? "Conectando..."
-                : phase === "verifying"
-                  ? "Verificando identidade..."
-                  : "Conectando..."}
-            </>
+        <div className="w-full flex flex-col gap-3">
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={
+              wrongNetwork
+                ? handleSwitchNetwork
+                : activationRoute?.nextAction === "activate_session"
+                  ? handleEnsureSession
+                : phase === "connected" && requiresSelfVerification && !selfStatus?.verified
+                  ? handleVerifySelf
+                : activationRoute?.nextAction === "claim_faucet"
+                  ? handleClaimFaucet
+                  : handleConnect
+            }
+            disabled={isBusy}
+            className="w-full py-4 rounded-full font-semibold flex items-center justify-center gap-2"
+            style={{
+              background:
+                phase !== "idle" || wrongNetwork
+                  ? "rgba(13,75,46,0.4)"
+                  : "linear-gradient(135deg, #0D4B2E 0%, #1a6b45 100%)",
+              color: "#fff",
+              boxShadow: phase === "idle" && !wrongNetwork ? "0 6px 24px rgba(13,75,46,0.35)" : "none",
+            }}
+          >
+            {phase === "idle" && !wrongNetwork ? (
+              <>
+                <Wallet className="w-5 h-5" />
+                {isMiniPay ? "Connect MiniPay" : "Connect wallet"}
+              </>
+            ) : activationRoute?.nextAction === "activate_session" ? (
+              <>
+                <Fingerprint className="w-5 h-5" />
+                {isSigningMessage || isEnsuringSession ? "Signing session..." : "Sign session"}
+              </>
+            ) : phase === "connected" && requiresSelfVerification && !selfStatus?.verified ? (
+              <>
+                <Fingerprint className="w-5 h-5" />
+                {isVerifyingSelf ? "Generating Self Link..." : "Unlock with Self ID"}
+              </>
+            ) : activationRoute?.nextAction === "claim_faucet" ? (
+              <>
+                <Wallet className="w-5 h-5" />
+                {isClaimingFaucet ? "Funding..." : "Get test funds"}
+              </>
+            ) : (
+              <>
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white"
+                />
+                {isSwitchingChain
+                  ? "Switching to Celo..."
+                  : isSigningMessage
+                  ? "Signing session..."
+                  : phase === "connecting"
+                  ? "Connecting..."
+                  : phase === "verifying"
+                    ? "Verifying identity..."
+                    : "Connecting..."}
+              </>
+            )}
+          </motion.button>
+
+          {(isConnected || phase !== "idle") && (
+            <button
+              type="button"
+              onClick={handleResetWallet}
+              className="w-full py-3 rounded-full text-sm font-semibold"
+              style={{
+                color: "#EF4444",
+                background: "rgba(239,68,68,0.1)",
+                border: "1px solid rgba(239,68,68,0.35)",
+              }}
+            >
+              Reset wallet
+            </button>
           )}
-        </motion.button>
+        </div>
       )}
     </div>
   );
@@ -1832,6 +1672,67 @@ function StepRisk({ onFinish }: { onFinish: (risk: RiskId) => void }) {
 
 // ─── Step 3: Launch (Chat Style) ───────────────────────────────────────────────
 
+const FALLBACK_MARKET_PROTOCOLS = [
+  { name: "Morpho", apy: "6.20%", color: "#A3D977" },
+  { name: "Mento V3", apy: "5.80%", color: "#EC4899" },
+  { name: "Aave V3", apy: "4.50%", color: "#8B5CF6" },
+];
+
+async function loadMarketAnalysis() {
+  try {
+    // 1. We wrap the API call in a Promise.race to guarantee it won't stall the UI for more than 3.5 seconds.
+    // Real on-chain data fetch typically takes 1-2s, but cold starts can delay this.
+    const snapshot = await Promise.race([
+      apiGet<{
+        protocols?: Array<{
+          id?: string;
+          name?: string;
+          apy?: number;
+          color?: string;
+        }>;
+        blendedApy?: number;
+        updatedAt?: string;
+      }>("/api/yields"),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout fetching market data")), 3500)
+      )
+    ]);
+
+    const protocols = Array.isArray(snapshot?.protocols)
+      ? snapshot.protocols
+          .slice()
+          .sort((a, b) => (Number(b.apy) || 0) - (Number(a.apy) || 0))
+          .slice(0, 3)
+          .map((protocol) => ({
+            name: protocol.name || "Protocol",
+            apy: `${(Number(protocol.apy) || 0).toFixed(2)}%`,
+            color: protocol.color || "#A3D977",
+          }))
+      : [];
+
+    const normalizedProtocols = protocols.length > 0 ? protocols : FALLBACK_MARKET_PROTOCOLS;
+    const blendedApy = Number(snapshot?.blendedApy) || 0;
+    const estimatedMonthlyYield = `+${(blendedApy / 12).toFixed(2)}%`;
+    const asOf = snapshot?.updatedAt
+      ? new Date(snapshot.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      : "just now";
+
+    return {
+      protocols: normalizedProtocols,
+      estimatedMonthlyYield,
+      asOf,
+      source: "Live snapshot (on-chain + provider fallback)",
+    };
+  } catch {
+    return {
+      protocols: FALLBACK_MARKET_PROTOCOLS,
+      estimatedMonthlyYield: "+0.55%",
+      asOf: "fallback",
+      source: "Fallback snapshot",
+    };
+  }
+}
+
 interface ChatMessage {
   id: string;
   role: "agent" | "system";
@@ -1844,6 +1745,9 @@ interface ChatMessage {
   };
   analysisData?: {
     protocols: { name: string; apy: string; color: string }[];
+    estimatedMonthlyYield: string;
+    asOf: string;
+    source: string;
   };
 }
 
@@ -1899,30 +1803,25 @@ function StepLaunch({ onDone }: { onDone: () => void }) {
     const run = async () => {
       try {
         // 1. Initial greeting
-        await wait(600);
+        await wait(400);
         setIsTyping(false);
         addMessage("Initializing secure environment...");
         
         // 2. Scanning (Fast)
-        await wait(800);
+        await wait(400);
         setIsTyping(true);
-        await wait(1000);
+        await wait(600);
         setIsTyping(false);
-        addMessage("Scanning Celo liquidity pools (Aave, Mento, Uniswap)...");
+        addMessage("Scanning Celo liquidity pools (Aave, Mento, Morpho)...");
 
         // 3. Market Analysis
-        await wait(800);
+        await wait(400);
         setIsTyping(true);
-        await wait(1200); 
+        await wait(600); 
         setIsTyping(false);
         
-        addMessage("Market Analysis Complete", "system", "analysis", {
-          protocols: [
-            { name: "Mento (cREAL)", apy: "6.2%", color: "#A3D977" },
-            { name: "Aave V3 (USDC)", apy: "4.5%", color: "#8B5CF6" },
-            { name: "Uniswap (CELO)", apy: "5.8%", color: "#EC4899" },
-          ]
-        });
+        const marketAnalysis = await loadMarketAnalysis();
+        addMessage("Market Analysis Complete", "system", "analysis", marketAnalysis);
 
         // 4. PAUSE -> Wait for user approval
         setWaitingApproval(true);
@@ -1953,6 +1852,7 @@ function StepLaunch({ onDone }: { onDone: () => void }) {
 
       // Real backend execution
       await ensureWalletAuthSession(address, signWalletMessage);
+      const safeActionId = sanitizeActionId(Date.now() % 1_000_000);
       const response = await apiPost<{
         settlement: {
           txHash?: string;
@@ -1960,7 +1860,7 @@ function StepLaunch({ onDone }: { onDone: () => void }) {
         };
       }>("/api/agent/authorize", {
         address,
-        actionId: `onboarding-activation-${Date.now()}`,
+        actionId: safeActionId,
         accepted: true,
       });
 
@@ -2060,7 +1960,10 @@ function StepLaunch({ onDone }: { onDone: () => void }) {
                  </div>
                  <div className="mt-3 pt-3 border-t border-[var(--border-light)] flex items-center justify-between">
                    <span className="text-[10px] text-[var(--text-muted)]">Est. Monthly Yield</span>
-                   <span className="text-xs font-bold text-[#A3D977]">+0.8%</span>
+                   <span className="text-xs font-bold text-[#A3D977]">{msg.analysisData?.estimatedMonthlyYield || "+0.55%"}</span>
+                 </div>
+                 <div className="mt-2 text-[10px] text-[var(--text-muted)]">
+                   {msg.analysisData?.source || "Live snapshot"} · as of {msg.analysisData?.asOf || "just now"}
                  </div>
                  
                  {/* Approval Button inside the card (or below) */}
@@ -2143,9 +2046,9 @@ export function OnboardingPage() {
   const TOTAL_STEPS = 2; // step 1 = connect, step 2 = risk
 
   const handleNext = () => setStep((s) => s + 1);
-  const handleSkip = () => navigate("/home");
+  const handleSkip = () => navigate("/");
   const handleFinish = (_risk: RiskId) => setStep(3); // launch
-  const handleDone = () => navigate("/home");
+  const handleDone = () => navigate("/");
 
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center bg-[var(--background)] md:bg-black/5 md:backdrop-blur-sm">

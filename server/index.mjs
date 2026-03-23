@@ -627,12 +627,20 @@ app.get(
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      if (/does not belong to the authenticated wallet/i.test(message)) {
+      const statusCode = Number(error?.statusCode ?? error?.status ?? 0);
+      if (statusCode === 403 || /does not belong to the authenticated wallet/i.test(message)) {
         authError(res, 403, message);
         return;
       }
+      if (statusCode === 400 || statusCode === 410 || statusCode === 429) {
+        authError(res, statusCode, message);
+        return;
+      }
       const transientProviderIssue =
-        /missing session token|self api error:\s*400/i.test(message);
+        statusCode === 502 ||
+        statusCode === 503 ||
+        statusCode === 504 ||
+        /temporarily|retry|timeout|provider unavailable/i.test(message);
       if (!transientProviderIssue) {
         throw error;
       }
@@ -961,8 +969,39 @@ const server = app.listen(env.port, bindHost, () => {
   });
 });
 
+let shuttingDown = false;
+function shutdown(reason, exitCode = 0) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.warn(`[LiquidAI API] shutdown requested (${reason}).`);
+
+  server.close(() => {
+    console.log("[LiquidAI API] HTTP server closed.");
+    process.exit(exitCode);
+  });
+
+  setTimeout(() => {
+    console.error("[LiquidAI API] forced shutdown timeout reached.");
+    process.exit(exitCode || 1);
+  }, 10_000).unref();
+}
+
 server.on("error", (error) => {
   const message = error instanceof Error ? error.message : String(error);
   console.error("[LiquidAI API] failed to bind server:", message);
-  process.exitCode = 1;
+  shutdown("server_error", 1);
+});
+
+process.on("SIGTERM", () => shutdown("sigterm", 0));
+process.on("SIGINT", () => shutdown("sigint", 0));
+
+process.on("unhandledRejection", (reason) => {
+  const message = reason instanceof Error ? reason.stack || reason.message : String(reason);
+  console.error("[LiquidAI API] unhandledRejection:", message);
+});
+
+process.on("uncaughtException", (error) => {
+  const message = error instanceof Error ? error.stack || error.message : String(error);
+  console.error("[LiquidAI API] uncaughtException:", message);
+  shutdown("uncaught_exception", 1);
 });

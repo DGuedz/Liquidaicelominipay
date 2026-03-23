@@ -109,12 +109,12 @@ const AppMockup = () => {
             </div>
 
             <div className="font-mono text-white mb-1 drop-shadow-md" style={{ fontSize: "2.2rem", fontWeight: 700, letterSpacing: "-0.02em" }}>
-              $5.57
+              $1,257.60
             </div>
             
             <div className="flex items-center gap-2 mb-6">
               <Sparkles className="w-3.5 h-3.5" style={{ color: "#A3D977" }} />
-              <span className="text-xs font-medium" style={{ color: "#A3D977" }}>+2.4% APY · +$0.01 this month</span>
+              <span className="text-xs font-medium" style={{ color: "#A3D977" }}>Live APY · yield updates in real time</span>
             </div>
             
             <div className="flex items-center justify-between pt-2 border-t border-white/10">
@@ -168,9 +168,9 @@ const AppMockup = () => {
           </div>
           <div className="grid grid-cols-3 px-2 py-2">
             {[
-              { l: "Daily Yield", v: "+$0.00" },
-              { l: "Managed Assets", v: "$4" },
-              { l: "Current APY", v: "2.4%" },
+              { l: "Daily Yield", v: "+$0.15" },
+              { l: "Managed Assets", v: "$1.2k" },
+              { l: "Current APY", v: "4.8%" },
             ].map((s, i) => (
               <div key={i} className={`text-center ${i > 0 ? 'border-l border-white/10' : ''}`}>
                 <div className="font-mono text-[10px] font-bold text-green-400">{s.v}</div>
@@ -202,7 +202,7 @@ export function LandingPage() {
 
   const stats = [
     { label: "Productive Capital", value: "Auto", icon: Bot },
-    { label: "Target APY", value: "~4.8%", icon: TrendingUp },
+    { label: "Target APY", value: "Live", icon: TrendingUp },
     { label: "Network", value: "Celo", icon: Globe },
   ];
 
@@ -250,7 +250,7 @@ export function LandingPage() {
                     </span>
                 </h1>
                 <p className="text-lg text-gray-400 mb-8 max-w-xl leading-relaxed">
-                    LiquidAI extends MiniPay's mission. You hold the stablecoins, our A2A (Agent-to-Agent) engine stacks the rewards. No strings, no locks, no confusing DeFi fees. Just the easiest autonomous treasury you'll ever use.
+                    LiquidAI is an Agentic Treasury OS that transforms idle stablecoins into productive assets. Powered by an A2A (Agent-to-Agent) engine on Celo, it removes all DeFi friction—arbitraging AMMs and yield protocols in the background so MiniPay users can simply hold and earn.
                 </p>
                 <div className="flex flex-wrap items-center gap-4">
                     <button 
@@ -308,7 +308,7 @@ export function LandingPage() {
                         </div>
                         <div>
                             <div className="text-[10px] text-gray-400">Current Yield</div>
-                            <div className="text-xs font-bold text-white">2.4% APY</div>
+                            <div className="text-xs font-bold text-white">Live APY</div>
                         </div>
                     </motion.div>
                 </div>
@@ -413,7 +413,7 @@ export function LandingPage() {
                 
                 {[
                     { feature: "Primary Function", minipay: "Everyday Payments (P2P)", liquidai: "Autonomous Yield Routing" },
-                    { feature: "Asset Strategy", minipay: "Hold Stablecoins (USDm)", liquidai: "Grow Stablecoins (stCelo, Mento)" },
+                    { feature: "Asset Strategy", minipay: "Hold Stablecoins (USDm)", liquidai: "Grow Stablecoins (stCELO, Mento)" },
                     { feature: "Liquidity Access", minipay: "Instant (Gasless)", liquidai: "Instant Buffer Maintained" },
                     { feature: "Identity Layer", minipay: "Phone Number", liquidai: "Zero-Knowledge ZK-Proof" }
                 ].map((row, i) => (
@@ -472,7 +472,7 @@ export function LandingPage() {
                             </div>
                             <div className="flex justify-between">
                                 <span>Yield Router</span>
-                                <span className="text-white">Mento V3 + stCelo</span>
+                                <span className="text-white">Mento V3 + stCELO</span>
                             </div>
                             <div className="flex justify-between">
                                 <span>Gas Abstraction</span>
