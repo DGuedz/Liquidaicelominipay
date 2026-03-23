@@ -24,7 +24,7 @@ export function MobileLayout() {
         {/* Main Content Area - Scrollable */}
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar relative scroll-smooth"
+          className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative scroll-smooth"
         >
           <Outlet />
         </div>

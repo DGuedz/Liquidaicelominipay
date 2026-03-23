@@ -2105,7 +2105,7 @@ export function OnboardingPage() {
   const handleNext = () => setStep((s) => s + 1);
   const handleSkip = () => navigate("/home");
   const handleFinish = (_risk: RiskId) => setStep(3); // launch
-  const handleDone = () => navigate("/home");
+  const handleDone = () => navigate("/home", { state: { autoOptimize: true } });
 
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center bg-[var(--background)] md:bg-black/5 md:backdrop-blur-sm">

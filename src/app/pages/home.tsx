@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router";
 import {
   Bell,
   Search,
@@ -45,6 +45,8 @@ import { AgentPulse } from "../components/agent-pulse";
 import { apiGet, apiPost, DashboardPayload, OptimizeLiquidityPayload, SavingsOverviewPayload } from "../lib/api";
 import { useCeloWallet } from "../hooks/use-celo-wallet";
 import { LiquidLogo } from "../components/LiquidLogo";
+
+import { ensureWalletAuthSession } from "../lib/wallet-auth";
 
 // ─── Data ───────────────────────────────────────────────────────────────────
 
@@ -296,8 +298,9 @@ function MiniTrend({ up, inverse }: { up: boolean; inverse?: boolean }) {
 
 export function HomePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isDark, toggleTheme } = useTheme();
-  const { address } = useCeloWallet();
+  const { address, signWalletMessage } = useCeloWallet();
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [agentIdx, setAgentIdx] = useState(0);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -396,6 +399,19 @@ export function HomePage() {
       setOptimizingNetwork(false);
     }
   }
+
+  const autoOptimizeDone = useRef(false);
+
+  useEffect(() => {
+    if (!address || optimizingNetwork || autoOptimizeDone.current) return;
+    const state = location.state as { autoOptimize?: boolean } | null;
+    if (state?.autoOptimize) {
+      autoOptimizeDone.current = true;
+      handleOptimizeNetwork();
+      // clean up history state so we don't trigger again on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [address, location.state, optimizingNetwork]);
 
   const displayEvents = dashboard?.agentEvents?.length ? dashboard.agentEvents : agentEvents;
   const displaySparkline = dashboard?.sparkline?.length ? dashboard.sparkline : sparklineData;
