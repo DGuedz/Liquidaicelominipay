@@ -227,14 +227,14 @@ export function ReceiptPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.95 }}
             whileTap={{ scale: 0.97 }}
-            onClick={() => navigate("/home")}
+            onClick={() => navigate("/dashboard")}
             className="w-full rounded-full py-4 font-semibold text-white"
             style={{
               background: "linear-gradient(135deg, #0D4B2E 0%, #1a6b45 100%)",
               boxShadow: "0 4px 20px rgba(13,75,46,0.25)",
             }}
           >
-            Back to Home
+            Back to Dashboard
           </motion.button>
         </div>
       </div>
