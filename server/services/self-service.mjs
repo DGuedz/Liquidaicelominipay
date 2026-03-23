@@ -470,7 +470,8 @@ export async function startSelfRegistration(humanAddress) {
     if (env.selfMode === "mock") {
         const normalizedAddress = normalizeAddress(humanAddress);
         const mockSessionToken = `mock_${normalizedAddress.toLowerCase()}_${nowMs()}`;
-        const mockDeepLink = "https://self.xyz/mock-deep-link";
+        // Generate a payload that won't fail QR generation
+        const mockDeepLink = "https://redirect.self.xyz?selfApp=" + encodeURIComponent(JSON.stringify({ sessionId: mockSessionToken }));
         await putSelfRegistrationSession(
           mockSessionToken,
           {
