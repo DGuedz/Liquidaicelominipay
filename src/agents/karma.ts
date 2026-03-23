@@ -216,21 +216,24 @@ export const LIQUIDAI_PROJECT: KarmaProject = {
   chainId: 42220, // Celo
   title: "LiquidAI",
   description:
-    "Treasury OS for MiniPay users — Autonomous DeFi liquidity optimization on Celo. Invisible DeFi philosophy: max 3 taps per action. Built for the $1,200 avg MiniPay user in emerging markets.",
+    "Agentic Treasury OS for MiniPay users on Celo. LiquidAI turns idle stablecoins into productive capital with mobile-first UX and policy-gated autonomous execution.",
   imageURL: "https://liquidai.vercel.app/og-image.png",
   links: [
-    { type: "github", url: "https://github.com/DGuedz/liquidai" },
-    { type: "website", url: "https://liquidai.vercel.app" },
+    { type: "github", url: "https://github.com/DGuedz/Liquidaicelominipay" },
+    { type: "website", url: "https://liquidai-app.vercel.app/" },
+    { type: "website", url: "https://synthesis.devfolio.co/projects/faa5281797514ddfa17d950f5c2b102a" },
+    { type: "website", url: "https://drive.google.com/file/d/19fUEtTRC5IUodulmQvjdOGb99CuNQPmG/view?usp=sharing" },
+    { type: "twitter", url: "https://x.com/dg_doublegreen/status/2035746225337639250" },
   ],
   tags: ["defi", "celo", "minipay", "treasury", "ai-agent", "mobile-first", "emerging-markets"],
   problem:
-    "MiniPay users in emerging markets lose 30-50% of savings to inflation while DeFi yields sit idle, inaccessible behind complex interfaces.",
+    "MiniPay users and stablecoin holders in emerging markets keep funds idle due to DeFi complexity and execution friction, losing purchasing power over time.",
   solution:
-    "Autonomous AI agent that optimizes liquidity across Aave, Morpho, and Mento with max 3-tap UX. Invisible DeFi for the real world.",
+    "Autonomous treasury routing with identity and safety controls, simple mobile UX, and continuous liquidity optimization on Celo.",
   missionSummary: "Make DeFi yield automatic, invisible, and accessible for everyday MiniPay users.",
   stageIn: "Beta",
   pathToTake:
-    "M1: AI Liquidity Map → M2: MiniPay UX → M3: Yield Router → M4: Card Infrastructure + PIX",
+    "Ship resilient mobile treasury automation on Celo, scale route intelligence, then expand to institutional treasury workflows.",
 };
 
 export type { KarmaClient };

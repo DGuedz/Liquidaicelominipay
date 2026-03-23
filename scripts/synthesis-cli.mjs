@@ -7,6 +7,10 @@ dotenv.config({ quiet: true });
 
 const BASE_URL = process.env.SYN_BASE_URL || "https://synthesis.devfolio.co";
 const AUTH_TOKEN = process.env.SYN_API_KEY || process.env.SYNTH_API_KEY || "";
+const DEFAULT_REQUIRED_TRACKS = [
+  "ff26ab4933c84eea856a5c6bf513370b", // Celo
+  "437781b864994698b2a304227e277b56", // Self
+];
 
 function usage() {
   console.log(`Synthesis CLI (terminal-first submission)
@@ -19,6 +23,7 @@ Usage:
   node scripts/synthesis-cli.mjs project --project <projectUUID>
   node scripts/synthesis-cli.mjs create-draft --file <jsonFile>
   node scripts/synthesis-cli.mjs update --project <projectUUID> --file <jsonFile>
+  node scripts/synthesis-cli.mjs monitor --project <projectUUID> [--team <teamUUID>] [--required-tracks <uuid,uuid>] [--owner-address <0x...>] [--strict-conversation] [--strict-custody]
   node scripts/synthesis-cli.mjs transfer-init --address <0x...>
   node scripts/synthesis-cli.mjs transfer-confirm --token <tok_...> --address <0x...>
   node scripts/synthesis-cli.mjs publish --project <projectUUID>
@@ -34,6 +39,17 @@ function getArg(flag) {
   const idx = process.argv.indexOf(flag);
   if (idx === -1 || idx + 1 >= process.argv.length) return null;
   return process.argv[idx + 1];
+}
+
+function parseCsv(value) {
+  return String(value || "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function hasFlag(flag) {
+  return process.argv.includes(flag);
 }
 
 function hasAuth() {
@@ -249,6 +265,155 @@ async function cmdPublish() {
   console.log(JSON.stringify(data, null, 2));
 }
 
+async function checkUrl(url, timeoutMs = 10_000) {
+  const value = String(url || "").trim();
+  if (!value) return { ok: false, status: 0, error: "missing-url" };
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs).unref();
+  try {
+    const headRes = await fetch(value, {
+      method: "HEAD",
+      redirect: "follow",
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (headRes.ok || (headRes.status >= 300 && headRes.status <= 399)) {
+      return { ok: true, status: headRes.status };
+    }
+
+    const getRes = await fetch(value, {
+      method: "GET",
+      redirect: "follow",
+      signal: controller.signal,
+    });
+    return { ok: getRes.ok || (getRes.status >= 300 && getRes.status <= 399), status: getRes.status };
+  } catch (error) {
+    clearTimeout(timeout);
+    return {
+      ok: false,
+      status: 0,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+async function cmdMonitor() {
+  requireAuth();
+
+  const projectUuid = getArg("--project") || process.env.SYN_PROJECT_UUID;
+  const teamUuid = getArg("--team") || process.env.SYN_TEAM_UUID || process.env.TEAM_UUID || "";
+  const ownerAddress = String(
+    getArg("--owner-address") || process.env.TARGET_OWNER_ADDRESS || "",
+  ).toLowerCase();
+  const strictConversation = hasFlag("--strict-conversation");
+  const strictCustody = hasFlag("--strict-custody");
+
+  if (!projectUuid) {
+    console.error("Missing --project <projectUUID> (or SYN_PROJECT_UUID env).");
+    process.exit(1);
+  }
+
+  const requiredTracks = parseCsv(getArg("--required-tracks") || process.env.SYN_REQUIRED_TRACKS);
+  const expectedTrackUUIDs = requiredTracks.length ? requiredTracks : DEFAULT_REQUIRED_TRACKS;
+
+  const checks = [];
+  const addCheck = (name, ok, details, severity = "error") => {
+    checks.push({ name, ok: Boolean(ok), severity, details: details || "" });
+  };
+
+  const project = await api(`/projects/${projectUuid}`, { auth: true });
+  const projectTracks = Array.isArray(project.tracks) ? project.tracks : [];
+  const projectTrackUUIDs = projectTracks.map((track) => String(track?.uuid || "").toLowerCase()).filter(Boolean);
+
+  addCheck("project_exists", Boolean(project?.uuid), `uuid=${project?.uuid || "missing"}`);
+  addCheck("status_publish", String(project?.status || "").toLowerCase() === "publish", `status=${project?.status || "unknown"}`);
+  addCheck("has_name", Boolean(String(project?.name || "").trim()));
+  addCheck("has_repo", Boolean(String(project?.repoURL || "").trim()));
+  addCheck("has_deploy", Boolean(String(project?.deployedURL || "").trim()));
+  addCheck("has_video", Boolean(String(project?.videoURL || "").trim()));
+  addCheck("has_submission_metadata", Boolean(project?.submissionMetadata));
+  addCheck(
+    "has_conversation_log",
+    String(project?.conversationLog || "").trim().length > 0,
+    `length=${String(project?.conversationLog || "").trim().length}`,
+    strictConversation ? "error" : "warning",
+  );
+
+  const missingTracks = expectedTrackUUIDs.filter(
+    (requiredUuid) => !projectTrackUUIDs.includes(String(requiredUuid).toLowerCase()),
+  );
+  addCheck(
+    "required_tracks_present",
+    missingTracks.length === 0,
+    missingTracks.length ? `missing=${missingTracks.join(",")}` : `count=${projectTrackUUIDs.length}`,
+  );
+
+  const repoHealth = await checkUrl(project?.repoURL);
+  const deployHealth = await checkUrl(project?.deployedURL);
+  const videoHealth = await checkUrl(project?.videoURL);
+  addCheck("repo_url_reachable", repoHealth.ok, `status=${repoHealth.status}${repoHealth.error ? ` error=${repoHealth.error}` : ""}`);
+  addCheck("deployed_url_reachable", deployHealth.ok, `status=${deployHealth.status}${deployHealth.error ? ` error=${deployHealth.error}` : ""}`);
+  addCheck("video_url_reachable", videoHealth.ok, `status=${videoHealth.status}${videoHealth.error ? ` error=${videoHealth.error}` : ""}`);
+
+  if (teamUuid) {
+    const team = await api(`/teams/${teamUuid}`, { auth: true });
+    addCheck(
+      "team_project_binding",
+      String(team?.project?.uuid || "") === String(projectUuid),
+      `teamProject=${team?.project?.uuid || "none"}`,
+    );
+  } else {
+    addCheck("team_uuid_provided", false, "team uuid not provided; skipped binding check", "warning");
+  }
+
+  const participant = await api("/participants/me", { auth: true });
+  const participantWallet = String(participant?.walletAddress || "").toLowerCase();
+  const ownerWallet = String(participant?.ownerWalletAddress || "").toLowerCase();
+  const custodyWallet = String(participant?.selfCustodyAddress || "").toLowerCase();
+  const hasCustodySignal = Boolean(ownerWallet || custodyWallet);
+  addCheck(
+    "self_custody_signal",
+    hasCustodySignal,
+    `wallet=${participantWallet || "none"} owner=${ownerWallet || "none"} selfCustody=${custodyWallet || "none"}`,
+    strictCustody ? "error" : "warning",
+  );
+
+  if (ownerAddress) {
+    const matchesOwner =
+      participantWallet === ownerAddress ||
+      ownerWallet === ownerAddress ||
+      custodyWallet === ownerAddress;
+    addCheck("owner_address_matches_participant", matchesOwner, `expected=${ownerAddress}`, strictCustody ? "error" : "warning");
+  }
+
+  const errors = checks.filter((check) => !check.ok && check.severity === "error");
+  const warnings = checks.filter((check) => !check.ok && check.severity === "warning");
+  const passed = checks.filter((check) => check.ok).length;
+
+  const report = {
+    monitoredAt: new Date().toISOString(),
+    project: {
+      uuid: project?.uuid || projectUuid,
+      status: project?.status || "unknown",
+      updatedAt: project?.updatedAt || null,
+    },
+    totals: {
+      checks: checks.length,
+      passed,
+      errors: errors.length,
+      warnings: warnings.length,
+    },
+    checks,
+  };
+
+  console.log(JSON.stringify(report, null, 2));
+
+  if (errors.length > 0) {
+    process.exit(1);
+  }
+}
+
 function cmdChecklist() {
   console.log(`Eligibility checklist (Synthesis)
 
@@ -308,6 +473,9 @@ async function main() {
         break;
       case "update":
         await cmdUpdateProject();
+        break;
+      case "monitor":
+        await cmdMonitor();
         break;
       case "transfer-init":
         await cmdTransferInit();

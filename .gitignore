@@ -62,4 +62,3 @@ docs/BLCK_*.md
 
 # Secret dump artifacts (accidental local files)
 src/app/pages/*PRIVATE_KEY=*
-src/app/pages/{"message"*.json

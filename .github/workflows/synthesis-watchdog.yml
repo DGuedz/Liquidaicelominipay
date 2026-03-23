@@ -1,0 +1,36 @@
+name: Synthesis Watchdog
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */2 * * *"
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Monitor Synthesis submission health
+        env:
+          SYNTH_API_KEY: ${{ secrets.SYNTH_API_KEY }}
+          SYN_PROJECT_UUID: "faa5281797514ddfa17d950f5c2b102a"
+          SYN_TEAM_UUID: "b0b4e1fc41d04356bb20073654887678"
+          SYN_REQUIRED_TRACKS: "ff26ab4933c84eea856a5c6bf513370b,437781b864994698b2a304227e277b56"
+          TARGET_OWNER_ADDRESS: "0xf8024Db04E64298B9BF89A1D4D0cc1D3F13E34a7"
+        run: pnpm synth:monitor --project "$SYN_PROJECT_UUID" --team "$SYN_TEAM_UUID"

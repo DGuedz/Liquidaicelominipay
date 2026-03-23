@@ -31,8 +31,16 @@
     "helpfulResources": [
       "https://synthesis.md/skill.md",
       "https://synthesis.md/submission/skill.md",
-      "https://docs.celo.org/"
+      "https://docs.celo.org/",
+      "https://drive.google.com/file/d/19fUEtTRC5IUodulmQvjdOGb99CuNQPmG/view?usp=sharing",
+      "https://liquidai-app.vercel.app",
+      "https://github.com/DGuedz/Liquidaicelominipay",
+      "https://youtu.be/pMjBLznBTvQ",
+      "https://www.karmahq.xyz/project/liquidai-odl-agent",
+      "https://synthesis.devfolio.co/projects/faa5281797514ddfa17d950f5c2b102a",
+      "https://x.com/dg_doublegreen/status/2035746225337639250"
     ],
+    "pitchDeckURL": "https://drive.google.com/file/d/19fUEtTRC5IUodulmQvjdOGb99CuNQPmG/view?usp=sharing",
     "moltbookPostURL": "https://www.moltbook.com/p/a496eba8-11bb-4dc5-9cb8-b42fff731b59",
     "intention": "continuing",
     "intentionNotes": "Roadmap includes production hardening, mainnet deployment, and expanded DeFi protocol integrations for automated yield."

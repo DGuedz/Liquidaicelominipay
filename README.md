@@ -10,6 +10,18 @@
 
 LiquidAI is an autonomous treasury infrastructure layer designed to optimize idle stablecoins in high-latency or low-literacy environments. Operating primarily within the Opera MiniPay ecosystem, it relies on strict Zero-Knowledge identity verification (Self Protocol) and deterministic on-chain execution.
 
+## Jury Quick Links
+
+- **Live dApp (Vercel):** https://liquidai-app.vercel.app
+- **Demo Video (YouTube):** https://youtu.be/pMjBLznBTvQ
+- **Pitch Deck (Google Drive):** https://drive.google.com/file/d/19fUEtTRC5IUodulmQvjdOGb99CuNQPmG/view?usp=sharing
+- **Synthesis Submission:** https://synthesis.devfolio.co/projects/faa5281797514ddfa17d950f5c2b102a
+- **Synthesis Project UUID:** `faa5281797514ddfa17d950f5c2b102a`
+- **Karma Project:** https://www.karmahq.xyz/project/liquidai-odl-agent
+- **GitHub Repository:** https://github.com/DGuedz/Liquidaicelominipay
+- **X Update Thread:** https://x.com/dg_doublegreen/status/2035746225337639250
+- **AgentScan (network index):** https://agentscan.info/
+
 ## The A2A (Agent-to-Agent) Execution Model
 
 Our architecture utilizes a multi-agent state machine designed for capital efficiency and absolute operational silence. Human intervention is reduced to cryptographic intent delegation. 
@@ -36,14 +48,14 @@ Our architecture utilizes a multi-agent state machine designed for capital effic
 ### 3. Highest Rank on AgentScan (ERC-8004 Standard)
 - **Trustless Execution:** Instead of operating as a black box, every agent decision is packaged as a transparent Intent.
 - **On-Chain Identity:** LiquidAI is officially registered on the Celo Mainnet Identity Registry.
-  - **AgentScan Profile:** [LiquidAI (Agent #2729)](https://agentscan.info/agents/celo/2729)
+  - **AgentScan Index:** [AgentScan Home](https://agentscan.info/) (project-specific page may depend on index refresh timing)
 - **Karma Telemetry:** Execution intents are logged via Karma API for reputation building.
 
 ### Hackathon Compliance (Build Agents for the Real World V2 & Synthesis)
 
 **1. Build Agents for the Real World V2 (Celo)**
 - **Karma Project:** [LiquidAI (ODL Agent)](https://www.karmahq.xyz/project/liquidai-odl-agent) (Active & Endorsed)
-- **AgentScan ID:** [Agent #2729](https://agentscan.info/agents/celo/2729) (Awaiting indexing on public explorer, validated locally via MetaMask wallet)
+- **AgentScan:** [agentscan.info](https://agentscan.info/) (index status can vary by crawler refresh windows)
 
 **2. Synthesis Hackathon (Bounty Stacking)**
 - 🪪 **Self Protocol (Best Agent Identity Integration):** LiquidAI implements a rigorous Zero-Knowledge (ZK) "Kill Switch". The backend agent (`Sentinel`) strictly refuses to sign or execute any on-chain transaction unless the user wallet holds a valid, active Proof-of-Humanity session from the Self App. Zero PII is leaked. 1:1 Human-to-Agent mapping enforced.

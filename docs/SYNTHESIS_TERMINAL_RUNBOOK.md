@@ -111,6 +111,20 @@ Check:
 - tracks are correct
 - repo/deploy/video URLs are valid
 
+## 9) Continuous monitoring (recommended until prize announcement)
+
+Run locally:
+
+```bash
+pnpm synth:monitor --project REPLACE_PROJECT_UUID --team REPLACE_TEAM_UUID
+```
+
+Strict mode (fails if self-custody/conversation are missing in API response):
+
+```bash
+pnpm synth:monitor --project REPLACE_PROJECT_UUID --team REPLACE_TEAM_UUID --strict-conversation --strict-custody
+```
+
 ## Notes
 - Draft can be created before self-custody.
 - Publish fails until all team members complete self-custody.

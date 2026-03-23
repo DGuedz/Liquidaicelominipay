@@ -12,6 +12,7 @@
     "api:dev": "node --watch server/index.mjs",
     "api:start": "node scripts/render-preflight.mjs && node server/index.mjs",
     "synth": "node scripts/synthesis-cli.mjs",
+    "synth:monitor": "node scripts/synthesis-cli.mjs monitor",
     "synth:prepare": "node scripts/synthesis-prepare-draft.mjs",
     "security:deps": "node scripts/verify-wallet-sdk-versions.mjs",
     "security:audit": "node scripts/security-audit-gate.mjs",
