@@ -2088,9 +2088,9 @@ export function OnboardingPage() {
   const TOTAL_STEPS = 2; // step 1 = connect, step 2 = risk
 
   const handleNext = () => setStep((s) => s + 1);
-  const handleSkip = () => navigate("/");
+  const handleSkip = () => navigate("/home");
   const handleFinish = (_risk: RiskId) => setStep(3); // launch
-  const handleDone = () => navigate("/");
+  const handleDone = () => navigate("/home");
 
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center bg-[var(--background)] md:bg-black/5 md:backdrop-blur-sm">
