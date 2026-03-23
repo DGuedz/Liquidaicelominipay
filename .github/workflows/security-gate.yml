@@ -22,8 +22,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "pnpm"
+
+      - name: Secret leak guard
+        run: pnpm run security:secrets
 
       - name: Install dependencies (frozen lockfile)
         run: pnpm install --frozen-lockfile
@@ -35,4 +38,4 @@ jobs:
         run: pnpm run security:audit
 
       - name: Build
-        run: npm run build
+        run: pnpm run build

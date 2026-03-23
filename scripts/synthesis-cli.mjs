@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 
+import dotenv from "dotenv";
+
+dotenv.config({ path: ".env.synthesis.local", quiet: true });
+dotenv.config({ quiet: true });
+
 const BASE_URL = process.env.SYN_BASE_URL || "https://synthesis.devfolio.co";
+const AUTH_TOKEN = process.env.SYN_API_KEY || process.env.SYNTH_API_KEY || "";
 
 function usage() {
   console.log(`Synthesis CLI (terminal-first submission)
@@ -19,6 +25,7 @@ Usage:
 
 Environment:
   SYN_API_KEY   Required for authenticated commands
+  SYNTH_API_KEY Alias accepted for backward compatibility
   SYN_BASE_URL  Optional (default: https://synthesis.devfolio.co)
 `);
 }
@@ -30,12 +37,12 @@ function getArg(flag) {
 }
 
 function hasAuth() {
-  return Boolean(process.env.SYN_API_KEY);
+  return Boolean(AUTH_TOKEN);
 }
 
 function requireAuth() {
   if (!hasAuth()) {
-    console.error("Missing SYN_API_KEY in env.");
+    console.error("Missing SYN_API_KEY (or SYNTH_API_KEY) in env.");
     process.exit(1);
   }
 }
@@ -48,7 +55,7 @@ async function api(path, options = {}) {
   };
 
   if (options.auth) {
-    headers.Authorization = `Bearer ${process.env.SYN_API_KEY}`;
+    headers.Authorization = `Bearer ${AUTH_TOKEN}`;
   }
 
   const res = await fetch(url, {
@@ -162,11 +169,24 @@ async function cmdUpdateProject() {
   const fs = await import("node:fs/promises");
   const body = JSON.parse(await fs.readFile(file, "utf-8"));
 
-  const updated = await api(`/projects/${project}`, {
-    method: "POST",
-    auth: true,
-    body,
-  });
+  let updated;
+  try {
+    updated = await api(`/projects/${project}`, {
+      method: "POST",
+      auth: true,
+      body,
+    });
+  } catch (postError) {
+    try {
+      updated = await api(`/projects/${project}`, {
+        method: "PUT",
+        auth: true,
+        body,
+      });
+    } catch (putError) {
+      throw new Error(`Update failed with POST and PUT. POST: ${postError.message}; PUT: ${putError.message}`);
+    }
+  }
 
   console.log("Project updated successfully:");
   console.log(JSON.stringify(updated, null, 2));

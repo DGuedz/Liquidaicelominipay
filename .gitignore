@@ -59,3 +59,7 @@ docs/internal/
 docs/*_INTERNAL*.md
 docs/BLCK_*.md
 .env.synthesis.local
+
+# Secret dump artifacts (accidental local files)
+src/app/pages/*PRIVATE_KEY=*
+src/app/pages/{"message"*.json
