@@ -1453,7 +1453,15 @@ function StepConnect({ onNext }: { onNext: () => void }) {
                 border: "1px solid rgba(255,255,255,0.08)",
               }}
             >
-              <p className="text-xs uppercase tracking-wide font-semibold text-[var(--text-muted)] text-center mb-1">Select Provider</p>
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs uppercase tracking-wide font-semibold text-[var(--text-muted)]">Select Provider</p>
+                <button 
+                  onClick={() => setShowWalletOptions(false)}
+                  className="w-6 h-6 rounded-full flex items-center justify-center bg-white/5"
+                >
+                  <span className="text-[var(--text-muted)] text-sm leading-none">&times;</span>
+                </button>
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -1485,72 +1493,73 @@ function StepConnect({ onNext }: { onNext: () => void }) {
             </motion.div>
           )}
 
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={
-              wrongNetwork
-                ? handleSwitchNetwork
-                : activationRoute?.nextAction === "activate_session"
-                  ? handleEnsureSession
-                : phase === "connected" && requiresSelfVerification && !selfStatus?.verified
-                  ? handleVerifySelf
-                : activationRoute?.nextAction === "claim_faucet"
-                  ? handleClaimFaucet
-                  : phase === "idle"
-                    ? () => setShowWalletOptions(true)
-                    : handleConnect
-            }
-            disabled={isBusy}
-            className="w-full py-4 rounded-full font-semibold flex items-center justify-center gap-2"
-            style={{
-              background:
-                phase !== "idle" || wrongNetwork || showWalletOptions
-                  ? "rgba(13,75,46,0.4)"
-                  : "linear-gradient(135deg, #0D4B2E 0%, #1a6b45 100%)",
-              color: "#fff",
-              boxShadow: phase === "idle" && !wrongNetwork && !showWalletOptions ? "0 6px 24px rgba(13,75,46,0.35)" : "none",
-              display: (phase === "idle" && !wrongNetwork && showWalletOptions) ? "none" : "flex",
-            }}
-          >
-            {phase === "idle" && !wrongNetwork ? (
-              <>
-                <Wallet className="w-5 h-5" />
-                {isMiniPay ? "Connect MiniPay" : "Connect wallet"}
-              </>
-            ) : activationRoute?.nextAction === "activate_session" ? (
-              <>
-                <Fingerprint className="w-5 h-5" />
-                {isSigningMessage || isEnsuringSession ? "Signing session..." : "Sign session"}
-              </>
-            ) : phase === "connected" && requiresSelfVerification && !selfStatus?.verified ? (
-              <>
-                <Fingerprint className="w-5 h-5" />
-                {isVerifyingSelf ? "Generating Self Link..." : "Unlock with Self ID"}
-              </>
-            ) : activationRoute?.nextAction === "claim_faucet" ? (
-              <>
-                <Wallet className="w-5 h-5" />
-                {isClaimingFaucet ? "Funding..." : "Get test funds"}
-              </>
-            ) : (
-              <>
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white"
-                />
-                {isSwitchingChain
-                  ? "Switching to Celo..."
-                  : isSigningMessage
-                  ? "Signing session..."
-                  : phase === "connecting"
-                  ? "Connecting..."
-                  : phase === "verifying"
-                    ? "Verifying identity..."
-                    : "Connecting..."}
-              </>
-            )}
-          </motion.button>
+          {(!showWalletOptions || phase !== "idle" || wrongNetwork) && (
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={
+                wrongNetwork
+                  ? handleSwitchNetwork
+                  : activationRoute?.nextAction === "activate_session"
+                    ? handleEnsureSession
+                  : phase === "connected" && requiresSelfVerification && !selfStatus?.verified
+                    ? handleVerifySelf
+                  : activationRoute?.nextAction === "claim_faucet"
+                    ? handleClaimFaucet
+                    : phase === "idle"
+                      ? () => setShowWalletOptions(true)
+                      : handleConnect
+              }
+              disabled={isBusy}
+              className="w-full py-4 rounded-full font-semibold flex items-center justify-center gap-2"
+              style={{
+                background:
+                  phase !== "idle" || wrongNetwork
+                    ? "rgba(13,75,46,0.4)"
+                    : "linear-gradient(135deg, #0D4B2E 0%, #1a6b45 100%)",
+                color: "#fff",
+                boxShadow: phase === "idle" && !wrongNetwork ? "0 6px 24px rgba(13,75,46,0.35)" : "none",
+              }}
+            >
+              {phase === "idle" && !wrongNetwork ? (
+                <>
+                  <Wallet className="w-5 h-5" />
+                  {isMiniPay ? "Connect MiniPay" : "Connect wallet"}
+                </>
+              ) : activationRoute?.nextAction === "activate_session" ? (
+                <>
+                  <Fingerprint className="w-5 h-5" />
+                  {isSigningMessage || isEnsuringSession ? "Signing session..." : "Sign session"}
+                </>
+              ) : phase === "connected" && requiresSelfVerification && !selfStatus?.verified ? (
+                <>
+                  <Fingerprint className="w-5 h-5" />
+                  {isVerifyingSelf ? "Generating Self Link..." : "Unlock with Self ID"}
+                </>
+              ) : activationRoute?.nextAction === "claim_faucet" ? (
+                <>
+                  <Wallet className="w-5 h-5" />
+                  {isClaimingFaucet ? "Funding..." : "Get test funds"}
+                </>
+              ) : (
+                <>
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white"
+                  />
+                  {isSwitchingChain
+                    ? "Switching to Celo..."
+                    : isSigningMessage
+                    ? "Signing session..."
+                    : phase === "connecting"
+                    ? "Connecting..."
+                    : phase === "verifying"
+                      ? "Verifying identity..."
+                      : "Connecting..."}
+                </>
+              )}
+            </motion.button>
+          )}
 
           {(isConnected || phase !== "idle") && (
             <button
