@@ -52,7 +52,7 @@ export function BottomNavigation() {
       <div className="flex items-center justify-around mx-auto px-4 py-3" style={{ maxWidth: 430 }}>
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = location.pathname === item.path;
+          const isActive = location.pathname === item.path || (item.path === "/home" && location.pathname === "/dashboard");
           const activeColor = "#A3D977";
           const inactiveColor = isDark ? "#3D5C44" : "#9CA3AF";
           const activeBg = isDark
