@@ -516,6 +516,8 @@ app.get(
 
 app.post(
   "/api/agent/rebalance",
+  walletAuthGuard((req) => req.body?.address),
+  selfAuthGuard((req) => req.body?.address),
   asyncRoute(async (req, res) => {
     const payload = req.body || {};
     const yields = await getYieldSnapshot();

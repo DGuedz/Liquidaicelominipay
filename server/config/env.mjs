@@ -178,7 +178,7 @@ export const env = {
   demoFaucetCooldownMs: readInt("DEMO_FAUCET_COOLDOWN_MS", 12 * 60 * 60 * 1000),
   demoFaucetNativeReserve: readFloat("DEMO_FAUCET_NATIVE_RESERVE", 1),
   demoFaucetStableReserve: readFloat("DEMO_FAUCET_STABLE_RESERVE", 5),
-  selfMode: readString("SELF_MODE", "mock"),
+  selfMode: readString("SELF_MODE", "agent"),
   selfRequiredForAgent: readBool("SELF_REQUIRED_FOR_AGENT", true),
   selfScope: readString("SELF_SCOPE", "liquidai").slice(0, 30),
   publicApiBaseUrl: readUrlLike("PUBLIC_API_BASE_URL", ""),
