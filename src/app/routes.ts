@@ -11,14 +11,21 @@ function lazyComponent<TModule extends LazyRouteModule>(
   exportName: keyof TModule,
 ) {
   return async () => {
-    const mod = await load();
-    const Component = mod[exportName];
+    try {
+      const mod = await load();
+      const Component = mod[exportName];
 
-    if (typeof Component !== "function") {
-      throw new Error(`Route export "${String(exportName)}" is not a valid component.`);
+      if (typeof Component !== "function") {
+        throw new Error(`Route export "${String(exportName)}" is not a valid component.`);
+      }
+
+      return { Component: Component as ComponentType };
+    } catch (error) {
+      console.error("Failed to load chunk, forcing full reload.", error);
+      // Instead of failing the route, force a hard reload so the browser gets the new JS chunk hashes
+      window.location.reload();
+      return { Component: () => null }; // Dummy component while reloading
     }
-
-    return { Component: Component as ComponentType };
   };
 }
 
