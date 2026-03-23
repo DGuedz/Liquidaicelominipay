@@ -15,17 +15,17 @@ const celoSepolia = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ["https://forno.celo-sepolia.celo-testnet.org"],
+      http: ["https://alfajores-forno.celo-testnet.org"], // Changed from forno.celo-sepolia due to instability
     },
     public: {
-      http: ["https://forno.celo-sepolia.celo-testnet.org"],
+      http: ["https://alfajores-forno.celo-testnet.org"],
     },
   },
   blockExplorers: {
     default: {
       name: "Celo Sepolia Explorer",
-      url: "https://celo-sepolia.blockscout.com",
-      apiUrl: "https://celo-sepolia.blockscout.com/api",
+      url: "https://celo-alfajores.blockscout.com",
+      apiUrl: "https://celo-alfajores.blockscout.com/api",
     },
   },
   testnet: true,

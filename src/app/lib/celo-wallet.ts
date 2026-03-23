@@ -4,7 +4,7 @@ import { defineChain } from "viem";
 import { chainConfig } from "viem/celo";
 import { injected, metaMask, walletConnect } from "wagmi/connectors";
 
-const DEFAULT_CELO_RPC_URL = "https://forno.celo-sepolia.celo-testnet.org";
+const DEFAULT_CELO_RPC_URL = "https://alfajores-forno.celo-testnet.org"; // Changed from forno.celo-sepolia
 const APP_WALLET_RESET_KEY = "liquidai.wallet-reset";
 
 type InjectedProvider = {
@@ -232,17 +232,17 @@ export const CELO_CHAIN = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ["https://forno.celo-sepolia.celo-testnet.org"],
+      http: ["https://alfajores-forno.celo-testnet.org"],
     },
     public: {
-      http: ["https://forno.celo-sepolia.celo-testnet.org"],
+      http: ["https://alfajores-forno.celo-testnet.org"],
     },
   },
   blockExplorers: {
     default: {
       name: "Celo Sepolia Blockscout",
-      url: "https://celo-sepolia.blockscout.com",
-      apiUrl: "https://celo-sepolia.blockscout.com/api",
+      url: "https://celo-alfajores.blockscout.com",
+      apiUrl: "https://celo-alfajores.blockscout.com/api",
     },
   },
   testnet: true,

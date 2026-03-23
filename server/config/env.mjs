@@ -116,7 +116,7 @@ const DEFAULT_FRONTEND_ORIGINS = [
 const defaultRpcUrl =
   chain === "mainnet"
     ? "https://forno.celo.org"
-    : "https://forno.celo-sepolia.celo-testnet.org";
+    : "https://alfajores-forno.celo-testnet.org";
 
 const rawRpcUrl = readString("CELO_RPC_URL", "");
 const celoRpcUrl =

@@ -66,6 +66,7 @@ const transactions = [
     name: "PIX Transfer",
     subtitle: "Waiting for first real payment",
     type: "expense",
+    kind: "pix",
     amount: 0,
     icon: PixIcon,
     color: "#EF4444",
@@ -76,6 +77,7 @@ const transactions = [
     name: "Yield Capture",
     subtitle: "Waiting for first live rebalance",
     type: "income",
+    kind: "yield",
     amount: 0,
     icon: YieldCaptureIcon,
     color: "#10B981",
@@ -86,6 +88,7 @@ const transactions = [
     name: "Wallet Sync",
     subtitle: "The app will record the first real deposit or swap here",
     type: "income",
+    kind: "deposit",
     amount: 0,
     icon: DepositIcon,
     color: "#0D4B2E",
@@ -96,6 +99,7 @@ const transactions = [
     name: "Agent Buffer",
     subtitle: "Immediate liquidity will appear after the first operation",
     type: "expense",
+    kind: "rebalance",
     amount: 0,
     icon: PhoneTopupIcon,
     color: "#F59E0B",
@@ -469,17 +473,20 @@ export function HomePage() {
       })
     : transactions;
 
-  const notificationItems = displayTransactions.map((tx, index) => ({
-    id: index + 1,
-    type: tx.kind === "yield" ? "yield" : tx.kind === "rebalance" ? "rebalance" : "success",
-    title: tx.name,
-    body: tx.subtitle,
-    time: tx.kind === "yield" ? "Live" : "Now",
-    read: index > 0,
-    icon: tx.kind === "yield" ? Sparkles : tx.kind === "rebalance" ? Bot : Shield,
-    color: tx.kind === "yield" ? "#A3D977" : tx.kind === "rebalance" ? "#10B981" : "#3B82F6",
-    bg: tx.kind === "yield" ? "rgba(163,217,119,0.12)" : tx.kind === "rebalance" ? "rgba(16,185,129,0.1)" : "rgba(59,130,246,0.1)",
-  }));
+  const notificationItems = displayTransactions.map((tx, index) => {
+    const txKind = 'kind' in tx ? tx.kind : "unknown";
+    return {
+      id: index + 1,
+      type: (txKind === "yield" ? "yield" : txKind === "rebalance" ? "rebalance" : "success") as "yield" | "rebalance" | "success" | "alert" | "tip" | "protect",
+      title: tx.name,
+      body: tx.subtitle,
+      time: txKind === "yield" ? "Live" : "Now",
+      read: index > 0,
+      icon: txKind === "yield" ? Sparkles : txKind === "rebalance" ? Bot : Shield,
+      color: txKind === "yield" ? "#A3D977" : txKind === "rebalance" ? "#10B981" : "#3B82F6",
+      bg: txKind === "yield" ? "rgba(163,217,119,0.12)" : txKind === "rebalance" ? "rgba(16,185,129,0.1)" : "rgba(59,130,246,0.1)",
+    } as const;
+  });
   const sparklineStart = displaySparkline[0]?.value ?? null;
   const sparklineEnd = displaySparkline[displaySparkline.length - 1]?.value ?? null;
   const sparklineDelta = sparklineStart != null && sparklineEnd != null ? sparklineEnd - sparklineStart : null;
@@ -867,19 +874,22 @@ export function HomePage() {
               totalYield: yieldEarned ?? 0,
               apy: yieldRate ?? 0,
             }}
-            feed={displayTransactions.map((tx) => ({
-              kind:
-                tx.kind === "yield"
-                  ? "yield"
-                  : tx.kind === "pix"
-                    ? "jit"
-                    : tx.kind === "rebalance"
-                      ? "rebalance"
-                      : "opportunity",
-              title: tx.name,
-              detail: tx.subtitle,
-              amount: tx.amount > 0 ? `${tx.type === "income" ? "+" : "-"}$${tx.amount.toFixed(2)}` : undefined,
-            }))}
+            feed={displayTransactions.map((tx) => {
+              const txKind = 'kind' in tx ? tx.kind : "unknown";
+              return {
+                kind:
+                  txKind === "yield"
+                    ? "yield"
+                    : txKind === "pix"
+                      ? "jit"
+                      : txKind === "rebalance"
+                        ? "rebalance"
+                        : "opportunity",
+                title: tx.name,
+                detail: tx.subtitle,
+                amount: tx.amount > 0 ? `${tx.type === "income" ? "+" : "-"}$${tx.amount.toFixed(2)}` : undefined,
+              };
+            })}
           />
         </motion.div>
       </div>
